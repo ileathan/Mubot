@@ -49,26 +49,27 @@ success = (msg) ->
 
 reloadAllScripts = (msg, success, error) ->
   robot = msg.robot
+  unappendedEvents = Object.assign({}, robot.events._events);
   robot.emit('reload_scripts')
   scriptsPath = Path.resolve ".", "scripts"
   robot.load scriptsPath
 
-  scriptsPath = Path.resolve ".", "src", "scripts"
-  robot.load scriptsPath
-
-  hubotScripts = Path.resolve ".", "hubot-scripts.json"
-  Fs.exists hubotScripts, (exists) ->
-    if exists
-      Fs.readFile hubotScripts, (err, data) ->
-        if data.length > 0
-          try
-            scripts = JSON.parse data
-            scriptsPath = Path.resolve "node_modules", "hubot-scripts", "src", "scripts"
-            robot.loadHubotScripts scriptsPath, scripts
-          catch err
-            error "Error parsing JSON data from hubot-scripts.json: #{err}"
-            return
-
+#  I DONT USE src/scripts
+#  scriptsPath = Path.resolve ".", "src", "scripts"
+#  robot.load scriptsPath
+#  DEPRECIATED LONG TIME AGO
+#  hubotScripts = Path.resolve ".", "hubot-scripts.json"
+#  Fs.exists hubotScripts, (exists) ->
+#    if exists
+#      Fs.readFile hubotScripts, (err, data) ->
+#        if data.length > 0
+#          try
+#            scripts = JSON.parse data
+#            scriptsPath = Path.resolve "node_modules", "hubot-scripts", "src", "scripts"
+#            robot.loadHubotScripts scriptsPath, scripts
+#          catch err
+#            error "Error parsing JSON data from hubot-scripts.json: #{err}"
+#            return
   externalScripts = Path.resolve ".", "external-scripts.json"
   Fs.exists externalScripts, (exists) ->
     if exists
@@ -76,9 +77,11 @@ reloadAllScripts = (msg, success, error) ->
         if data.length > 0
           try
             scripts = JSON.parse data
+            scripts.splice(0, 1) # REMOVES THE FIRST SCRIPT (hubot-server)
           catch err
             error "Error parsing JSON data from external-scripts.json: #{err}"
           robot.loadExternalScripts scripts
           return
+  robot.events._events = unappendedEvents
   success(msg)
 

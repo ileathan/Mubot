@@ -1,7 +1,7 @@
 [
+  "hubot-server",
   "hubot-mubot",
   "hubot-diagnostics",
-  "hubot-server",
   "hubot-bustabit",
   "hubot-calculator",
   "hubot-help",

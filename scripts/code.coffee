@@ -56,7 +56,8 @@ module.exports = (robot) ->
     return unless msg.message.user.name == 'leathan'
     fs.readFile __dirname + "/" + msg.match[1], (err, data) ->
       if err
-        msg.send err
+        msg.send err.toString().slice(0, 15)
+        msg.send '```' + err.toString().slice(15) + '```'
         return
       data = data.toString().replace(/`/g, '\\\`')
       Send "Viewing ```#{msg.match[1]}```Contents ```coffeescript\n#{data}```", msg

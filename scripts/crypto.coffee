@@ -15,7 +15,12 @@
 
 module.exports = (robot) ->
 
+  robot.on "test", (msg) ->
+    msg.send "Hi"
+
   cR = {}
+  # This was to address a bug due to how reload.coffee was reloading scripts, I fixed it there directly.
+  #if typeof robot.events._events.CryptoReply is 'undefined'
   robot.on 'CryptoReply', (r, mode, msg) ->
     key = Object.keys(r)[0]
     cR[key] = r[key] if r[key]
@@ -48,9 +53,9 @@ module.exports = (robot) ->
         msg.send "Buying " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + " at current books gives you " + cR.asks.BTC  + " BTC.\n" +
         "Selling " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0] + " at current books gives you " + cR.bids.BTC  + " BTC."
         cR = {}
-
+  #if typeof robot.events._events.CryptoRequest is 'undefined'
   robot.on 'CryptoRequest', (r, msg) ->
-    r.market = 'p' if r.market is "" or not r.market
+    r.market = 'p' if r.market is "" or not r.market 
     r.mode = "all"; r.mode = "depth" if r.depth; r.mode = "swap" if r.ticker2; r.mode = "amount" if r.amount and not r.ticker2
     r.ticker  = r.ticker?.toUpperCase()
     r.ticker2 = if r.ticker2 and r.ticker2 != 'false' then r.ticker2.toUpperCase() else false
@@ -64,6 +69,13 @@ module.exports = (robot) ->
       Loop orderBook, r, msg, robot
 
   robot.hear /^(?:c|crypto|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, (msg) ->
+#    clone = Object.assign({}, robot.events._events);
+#    delete clone.test
+#    console.log("CLONE")
+#    console.log(clone)
+#    console.log("AND REAL")
+#    console.log(robot.events._events)
+
     depth   = msg.match[4] if /^\d{1,6}$/.test(msg.match[4])
     ticker2 = msg.match[4] if not /^\d{1,6}$/.test(msg.match[4])
     robot.emit 'CryptoRequest', { market: msg.match[1], ticker: msg.match[3], ticker2: ticker2, amount: msg.match[2], depth: depth }, msg
