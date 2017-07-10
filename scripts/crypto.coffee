@@ -15,9 +15,6 @@
 
 module.exports = (robot) ->
 
-  robot.on "test", (msg) ->
-    msg.send "Hi"
-
   cR = {}
   # This was to address a bug due to how reload.coffee was reloading scripts, I fixed it there directly.
   #if typeof robot.events._events.CryptoReply is 'undefined'
