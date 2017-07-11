@@ -28,8 +28,12 @@ And then in any new shell just use the installed version:
 nvm use node
 ```
 
-### Instalation
+### Quick Install
 `git clone https://github.com/ileathan/Mubot.git && cd Mubot`
 
 ### Execution 
 `bin/hubot`
+
+### Full Instalation
+
+... This project is still constantly in developement but a full guide is coming. That way each end user can host their own marking servers accompanied with a customized and extended hubot implementation.
