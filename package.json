@@ -48,7 +48,6 @@
     "opusscript": "0.0.3",
     "randomstring": "^1.1.5",
     "request": "^2.81.0",
-    "scrapeit": "0.0.2",
     "serve-favicon": "^2.4.3",
     "sodium": "^2.0.1",
     "soupselect": "^0.2.0",
