@@ -1,7 +1,13 @@
 #!/bin/sh
 
 set -e
-
+export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
+export EXPRESS_USER=
+export EXPRESS_PASSWORD=
+export HUBOT_LOG_LEVEL=debug
+export HUBOT_DISCORD_TOKEN=
+export HUBOT_MAX_MESSAGE_LENGTH=
+export WORDNIK_API_KEY=
 #npm install
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
