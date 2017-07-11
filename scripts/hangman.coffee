@@ -20,7 +20,7 @@ class Game
 
   constructor: (word, @definitions) ->
     @word = word.toUpperCase()
-    @wordLetters = @word.split(//)
+    @wordLetters = @word.split(/(?:)/)
     @answerLetters = ("\\_" for letter in @wordLetters)
     @remainingGuesses = 9
     @previousGuesses = []
