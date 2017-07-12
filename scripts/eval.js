@@ -124,7 +124,6 @@
       return lang_valid(robot, lang, is_valid);
     });
     return robot.catchAll(function(msg) {
-      console.log("now")
       var base, ref, ref1;
       if (!((ref = robot.brain.data["eval"]) != null ? ref[msg.message.user.name] : void 0)) {
         return;
