@@ -13,7 +13,7 @@ const leet = require('1337');
 
   module.exports = function(bot) {
     bot.respond(/leet(?: me) (.*)/i, function(r) {
-      m.send(leet(msg.match[1]));
+      r.send(leet(msg.match[1]));
     });
   };
 }).call(this);

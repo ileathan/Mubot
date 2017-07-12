@@ -6,7 +6,7 @@
   var POWER_COMMANDS, POWER_USERS,
     indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  POWER_COMMANDS = ['create.file', 'view.file'];
+  POWER_COMMANDS = ['create.file', 'view.file', 'create.break'];
 
   POWER_USERS = ['leathan'];
 

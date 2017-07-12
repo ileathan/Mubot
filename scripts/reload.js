@@ -59,8 +59,10 @@
   };
 
   reloadAllScripts = function(msg, success, error) {
-    var externalScripts, hubotScripts, robot, scriptsPath;
+    var unapppendedEvents, externalScripts, hubotScripts, robot, scriptsPath;
     robot = msg.robot;
+    unappendedEvents = Object.assign({}, robot.events._events);
+
     robot.emit('reload_scripts');
     scriptsPath = Path.resolve(".", "scripts");
     robot.load(scriptsPath);
@@ -92,6 +94,7 @@
           if (data.length > 0) {
             try {
               scripts = JSON.parse(data);
+              scripts.splice(0, 1) // REMOVES THE FIRST SCRIPT (hubot-server)
             } catch (error1) {
               err = error1;
               error("Error parsing JSON data from external-scripts.json: " + err);
@@ -101,6 +104,7 @@
         });
       }
     });
+    robot.events._events = unappendedEvents
     return success(msg);
   };
 
