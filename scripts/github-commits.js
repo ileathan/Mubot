@@ -6,13 +6,13 @@
 
   querystring = require('querystring');
 
-  gitio = require('gitio2');
+  gitio = require('gitio');
 
   module.exports = function(robot) {
-    return robot.router.post("/hubot/gh-commits", function(req, res) {
+    robot.router.post("/hubot/gh-commits", function(req, res) {
       var commit, commitWord, error, i, len, push, query, ref, results, user;
       query = querystring.parse(url.parse(req.url).query);
-      res.send(200);
+      res.sendStatus(200);
       user = {};
       if (query.room) {
         user.room = query.room;
