@@ -36,4 +36,4 @@ nvm use node
 
 ### Full Instalation
 
-... This project is still constantly in developement but a full guide is coming. That way each end user can host their own marking servers accompanied with a customized and extended hubot implementation.
+... This project is still constantly in developement but a full guide is coming. That way each end user can host their own marking servers accompanied with a customized and extended hubot implementation..
