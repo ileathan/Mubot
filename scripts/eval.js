@@ -24,7 +24,7 @@
         var langs;
         langs = JSON.parse(body);
         callback(langs);
-        return robot.logger.info("Brain received eval language list " + (util.inspect(langs)));
+        return robot.logger.info("Brain received eval language list.") // + (util.inspect(langs)));
       });
     };
     lang_valid = function(robot, lang, callback) {
@@ -124,6 +124,7 @@
       return lang_valid(robot, lang, is_valid);
     });
     return robot.catchAll(function(msg) {
+      console.log("now")
       var base, ref, ref1;
       if (!((ref = robot.brain.data["eval"]) != null ? ref[msg.message.user.name] : void 0)) {
         return;
