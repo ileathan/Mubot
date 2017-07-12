@@ -10,7 +10,7 @@
 
 (function() {
   module.exports = function(robot) {
-    return robot.respond(/die$/i, function(msg) {
+    return robot.respond(/die$/i, { id: 'create.die' }, function(msg) {
       msg.send("You humans are so cruel.. very well then, ill die now.");
       return setTimeout(function(){process.exit(0)},100)
     });
