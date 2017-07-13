@@ -17,14 +17,14 @@
         return;
       }
       url = "http://api.dan.co.jp/lleval.cgi";
-      robot.logger.info("Loading language data from " + url);
+      //robot.logger.info("Loading language data from " + url);
       return robot.http(url).query({
         q: "1"
       }).get()(function(err, res, body) {
         var langs;
         langs = JSON.parse(body);
         callback(langs);
-        return robot.logger.info("Brain received eval language list.") // + (util.inspect(langs)));
+        //return robot.logger.info("Brain received eval language list.") // + (util.inspect(langs)));
       });
     };
     lang_valid = function(robot, lang, callback) {
