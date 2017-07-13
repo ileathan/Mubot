@@ -53,13 +53,13 @@ Mubot = require('hubot')
 
 3.) 
 ```javascript
-robot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot') // (path_to_hubot, adapter_name, http_server, name, alias)
+process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAm"
+// or for slack process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-9j1Ujh3YhaZ7TShV7YkaHxbK"
 ```
 
 4.) 
 ```javascript
-robot.loadAdapter('discord') 
-// or for slack robot.loadAdapter('slack')
+robot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot') // (path_to_hubot, adapter_name, http_server, name, alias)
 ```
 
 5.) 
@@ -73,18 +73,6 @@ robot.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json'
 ```
 
 7.) 
-```javascript
-process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAm"
-// or for slack process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-9j1Ujh3YhaZ7TShV7YkaHxbK"
-```
-
-8.) 
-```javascript
-Discord = require('Discord.js')
-// or for slack skip this step
-```
-
-9.) 
 ```javascript
 robot.run()
 ```
