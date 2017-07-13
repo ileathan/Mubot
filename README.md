@@ -87,3 +87,9 @@ robot.adapter.run()
 ```
 
 At this point you should be logged in to discord!
+
+(All of the above in 1 line)
+
+```javascript
+Mubot = require('hubot'); robot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'MubotCLI', 'MubotCLI'); robot.loadAdapter('discord'); robot.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAM"; Discord = require('Discord.js'); robot.adapter.run()
+``
