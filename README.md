@@ -46,22 +46,35 @@ nvm use node
 
 All commands from here on out are in REPL:
 
-2.) `Mubot = require('hubot')`
+2.) ```javascript
+Mubot = require('hubot')
+```
 
 3.) `robot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'MubotCLI', 'MubotCLI') // (path_to_hubot, adapter_name, http_server, name, alias)`
 
-4.) `robot.loadAdapter('discord') // replace with any adapter`
+4.) ```javascript
+robot.loadAdapter('discord') // replace with any adapter
+```
 
-5.) `robot.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/'))`
+5.) ```javascript
+robot.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/'))
+```
 
-6.) 
+6.) ```javascript
 
     robot.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \""))
+```
 
-7.) `process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAN"`
+7.) ```javascript
+process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAN"
+```
 
-8.) `Discord = require('Discord.js')`
+8.) ```javascript
+Discord = require('Discord.js')
+```
 
-9.) `robot.adapter.run()`
+9.) ```javascript
+robot.adapter.run()
+```
 
 At this point you should be logged in to discord!
