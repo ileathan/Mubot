@@ -94,7 +94,7 @@
           if (data.length > 0) {
             try {
               scripts = JSON.parse(data);
-              scripts.splice(0, 1) // REMOVES THE FIRST SCRIPT (hubot-server)
+              //scripts.splice(0, 1) // REMOVES THE FIRST SCRIPT (hubot-server)
             } catch (error1) {
               err = error1;
               error("Error parsing JSON data from external-scripts.json: " + err);
