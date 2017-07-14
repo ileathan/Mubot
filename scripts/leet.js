@@ -10,10 +10,9 @@
 
 (function(){
 const leet = require('1337');
-
   module.exports = function(bot) {
-    bot.respond(/leet(?: me) (.*)/i, function(r) {
-      r.send(leet(msg.match[1]));
+    bot.respond(/leet(?: me)? (.*)/i, function(r) {
+      r.send(leet(r.match[1]));
     });
   };
 }).call(this);

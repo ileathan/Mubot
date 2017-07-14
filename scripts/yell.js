@@ -6,8 +6,8 @@
 
 (function() {
   module.exports = function(robot) {
-    return robot.respond(/YELL (.*)$/i, function(msg) {
-      return msg.send(msg.match[1].toUpperCase());
+    return robot.respond(/yell(?: me)? (.*)$/i, function(msg) {
+      return msg.send(r.match[1].toUpperCase());
     });
   };
 
