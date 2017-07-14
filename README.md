@@ -29,10 +29,10 @@ nvm use node
 ```
 
 ### Quick Install
-`git clone https://github.com/ileathan/Mubot.git && cd Mubot`
+`git clone https://github.com/ileathan/Mubot.git`
 
 ### Execution 
-`bin/hubot`
+`./Mubot/bin/hubot`
 
 ### Full Instalation
 
