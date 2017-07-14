@@ -10,11 +10,11 @@
 
 (function(){
   module.exports = function(bot) {
-    bot.respond(/pong/i, function(r) {
+    bot.respond(/pong(?: me)?/i, function(r) {
       r.send(bot.client.pings[0] + 'ms.');
     });
-    bot.respond(/check(?: me) (.*)/i, function(r) {
-      r.send(scanMe(msg.match[1]));
+    bot.respond(/check(?: me)? (.*)/i, function(r) {
+      r.send(scanMe(r.match[1]));
     });
   };
   scanMe = (string) => {
