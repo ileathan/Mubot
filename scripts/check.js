@@ -21,8 +21,9 @@
     var res = [];
     for (i=0; i<robot.listeners.length; i++) {
       if (!robot.listeners[i].regex) continue;
-      if (robot.listeners[i].regex.test(string)) res.push(k)
+      if (robot.listeners[i].regex.test(string)) res.push(`Match @ index ${i} \`\`\`${robot.listeners[i].regex}\`\`\``)
     }
+    if (!res.length) res.push("No matches found.")
     return res;
   }
 }).call(this);

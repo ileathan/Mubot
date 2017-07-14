@@ -25,12 +25,10 @@
       }
     });
     return robot.responseMiddleware(function(context, next, done) {
-      var RecursAndQue, i;
       if (context.plaintext == null) {
         return;
       }
-      i = 0;
-      RecursAndQue = function() {
+      function recursAndQue(i) {
         var epad, fpad, m;
         if ((context.strings[i] != null) && context.strings[i].length > 2000) {
           fpad = "";
@@ -50,11 +48,10 @@
           context.strings.push(("" + fpad) + context.strings[i].slice(m[1].length));
           context.strings[i] = context.strings[i].slice(0, m[1].length) + epad;
           i++;
-          return RecursAndQue();
+          return recursAndQue(i);
         }
-      };
-      RecursAndQue(context.strings[i]);
-      done();
+      }
+      recursAndQue(0);
       return next();
     });
   };
