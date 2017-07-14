@@ -5,9 +5,9 @@
 //   hubot yell <text> - Yells the text.
 
 (function() {
-  module.exports = function(robot) {
-    return robot.respond(/yell(?: me)? (.*)$/i, function(msg) {
-      return msg.send(r.match[1].toUpperCase());
+  module.exports = function(bot) {
+    return bot.respond(/yell(?: me)? (.*)$/i, function(r) {
+      return r.send(r.match[1].toUpperCase());
     });
   };
 
