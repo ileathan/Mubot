@@ -14,17 +14,19 @@
       r.send(bot.client.pings[0] + 'ms.');
     });
     bot.respond(/check(?: me)? (.*)/i, function(r) {
-      r.send(scanMe(r.match[1]));
+      rr = scanMe(bot, r.match[1])
+      console.log(rr)
+      r.send(rr)
     });
   };
-  scanMe = (string) => {
-    var res = [];
-    for (i=0; i<robot.listeners.length; i++) {
-      if (!robot.listeners[i].regex) continue;
-      if (robot.listeners[i].regex.test(string)) res.push(`Match @ index ${i} \`\`\`${robot.listeners[i].regex}\`\`\``)
+  scanMe = (bot, string) => {
+    var r = [];
+    for (i=0; i<bot.listeners.length; i++) {
+      if (!bot.listeners[i].regex) continue; // The listener has no regex, probably a catchAll.
+      if (bot.listeners[i].regex.test(string)) r.push('Match @ index ' + i + ' ```' + bot.listeners[i].regex + '```')
     }
-    if (!res.length) res.push("No matches found.")
-    return res;
+    if (!r.length) r.push("No matches found.")
+    return r.toString();
   }
 }).call(this);
 

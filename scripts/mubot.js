@@ -21,92 +21,32 @@
 
 (function() {
   var adapter, deposit_marks, exec, from_URI, irc_server, last, marks, secret, slack_team, symbol, to_URI, transfer_marks, why_context, withdraw_marks;
-
   exec = require('child_process').exec;
-
-  marks = {};
-
   symbol = '₥';
-
   last = 'Mubot';
-
-  secret = process.env.HUBOT_DEPOSIT_SECRET;
-
   why_context = '';
 
-  if (process.env.HUBOT_ADAPTER === 'irc') {
-    adapter = 'irc';
-    irc_server = process.env.HUBOT_IRC_SERVER;
-  } else if (process.env.HUBOT_ADAPTER === 'slack') {
-    adapter = 'slack';
-    slack_team = process.env.HUBOT_SLACK_TEAM;
-  } else if (process.env.HUBOT_ADAPTER === 'shell') {
-    adapter = 'shell';
-  } else {
-    adapter = 'discord' || (function() {
-      throw new Error('HUBOT_ADAPTER env variable is required');
-    })();
-  }
+  function to_URI(name) { return id }   // Pending future API creation
+  function from_URI(URI) { return URI } // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  function deposit_marks(msg, URI, amount, robot) { } // Will add when needed
 
-  to_URI = function(id) {
-    if (id.indexOf(':') !== -1) {
-      return id;
-    } else if (adapter === 'irc') {
-      return 'irc://' + id.toLowerCase() + '@' + irc_server + '/';
-    } else if (adapter === 'slack') {
-      return 'https://' + slack_team + '.slack.com/team/' + id.toLowerCase() + '#this';
-    } else if (adapter === 'shell') {
-      return 'urn:shell:' + id.toLowerCase();
-    } else {
-      return id;
-    }
-  };
-
-  from_URI = function(URI) {
-    if (URI.indexOf('irc://') === 0 && adapter === 'irc') {
-      return URI.split(":")[1].substring(2).split('@')[0];
-    } else if (URI.indexOf('https://' + slack_team + '.slack.com/team/') === 0 && URI.indexOf('#this') !== -1 && adapter === 'slack') {
-      return URI.split(":")[1].substring(2).split('/')[2].split('#')[0];
-    } else {
-      return URI;
-    }
-  };
-
-  deposit_marks = function(msg, URI, amount, robot) {
-    var base;
-    if ((base = robot.brain.data.marks)[URI] == null) {
-      base[URI] = 0;
-    }
-    robot.brain.data.marks[URI] += parseFloat(amount);
-    return msg.send(amount + symbol + ' to ' + from_URI(URI) + '.');
-  };
-
-  transfer_marks = function(msg, URI, amount, robot) {
-    var base;
-    if (why_context == null) {
-      why_context = "N/A";
-    }
-    if (robot.brain.data.marks[to_URI(msg.message.user.id)] >= parseFloat(amount)) {
-      if ((base = robot.brain.data.marks)[URI] == null) {
-        base[URI] = 0;
-      }
-      robot.brain.data.marks[URI] += parseFloat(amount);
-      robot.brain.data.marks[to_URI(msg.message.user.id)] -= parseFloat(amount);
+  function transfer_marks(msg, URI, amount, robot, why_context) {
+    if (why_context == null) why_context = "N/A"
+    if (marks[msg.message.user.id] >= parseFloat(amount)) {
+      if (marks[URI] == null) marks[URI] = 0
+      marks[URI] += parseFloat(amount);
+      marks[msg.message.user.id] -= parseFloat(amount);
       return msg.send(msg.message.user.name + ' has marked ' + robot.brain.data.users[URI].name + ' ' + amount + symbol + '. ( ' + why_context + ' )');
     } else {
       return msg.send('Sorry, but you dont have enough marks. Try the deposit command or get marked more.');
     }
   };
 
-  withdraw_marks = function(msg, address, amount, robot) {
+  function withdraw_marks(msg, address, amount, robot) {
     var command;
     if (robot.brain.data.marks[to_URI(msg.message.user.name)] >= parseFloat(amount)) {
       command = 'bitmark-cli sendtoaddress ' + address + ' ' + (parseFloat(amount) / 1000.0);
-      console.log(command);
       return exec(command, function(error, stdout, stderr) {
-        console.log(error);
-        console.log(stdout);
-        console.log(stderr);
         robot.brain.data.marks[to_URI(msg.message.user.name)] -= parseFloat(amount);
         return msg.send(stdout);
       });
@@ -116,57 +56,46 @@
   };
 
   module.exports = function(robot) {
-    robot.brain.on('loaded', function() {
-      var base, base1;
-      if ((base = robot.brain.data).marks == null) {
-        base.marks = {};
-      }
-      marks = robot.brain.data.marks || {};
-      robot.brain.resetSaveInterval(1);
-      return (base1 = robot.brain.data.marks)['183771581829480448'] != null ? base1['183771581829480448'] : base1['183771581829480448'] = 12000;
-    });
-    robot.hear(/^\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, function(msg) {
-      var plus;
-      if (msg.match[2] === '329612596397342721') {
-        msg.send("Sorry but I am currently unmarkable.");
-        return;
-      }
-      if (msg.match[2] === msg.message.user.id) {
-        msg.send("Sorry but you cannot mark yourself.");
-        return;
-      }
-      why_context = msg.match[3];
-      plus = msg.match[1];
-      if (plus <= 25) {
-        return transfer_marks(msg, to_URI(msg.match[2]), plus, robot);
-      } else {
-        return msg.send('Max is +25');
-      }
-    });
+    adapter = robot.adapterName;
+    if (robot.brain.data.marks == null) robot.brain.data.marks = {}
+    marks = robot.brain.data.marks
+    if(marks['183771581829480448'] == null) marks['183771581829480448'] = 12000
+    if(marks['U02JGQLSQ'] == null) marks['U02JGQLSQ'] = 12000
+
+    if(adapter == 'discord') {
+      robot.hear(/^\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, function(msg) {
+        if (msg.match[2] === robot.client.user)   return msg.send("Sorry but I am currently unmarkable.");
+        if (msg.match[2] === msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
+        if (msg.match[1] <= 100) { return transfer_marks(msg, msg.match[2], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
+      })
+    } else {
+      robot.respond(/\+(\d+)\s+@?(\w+)\s*(.*)?$/i, function(msg) {
+//        console.log(robot.brain.userForName([msg.match[2]]))
+console.log(robot.brain.userForName('mubot'))
+        //if (robot.brain.data.users[msg.match[2]] === robot.adapter.self.id)  return msg.send("Sorry but I am currently unmarkable.");
+        //if (robot.brain.data.users[msg.match[2]] === msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
+        //if (robot.brain.data.users[msg.match[2]] == null) msg.send("Sorry but I cant find that user.");
+        //if (msg.match[1] <= 100) { return transfer_marks(msg, robot.brain.data.users[msg.match[2]], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
+      })
+    }
+
+
     robot.hear(/withdraw\s+([\w\S]+)\s+(\d+)\s*$/i, function(msg) {
       var destination;
       destination = msg.match[1];
       return withdraw_marks(msg, destination, msg.match[2], robot);
     });
-    robot.hear(/^marks\s+<@?!?(\d+)>$/i, function(msg) {
-      var URI, base;
-      if (robot.brain.data.users[msg.match[1]]) {
-        URI = to_URI(msg.match[1]);
-        if ((base = robot.brain.data.marks)[URI] == null) {
-          base[URI] = 0;
-        }
-        return msg.send(robot.brain.data.users[msg.match[1]].name + ' has ' + robot.brain.data.marks[URI] + symbol + '.');
+    robot.hear(/marks\s+<@?!?(\d+)>$/i, function(msg) {
+     if (robot.brain.data.users[msg.match[1]]) {
+        if (marks[msg.match[1]]  == null) marks[msg.match[1]] = 0
+        return msg.send(robot.brain.data.users[msg.match[1]] + ' has ' + marks[msg.match[1]] + symbol + '.');
       } else {
         return msg.send("Sorry, I can't find that user.");
       }
     });
-    robot.hear(/^marks\s*$/i, function(msg) {
-      var URI, base;
-      URI = to_URI(msg.message.user.id);
-      if ((base = robot.brain.data.marks)[URI] == null) {
-        base[URI] = 0;
-      }
-      return msg.send('You have ' + robot.brain.data.marks[URI] + symbol + '.');
+    robot.hear(/marks\s*$/i, function(msg) {
+      if (marks[msg.message.user.id] == null) marks[msg.message.user.id] = 0;
+      msg.send('You have ' + marks[msg.message.user.id] + symbol + '.');
     });
     return robot.router.get("/" + robot.name + "/marks", function(req, res) {
       return res.end(robot.brain.data.marks);
