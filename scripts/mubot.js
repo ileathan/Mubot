@@ -12,8 +12,7 @@
 // Commands:
 //   + <times> <user> <reason>        -   Marks the specified user.
 //   withdraw <address> <amount>      -   withdraw to address amount.
-//   deposit                          -   Display your address.
-//   marks [user]                     -   Balance for a user.
+//   marks [user]                     -   Balance for a user or self.
 //
 // Author:
 //   Project Bitmark
@@ -30,13 +29,13 @@
   function from_URI(URI) { return URI } // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
   function deposit_marks(msg, URI, amount, robot) { } // Will add when needed
 
-  function transfer_marks(msg, URI, amount, robot, why_context) {
+  function transfer_marks(msg, recipient, amount, robot, why_context) {
     if (why_context == null) why_context = "N/A"
     if (marks[msg.message.user.id] >= parseFloat(amount)) {
-      if (marks[URI] == null) marks[URI] = 0
-      marks[URI] += parseFloat(amount);
+      if (marks[recipient] == null) marks[recipient] = 0
+      marks[recipient] += parseFloat(amount);
       marks[msg.message.user.id] -= parseFloat(amount);
-      return msg.send(msg.message.user.name + ' has marked ' + robot.brain.data.users[URI].name + ' ' + amount + symbol + '. ( ' + why_context + ' )');
+      return msg.send(msg.message.user.name + ' has marked ' + robot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )');
     } else {
       return msg.send('Sorry, but you dont have enough marks. Try the deposit command or get marked more.');
     }
@@ -70,16 +69,12 @@
       })
     } else {
       robot.respond(/\+(\d+)\s+@?(\w+)\s*(.*)?$/i, function(msg) {
-//        console.log(robot.brain.userForName([msg.match[2]]))
-console.log(robot.brain.userForName('mubot'))
-        //if (robot.brain.data.users[msg.match[2]] === robot.adapter.self.id)  return msg.send("Sorry but I am currently unmarkable.");
-        //if (robot.brain.data.users[msg.match[2]] === msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
-        //if (robot.brain.data.users[msg.match[2]] == null) msg.send("Sorry but I cant find that user.");
-        //if (msg.match[1] <= 100) { return transfer_marks(msg, robot.brain.data.users[msg.match[2]], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
+        if (robot.brain.userForName(msg.match[2]).id == robot.adapter.self.id)  return msg.send("Sorry but I am currently unmarkable.");
+        if (robot.brain.userForName(msg.match[2]).id == msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
+        if (robot.brain.userForName(msg.match[2]).id == null) msg.send("Sorry but I cant find that user.");
+        if (msg.match[1] <= 100) { return transfer_marks(msg, robot.brain.data.users[msg.match[2]], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
       })
     }
-
-
     robot.hear(/withdraw\s+([\w\S]+)\s+(\d+)\s*$/i, function(msg) {
       var destination;
       destination = msg.match[1];
