@@ -80,6 +80,16 @@
       destination = msg.match[1];
       return withdraw_marks(msg, destination, msg.match[2], robot);
     });
+    robot.hear(/marks\s+@? (.*)#(\d{4})/i, r => {
+      arr = robot.brain.usersForFuzzyName(r.match[1])
+      if (arr.length == 1 && marks[arr[0].id]) {
+        return r.send(r.match[1] + ' has ' + marks[arr[0].id] + symbol + '.')
+      } else if (arr.length > 1)  {
+        for (i=0; i<arr.length; i++) if (arr[i].discriminator == r.match[2])  return r.send(r.match[1] + ' has ' + marks[arr[i].id] + symbol + '.')
+      } else if (arr.length < 1) { return r.send('User ' + r.match[1] + ' was not found.') }
+      return r.send(r.match[1] + ' has 0' + symbol + '.')
+    })
+
     robot.hear(/marks\s+<@?!?(\d+)>$/i, function(msg) {
      if (robot.brain.data.users[msg.match[1]]) {
         if (marks[msg.match[1]]  == null) marks[msg.match[1]] = 0
