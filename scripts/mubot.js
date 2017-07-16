@@ -80,11 +80,11 @@
         if (r.match[1] <= 100) { return transfer_marks(r, rec, r.match[1], robot, r.match[4]) } else { return r.send('Max is +100') }
       })
     } else {
-      robot.respond(/\+(\d+)\s+@?(\w+)\s*(.*)?$/i, function(msg) {
+      robot.respond(/\+(\d+)\s+@? ?(\w+)\s*(.*)?$/i, function(msg) {
+        if (robot.brain.userForName(msg.match[2]) == null) return msg.send("Sorry but I cant find that user.");
         if (robot.brain.userForName(msg.match[2]).id == robot.adapter.self.id)  return msg.send("Sorry but I am currently unmarkable.");
         if (robot.brain.userForName(msg.match[2]).id == msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
-        if (robot.brain.userForName(msg.match[2]).id == null) msg.send("Sorry but I cant find that user.");
-        if (msg.match[1] <= 100) { return transfer_marks(msg, robot.brain.data.users[msg.match[2]], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
+        if (msg.match[1] <= 100) { return transfer_marks(msg, robot.brain.userForName(msg.match[2]).id, msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
       })
     }
     robot.hear(/withdraw\s+([\w\S]+)\s+(\d+)\s*$/i, function(msg) {
