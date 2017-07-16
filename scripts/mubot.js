@@ -62,6 +62,23 @@
     if(marks['U02JGQLSQ'] == null) marks['U02JGQLSQ'] = 12000
 
     if(adapter == 'discord') {
+      robot.hear(/marks\s+@? (.*)#(\d{4})/i, r => {
+        arr = robot.brain.usersForFuzzyName(r.match[1])
+        if (arr.length == 1 && marks[arr[0].id]) {
+          return r.send(r.match[1] + ' has ' + marks[arr[0].id] + symbol + '.')
+        } else if (arr.length > 1)  {
+          for (i=0; i<arr.length; i++) if (arr[i].discriminator == r.match[2])  return r.send(r.match[1] + ' has ' + marks[arr[i].id] + symbol + '.')
+        } else if (arr.length < 1) { return r.send('User ' + r.match[1] + ' was not found.') }
+        return r.send(r.match[1] + ' has 0' + symbol + '.')
+      })
+      robot.hear(/marks\s+<@?!?(\d+)>$/i, function(msg) {
+       if (robot.brain.data.users[msg.match[1]]) {
+          if (marks[msg.match[1]]  == null) marks[msg.match[1]] = 0
+          return msg.send(robot.brain.data.users[msg.match[1]] + ' has ' + marks[msg.match[1]] + symbol + '.');
+        } else {
+          return msg.send("Sorry, I can't find that user.");
+        }
+      })
       robot.hear(/^\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, msg => {
         if (msg.match[2] === robot.client.user)   return msg.send("Sorry but I am currently unmarkable.");
         if (msg.match[2] === msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
@@ -78,6 +95,11 @@
         if (r.match[1] <= 100) { return transfer_marks(r, rec, r.match[1], robot, r.match[4]) } else { return r.send('Max is +100') }
       })
     } else {
+      robot.hear(/marks\s*@? ?(\w+)$/i, function(msg) {
+        if (robot.brain.userForName(msg.match[1]) == null) return msg.send("Sorry but I cant find that user.");
+        if (marks[robot.brain.userForName(msg.match[1])] == null) marks[robot.brain.userForName(msg.match[1])] = 0
+        msg.send(msg.match[1] + ' has ' + marks[robot.brain.userForName(msg.match[1]).id] + symbol + '.');
+      })
       robot.respond(/\+(\d+)\s+@? ?(\w+)\s*(.*)?$/i, function(msg) {
         if (robot.brain.userForName(msg.match[2]) == null) return msg.send("Sorry but I cant find that user.");
         if (robot.brain.userForName(msg.match[2]).id == robot.adapter.self.id)  return msg.send("Sorry but I am currently unmarkable.");
@@ -86,27 +108,7 @@
       })
     }
     robot.hear(/withdraw\s+([\w\S]+)\s+(\d+)\s*$/i, function(msg) {
-      var destination;
-      destination = msg.match[1];
-      return withdraw_marks(msg, destination, msg.match[2], robot);
-    });
-    robot.hear(/marks\s+@? (.*)#(\d{4})/i, r => {
-      arr = robot.brain.usersForFuzzyName(r.match[1])
-      if (arr.length == 1 && marks[arr[0].id]) {
-        return r.send(r.match[1] + ' has ' + marks[arr[0].id] + symbol + '.')
-      } else if (arr.length > 1)  {
-        for (i=0; i<arr.length; i++) if (arr[i].discriminator == r.match[2])  return r.send(r.match[1] + ' has ' + marks[arr[i].id] + symbol + '.')
-      } else if (arr.length < 1) { return r.send('User ' + r.match[1] + ' was not found.') }
-      return r.send(r.match[1] + ' has 0' + symbol + '.')
-    })
-
-    robot.hear(/marks\s+<@?!?(\d+)>$/i, function(msg) {
-     if (robot.brain.data.users[msg.match[1]]) {
-        if (marks[msg.match[1]]  == null) marks[msg.match[1]] = 0
-        return msg.send(robot.brain.data.users[msg.match[1]] + ' has ' + marks[msg.match[1]] + symbol + '.');
-      } else {
-        return msg.send("Sorry, I can't find that user.");
-      }
+      return withdraw_marks(msg, msg.match[1], msg.match[2], robot);
     });
     robot.hear(/marks\s*$/i, function(msg) {
       if (marks[msg.message.user.id] == null) marks[msg.message.user.id] = 0;
