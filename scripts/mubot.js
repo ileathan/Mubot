@@ -67,15 +67,15 @@
         if (msg.match[2] === msg.message.user.id) return msg.send("Sorry but you cannot mark yourself.");
         if (msg.match[1] <= 100) { return transfer_marks(msg, msg.match[2], msg.match[1], robot, msg.match[3]) } else { return msg.send('Max is +100') }
       })
-      robot.hear(/\+(\d+)\s+@ (.*)#(\d{4}) (.*)/i, r => {
+      robot.hear(/\+(\d+)\s+@ (.*)#(\d{4}) ?(.*)/i, r => {
         var rec;
-        var arr = robot.brain.usersForFuzzyName(r.match[2])
+        var arr = robot.brain.usersForFuzzyName('Mubot') //r.match[2])
       if (arr.length == 1) {
         rec = arr[0].id
       } else if (arr.length > 1)  {
         for (i=0; i<arr.length; i++) if (arr[i].discriminator == r.match[3]) rec = arr[i].id
       } else if (arr.length < 1) { return r.send('User ' + r.match[2] + ' was not found.') }
-        if (rec === robot.client.user)   return r.send("Sorry but I am currently unmarkable.");
+        if ((r.match[2].toLowerCase() == robot.name.toLowerCase()) && r.match[3] == robot.client.user.discriminator) return r.send("Sorry but I am currently unmarkable.");
         if (rec === r.message.user.id) return r.send("Sorry but you cannot mark yourself.");
         if (r.match[1] <= 100) { return transfer_marks(r, rec, r.match[1], robot, r.match[4]) } else { return r.send('Max is +100') }
       })
