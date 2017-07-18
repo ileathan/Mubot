@@ -114,6 +114,16 @@
       if (marks[msg.message.user.id] == null) marks[msg.message.user.id] = 0;
       msg.send('You have ' + marks[msg.message.user.id] + symbol + '.');
     });
+    if(adapter == 'slack') {
+      robot.react((r)=>{
+        if(r.message.type==='added' && r.message.reaction==='mh') {
+          var senderID=r.message.user.id; receiverID=r.message.item_user.id
+          transfer_marks(r, r.message.item_user.id, 1, robot, "reaction")
+        }
+      })
+    } else if(adapter == 'discord') {
+      // To be continued ...
+    }
     return robot.router.get("/api/marks", function(req, res) {
       return res.json(robot.brain.data.marks);
     });
