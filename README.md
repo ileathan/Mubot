@@ -9,7 +9,7 @@ The documentation page for the API is another webservice included and is a great
 ![Image of coloring](https://preview.ibb.co/j8HCnv/Screen_Shot_2017_07_17_at_10_36_24_PM.png)
 
 Another webservice included is a logger, which logs all servers.
-![Image of coloring](https://preview.ibb.co/iJZp0F/Screen_Shot_2017_07_17_at_10_07_37_PM.png)
+![Image of coloring](https://preview.ibb.co/eUQzZa/Screen_Shot_2017_07_18_at_12_16_30_PM.png)
 
 ### Dependencies
 1.) Nodejs
