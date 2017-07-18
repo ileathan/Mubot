@@ -30,6 +30,7 @@
       if (marks[recipient] == null) marks[recipient] = 0
       marks[recipient] += parseFloat(amount);
       marks[r.message.user.id] -= parseFloat(amount);
+      robot.brain.save()
       return r.send(r.message.user.name + ' has marked ' + robot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )');
     } else {
       return r.send('Sorry, but you dont have enough marks. Try the deposit command or get marked more.');
@@ -49,7 +50,6 @@
   module.exports = robot => {
     adapter = robot.adapterName;
     robot.brain.on('loaded', ()=>{
-      //robot.brain.saveInterval(1) // (Removed): Logger should save on ever new msg.
       if (robot.brain.data.marks == null) robot.brain.data.marks = {}; marks = robot.brain.data.marks;
       if(marks['183771581829480448'] == null) marks['183771581829480448'] = 12000
       if(marks['U02JGQLSQ']          == null) marks['U02JGQLSQ']          = 12000
