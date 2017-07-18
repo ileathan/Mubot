@@ -43,7 +43,7 @@ nvm use node
 `git clone https://github.com/ileathan/Mubot.git`
 
 ### Execution 
-`./Mubot/bin/hubot`
+`./Mubot/bin/mubot`
 
 ### Full Instalation
 
