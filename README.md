@@ -2,10 +2,10 @@
 
 A bot that aside from inhereting hubot's most usefull core features and scripts, allows you to host a multiple of preconfigured webservices. One of which allows you to connect directly to the bitmark network and marking application interface protocol.
 
-The main webservice is a marking implementation that uses the API on the back end. Text based marks are not shown here but will also use the back end API.
+The main webservice is a marking implementation that uses an included back end marking API. Text based marks are not shown here but will also use the back end API.
 ![Image of coloring](https://preview.ibb.co/bwkMfF/Screen_Shot_2017_07_17_at_10_30_29_PM.png)
 
-The front end for the back end API is another webservice included and is a great place to learn how to actually use the API for your own software additions.
+The documentation page for the API is another webservice included and is a great place to learn how to actually enable bitmarking in your applications.
 ![Image of coloring](https://preview.ibb.co/j8HCnv/Screen_Shot_2017_07_17_at_10_36_24_PM.png)
 
 Another webservice included is a logger, which logs all servers.
