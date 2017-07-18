@@ -1,5 +1,10 @@
 # Mubot
 
+A bot that aside from inhereting hubot's most usefull core features and scripts, allows you to host a multiple of preconfigured webservices. One of which allows you to connect directly to the bitmark network and marking application interface protocol.
+
+One webservice included is a logger, which logs all servers.
+![Image of coloring](https://preview.ibb.co/iJZp0F/Screen_Shot_2017_07_17_at_10_07_37_PM.png)
+
 ### Dependencies
 1.) Nodejs
 
