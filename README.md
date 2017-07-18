@@ -20,7 +20,7 @@ To install I recommend first installing nvm:
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
 ```
 
-then run this snippet to load nvm
+then run this snippet every time to load nvm (or add it to your .bashrc / .bash_profile)
 
 ```sh
 export NVM_DIR="$HOME/.nvm"
@@ -33,7 +33,7 @@ Then to download, compile, and install the latest release of node
 nvm install node
 ```
 
-And then in any new shell just use the installed version:
+And then just use the installed version:
 
 ```sh
 nvm use node
