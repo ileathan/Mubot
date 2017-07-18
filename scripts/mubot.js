@@ -114,8 +114,8 @@
       if (marks[msg.message.user.id] == null) marks[msg.message.user.id] = 0;
       msg.send('You have ' + marks[msg.message.user.id] + symbol + '.');
     });
-    return robot.router.get("/" + robot.name + "/marks", function(req, res) {
-      return res.end(robot.brain.data.marks);
+    return robot.router.get("/api/marks", function(req, res) {
+      return res.json(robot.brain.data.marks);
     });
   };
 
