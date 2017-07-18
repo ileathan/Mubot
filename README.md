@@ -1,5 +1,16 @@
 # Mubot
 
+A bot that aside from inhereting hubot's most usefull core features and scripts, allows you to host a multiple of preconfigured webservices. One of which allows you to connect directly to the bitmark network.
+
+The main webservice is a marking implementation that uses an included back end marking API. Seperate marking implemenations (like mubots own text based markings) are not shown here but will also use the back end API.
+![Image of coloring](https://preview.ibb.co/bwkMfF/Screen_Shot_2017_07_17_at_10_30_29_PM.png)
+
+The documentation page for the API is another webservice included and is a great place to learn how to actually enable bitmarking in your applications.
+![Image of coloring](https://preview.ibb.co/j8HCnv/Screen_Shot_2017_07_17_at_10_36_24_PM.png)
+
+Another webservice included is a logger, which logs all servers.
+![Image of coloring](https://preview.ibb.co/iJZp0F/Screen_Shot_2017_07_17_at_10_07_37_PM.png)
+
 ### Dependencies
 1.) Nodejs
 
@@ -32,7 +43,7 @@ nvm use node
 `git clone https://github.com/ileathan/Mubot.git`
 
 ### Execution 
-`./Mubot/bin/hubot`
+`./Mubot/bin/mubot`
 
 ### Full Instalation
 
