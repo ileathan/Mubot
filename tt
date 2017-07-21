@@ -1,0 +1,6 @@
+const ec = require('elliptic').ec('secp256k1')
+const c  = require('crypto')
+
+
+    ecKey     = ec.genKeyPair()
+console.log(ecKey)
