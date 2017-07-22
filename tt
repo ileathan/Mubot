@@ -1,6 +1,12 @@
-const ec = require('elliptic').ec('secp256k1')
-const c  = require('crypto')
-
-
-    ecKey     = ec.genKeyPair()
-console.log(ecKey)
+request=require('request')
+  request({
+    method: 'GET',
+    uri: 'https://localhost/ip',
+    rejectUnauthorized: false
+  },
+  function (error, response, body) {
+    if (error) {
+      return console.error('upload failed:', error);
+    }
+    console.log('Server responded with: ' + body);
+  })
