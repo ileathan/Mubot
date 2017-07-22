@@ -2,10 +2,10 @@
 //   Allow connect each user with a private key for signitures and encryption.
 //
 
-const ec = require('elliptic').ec('secp256k1')
+//const ec = require('elliptic').ec('secp256k1')
 const c  = require('crypto')
 const cs = require('coinstring')
-const ci = require('coininfo')
+//const ci = require('coininfo')
 const CK = require('coinkey')
 const secp = require('secp256k1')
 const bs58 = require('bs58')
@@ -21,6 +21,7 @@ module.exports = bot => {
   bot.brain.on('loaded', () => {
     keys = bot.brain.data.keys || (bot.brain.data.keys = {});
 delete keys['U02JGQLSQ']
+keys._bitmark = []
 delete keys['183771581829480448']
     bot.brain.save();
   })
@@ -31,24 +32,27 @@ delete keys['183771581829480448']
   bot.respond(/crypto me ?(.+)?$/i, r => {
     const userID = r.message.user.id;
     if(r.match[1]) coin = r.match[1].toLowerCase(); else coin = 'bitcoin'
-    if(!keys[userID] && r.match[1]) return r.send(createMe(userID) + '\n' + cryptoMe(userID, coin))
+    if(!keys[userID] && r.match[1]) { r.send(createMe(userID) + "\n" +  cryptoMe(userID, coin)); return
     if(!keys[userID]) return r.send(createMe(userID))
     if(keys[userID][coin]) return r.send("You already have a " + coin +  " keypair.")
     r.send(cryptoMe(userID, coin))
   })
 
-  cryptoMe = (userID, version) => {
+  bot.on('cryptoMe', (userID, version, bot) => {
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
     importKey = cs.encode(Buffer.concat([keys[userID].private, (new Buffer('01', 'hex'))]), vByte);
     var ck = CK.fromWif(importKey);
+    if(!keys['_'+version]) keys['_'+version] = []
+    keys['_'+version].push(ck.publicAddress, userID)
     keys[userID][version] = {
       address: ck.publicAddress,
-      importKey: importKey
+      importKey: importKey,
+      balance: 0,
+      txids: []
     };
     bot.brain.save()
     return 'Done, your address is `' + ck.publicAddress + '`.'
-  }
-
+  })
   versionMe = version => {
     switch(version) {
       case 'bitmark':
