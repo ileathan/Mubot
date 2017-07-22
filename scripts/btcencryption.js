@@ -20,9 +20,9 @@ module.exports = bot => {
 
   bot.brain.on('loaded', () => {
     keys = bot.brain.data.keys || (bot.brain.data.keys = {});
-delete keys['U02JGQLSQ']
-keys._bitmark = []
-delete keys['183771581829480448']
+//delete keys['U02JGQLSQ']
+//keys._bitmark = []
+//delete keys['183771581829480448']
     bot.brain.save();
   })
   bot.respond(/key me/i, r => {
@@ -32,13 +32,13 @@ delete keys['183771581829480448']
   bot.respond(/crypto me ?(.+)?$/i, r => {
     const userID = r.message.user.id;
     if(r.match[1]) coin = r.match[1].toLowerCase(); else coin = 'bitcoin'
-    if(!keys[userID] && r.match[1]) { r.send(createMe(userID) + "\n" +  cryptoMe(userID, coin)); return
+    if(!keys[userID] && r.match[1]) return r.send(createMe(userID) + "\n" +  cryptoMe(userID, coin));
     if(!keys[userID]) return r.send(createMe(userID))
     if(keys[userID][coin]) return r.send("You already have a " + coin +  " keypair.")
     r.send(cryptoMe(userID, coin))
   })
 
-  bot.on('cryptoMe', (userID, version, bot) => {
+  cryptoMe = (userID, version, balance) => {
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
     importKey = cs.encode(Buffer.concat([keys[userID].private, (new Buffer('01', 'hex'))]), vByte);
     var ck = CK.fromWif(importKey);
@@ -47,12 +47,12 @@ delete keys['183771581829480448']
     keys[userID][version] = {
       address: ck.publicAddress,
       importKey: importKey,
-      balance: 0,
+      balance: balance || 0,
       txids: []
     };
     bot.brain.save()
     return 'Done, your address is `' + ck.publicAddress + '`.'
-  })
+  }
   versionMe = version => {
     switch(version) {
       case 'bitmark':
@@ -62,12 +62,20 @@ delete keys['183771581829480448']
     }
   }
   createMe = userID => {
+console.log("Event")
+console.log(userID)
     keys[userID] = {
       private: x(c.randomBytes(32)),
       get public() { return secp.publicKeyCreate(this.private, true) }
     }
     return "Base keypair created, you may encrypt, sign, or generate coin addresses."
   }
+  bot.on('createMeEvent', (userID, msg) => {
+    msg.send(createMe(userID))
+  })
+  bot.on('cryptoMeEvent', (userID, coin, balance, msg) => {
+    msg.send(cryptoMe(userID, coin, balance))
+  })
 }
 
 // Old code, no dependencies.
