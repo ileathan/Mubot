@@ -97,7 +97,7 @@
         return Loop(orderBook, r, msg, robot);
       });
     });
-    return robot.respond(/(?:c|crypto|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, function(msg) {
+    return robot.respond(/(?:c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, function(msg) {
       var depth, ticker2;
       if (/^\d{1,6}$/.test(msg.match[4])) {
         depth = msg.match[4];
