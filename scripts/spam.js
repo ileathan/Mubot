@@ -10,4 +10,7 @@ module.exports = (robot) => {
     if (amount > 25) { msg.send("Sorry the most I can span is 25 lines."); return }
     for (i=0; i<amount; i++) msg.send(msg.match[2])
   })
+  robot.respond(/test$/i, (msg) => {
+    msg.reply(".")
+  })
 }
