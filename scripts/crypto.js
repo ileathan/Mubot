@@ -158,9 +158,8 @@
   };
 
   Loop = (orderBook, r, msg, robot) => {
-    var amountInBtc, c, k, key, l, len, len1, ref, ref1, reply, results, totalBtc, totalTicker;
+    var amountInBtc, c, k, key, l, len, len1, ref, ref1, reply, totalBtc, totalTicker;
     ref = Object.keys(orderBook);
-    results = [];
     for (k = 0, len = ref.length; k < len; k++) {
       key = ref[k];
       if (key === 'seq' || key === 'isFrozen') continue;
@@ -177,11 +176,10 @@
           amountInBtc = parseFloat(totalBtc - (totalTicker - r.amount) * c[0]).toFixed(8);
           if (r.ticker2 && key === 'bids') {
             Get(r.ticker2, r.depth, r.market, msg, robot, function(orderBook) {
-              var amountTicker2, len2, m, ref2, results1, totalTicker2;
+              var amountTicker2, len2, m, ref2, totalTicker2;
               if(orderBook.error) return;
               totalBtc = totalTicker2 = amountTicker2 = 0;
               ref2 = orderBook.asks;
-              results1 = [];
               for (m = 0, len2 = ref2.length; m < len2; m++) {
                 c = ref2[m];
                 if(+totalBtc > +amountInBtc) break;
@@ -202,31 +200,24 @@
           }
         }
       }
+      reply = {};
+      reply[key] = {};
       if (r.amount && !r.ticker2) {
-        reply = {};
-        reply[key] = {};
         reply[key][r.ticker] = r.amount;
         reply[key]['BTC'] = amountInBtc;
-        results.push(robot.emit('CryptoReply', reply, r.mode, msg));
+        robot.emit('CryptoReply', reply, r.mode, msg);
       } else if (!r.ticker2) {
         if (r.depth === 999999) {
-          reply = {};
-          reply[key] = {};
           reply[key][r.ticker] = totalTicker;
           reply[key]['BTC'] = totalBtc;
-          results.push(robot.emit('CryptoReply', reply, r.mode, msg));
+          robot.emit('CryptoReply', reply, r.mode, msg);
         } else {
-          reply = {};
-          reply[key] = {};
           reply[key][r.ticker] = totalTicker;
           reply[key]['BTC'] = totalBtc;
-          results.push(robot.emit('CryptoReply', reply, r.mode, msg));
+          robot.emit('CryptoReply', reply, r.mode, msg);
         }
-      } else {
-        results.push(void 0);
       }
     }
-    return results;
   };
 
 }).call(this);
