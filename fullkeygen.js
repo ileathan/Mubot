@@ -1,4 +1,3 @@
-//privateKey, publicKey, eccrypto, hash, checksum, version, address;
 crypto = require('crypto');
 eccrypto  = require('eccrypto')
 
