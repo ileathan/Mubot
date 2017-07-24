@@ -1,3 +1,4 @@
+var t, r, publicKey, hash, checksum, address, privateKey, crypto, eccrypto
 crypto = require('crypto');
 eccrypto  = require('eccrypto')
 
@@ -20,7 +21,6 @@ else if(process.argv[2].length == 61) {
   console.log("using privkey " + privateKey.toString('hex'))
 }
 
-
 publicKey = eccrypto.getPublic(privateKey)
 hash      = crypto.createHash('sha256').update(publicKey).digest()
 hash      = crypto.createHash('ripemd160').update(hash).digest()
@@ -35,9 +35,7 @@ console.log([t(privateKey), t(hash), t(version), t(checksum), t(address), t(publ
 
 //EC = require("elliptic").ec;
 //ec = new EC("secp256k1");
-
 //shaMsg = crypto.createHash("sha256").update("leathan").digest();
 //mySign = ec.sign(shaMsg, privateKey, {canonical: true});
 //console.log(shaMsg, privateKey)
 //console.log(mySign)
-
