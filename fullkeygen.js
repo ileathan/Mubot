@@ -5,7 +5,7 @@ eccrypto  = require('eccrypto')
 t = _ => _.toString('hex')
 r = _ => !(_.compare((new Buffer('0000000000000000000000000000000000000000000000000000000000000001', 'hex'))) < 0)
       && !(_.compare((new Buffer('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140', 'hex'))) > 0)
-         ?_
+         ? _
     : r(crypto.randomBytes(32)) ;
 
 if (typeof process.argv == 'undefined' || typeof process.argv[2] == 'undefined') {
