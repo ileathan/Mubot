@@ -1,7 +1,11 @@
 // Description:
 //   Coin alerts.
 //
-request = require('request');
+// Commands:
+//   hubot start|stop scanner alert - manually start/stops the scanners useful for custom delays.
+//   hubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
+
+const request = require('request');
 var quit = false;
 var allRequests = [];
 module.exports = bot => {
@@ -22,8 +26,8 @@ module.exports = bot => {
     res.send("Alert(s) created.")
   })
 }
-alertMe = (delay, coinObj) => {
-  if(quit) { quit = false; return; }
+var alertMe = (delay, coinObj) => {
+  if(quit) { return quit = false }
   if(coinObj) {
     for(let i=0; i<allRequests.length; i++) {
       if(allRequests[i].alerts.length == 0) { allRequests.splice(i, 1); continue }
@@ -31,9 +35,9 @@ alertMe = (delay, coinObj) => {
       if(areTrue.length > 0) allRequests[i].res.reply("Alert(s) triggered -> [" + areTrue.join("][ ") + "].")
     }
   }
-  scanTimer = setTimeout(()=> {
+  var scanTimer = setTimeout(()=> {
     if(allRequests.length < 1) { clearInterval(scanTimer); quit = true }
-    r('https://poloniex.com/public?command=returnTicker', (e,r,b) => alertMe(delay, JSON.parse(b)) )
+    request('https://poloniex.com/public?command=returnTicker', (e,r,b) => alertMe(delay, JSON.parse(b)) )
   }, delay)
 }
 function Request(res, alerts) {
