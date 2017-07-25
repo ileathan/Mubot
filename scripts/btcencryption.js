@@ -33,7 +33,7 @@ module.exports = bot => {
   })
 
   cryptoMe = (userID, version, balance) => {
-    var vByte, ck importKey;
+    var vByte, ck, importKey;
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
     importKey = cs.encode(Buffer.concat([keys[userID].private, (new Buffer('01', 'hex'))]), vByte);
     ck = CK.fromWif(importKey);
