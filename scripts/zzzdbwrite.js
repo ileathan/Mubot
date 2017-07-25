@@ -4,15 +4,16 @@
 // Author:
 //   leathan
 (function() {
-  var fs = require('fs'), path = require('path');
+  var fs = require('fs'), Path = require('path');
+  var path = Path.join(__dirname, '/../brain.json')
   module.exports = function(robot) {
     robot.brain.setAutoSave(false);
     try {
-      var data = fs.readFileSync(path.join(__dirname, '/../brain.json') 'utf-8');
+      var data = fs.readFileSync(path, 'utf-8');
       if (data) robot.brain.mergeData(JSON.parse(data));
-    } catch (err) { if (err.code !== 'ENOENT') console.log(error); }
+    } catch (err) { if (err.code !== 'ENOENT') console.log(err); }
     return robot.brain.on('save', function(data) {
-      fs.writeFile(brainPath, JSON.stringify(data), 'utf-8', ()=>{});
+      fs.writeFile(Path, JSON.stringify(data), 'utf-8', ()=>{});
     });
   };
 }).call(this);
