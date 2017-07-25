@@ -1,8 +1,5 @@
 // Description:
-//   None
-//
-// Dependencies:
-//   None
+//   Removes auto save from brain, and writes to disk on save event.
 //
 // Configuration:
 //   FILE_BRAIN_PATH
@@ -15,13 +12,12 @@
 
 (function() {
   var fs, path;
-
   fs = require('fs');
-
   path = require('path');
 
   module.exports = function(robot) {
     var brainPath, data, error;
+    robot.brain.setAutoSave(false);
     brainPath = process.env.FILE_BRAIN_PATH || __dirname + '/../';
     brainPath = path.join(brainPath, 'brain-dump.json');
     try {
