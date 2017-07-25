@@ -20,10 +20,6 @@ module.exports = bot => {
 
   bot.brain.on('loaded', () => {
     keys = bot.brain.data.keys || (bot.brain.data.keys = {});
-//delete keys['U02JGQLSQ']
-//keys._bitmark = []
-//delete keys['183771581829480448']
-    bot.brain.save();
   })
   bot.respond(/key me/i, r => {
     if(keys[r.message.user.id]) return r.send("You already have a keypair.")
