@@ -3,12 +3,13 @@
 //
 
 //const ec = require('elliptic').ec('secp256k1')
-const c  = require('crypto')
-const cs = require('coinstring')
-//const ci = require('coininfo')
-const CK = require('coinkey')
-const secp = require('secp256k1')
-const bs58 = require('bs58')
+const c  = require('crypto');
+const cs = require('coinstring');
+//const ci = require('coininfo');
+const CK = require('coinkey');
+const secp = require('secp256k1');
+const bs58 = require('bs58');
+const exec = require('child_process').exec;
 
 x = _ => !(_.compare((new Buffer('0000000000000000000000000000000000000000000000000000000000000001', 'hex'))) < 0)
       && !(_.compare((new Buffer('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140', 'hex'))) > 0)
@@ -22,8 +23,8 @@ module.exports = bot => {
     keys = bot.brain.data.keys || (bot.brain.data.keys = {});
   })
   bot.respond(/key me/i, r => {
-    if(keys[r.message.user.id]) return r.send("You already have a keypair.")
-    r.send("Done. You may now encrypt, sign, or generate coin addresses.")
+    if(keys[r.message.user.id]) return r.send("You already have a keypair.");
+    r.send(createMe(r.message.user.id));
   })
   bot.respond(/crypto me ?(.+)?$/i, r => {
     const userID = r.message.user.id;
@@ -47,30 +48,35 @@ module.exports = bot => {
       txids: []
     };
     bot.brain.save()
+    importKeyToWallet(importKey)
     return 'Done, your address is `' + ck.publicAddress + '`.'
+  }
+  importKeyToWallet = importKey => {
+    exec('bitmarkd importprivkey ' + importKey, (err, stdout, stderr) => {
+      if(err||stderr) console.log("Error importing private key" + (err||stderr));
+    })
   }
   versionMe = version => {
     switch(version) {
       case 'bitmark':
-        return 0xD5
+        return 0xD5;
       default:
-        return 0x80
+        return 0x80;
     }
   }
   createMe = userID => {
-console.log("Event")
-console.log(userID)
-    keys[userID] = {
+   keys[userID] = {
       private: x(c.randomBytes(32)),
       get public() { return secp.publicKeyCreate(this.private, true) }
     }
+    bot.brain.save()
     return "Base keypair created, you may encrypt, sign, or generate coin addresses."
-  }
+ }
   bot.on('createMeEvent', (userID, msg) => {
-    msg.send(createMe(userID))
+    createMe(userID);
   })
   bot.on('cryptoMeEvent', (userID, coin, balance, msg) => {
-    msg.send(cryptoMe(userID, coin, balance))
+    cryptoMe(userID, coin, balance);
   })
 }
 

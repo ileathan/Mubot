@@ -18,21 +18,16 @@
 //   Project Bitmark
 //
 (function() {
-  var adapter, deposit_marks, exec, marks, symbol, why_context
+  var adapter, deposit_marks, exec, marks, symbol, why_context, keys
   exec = require('child_process').exec;
   symbol = '₥';
-  function to_URI(name) { return id }               // Pending future API
-  function from_URI(URI) { return URI }             // Pending future API
-  function deposit_marks(r, URI, amount, bot) { } // Will add when needed
   function transfer_marks(r, recipient, amount, bot, why_context) {
     if (why_context == null) why_context = "N/A"
     if(!keys[r.message.user.id] || !keys[r.message.user.id].bitmark) return r.send("Sorry but you dont have an account, try crypto me bitmark.")
     if (keys[r.message.user.id].bitmark.balance >= parseFloat(amount)) {
       if (!keys[recipient]) {
-        bot.emit("createMeEvent", recipient, r);
-        //setTimeout(()=>
+        bot.emit("createMeEvent", recipient, r); // User has no base key, create one
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), r);
-        //, 1000)
       } else if(!keys[recipient].bitmark) {
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), r)
       } else {
@@ -60,9 +55,6 @@
     adapter = bot.adapterName;
     bot.brain.on('loaded', () => {
       keys = bot.brain.data.keys || (bot.brain.data.keys = {});
-      //if (bot.brain.data.marks == null) bot.brain.data.marks = {}; marks = bot.brain.data.marks;
-      //if(marks['183771581829480448'] == null) marks['183771581829480448'] = 12000
-      //if(marks['U02JGQLSQ']          == null) marks['U02JGQLSQ']          = 12000
     })
     bot.respond(/withdraw\s+(\w{34})\s+(.*)\s*$/i, r => withdraw_marks(r, r.match[1], r.match[2], bot))
     bot.respond(/marks\s*$/i, r => {
@@ -73,19 +65,20 @@
     if(adapter == 'discord') {
       bot.hear(/marks\s+@? (.*)#(\d{4})/i, r => {
         arr = bot.brain.usersForFuzzyName(r.match[1])
-        if (arr.length == 1 && marks[arr[0].id]) {
+        if (arr.length == 1 && keys[arr[0].id] && keys[arr[0].id].bitmark) {
           return r.send(r.match[1] + ' has ' + keys[arr[0].id].bitmark.balance + symbol + '.')
         } else if (arr.length > 1)  {
           for (i=0; i<arr.length; i++)
             if (arr[i].discriminator == r.match[2])
-              return r.send(r.match[1] + ' has ' + keys[arr[i].id].bitmark.balance + symbol + '.')
+              try { var bal = keys[arr[i].id].bitmark.balance } catch(e) { var bal = 0 }
+              return r.send(r.match[1] + ' has ' + bal + symbol + '.')
         } else if (arr.length < 1) return r.send('User ' + r.match[1] + ' was not found.')
         return r.send(r.match[1] + ' has 0' + symbol + '.')
       })
       bot.hear(/marks\s+<@?!?(\d+)>$/i, r => {
-       if (bot.brain.data.users[r.match[1]]) {
+       if (user = bot.brain.userForId(r.match[1])) {
           try { var balance = keys[r.match[1]].bitmark.balance } catch(e) { var balance = 0 }
-          return r.send(bot.brain.data.users[r.match[1]] + ' has ' + keys[r.match[1]].bitmark.balance + symbol + '.');
+          return r.send(user.name + ' has ' + keys[r.match[1]].bitmark.balance + symbol + '.');
         } else {
           return r.send("Sorry, I can't find that user.");
         }
