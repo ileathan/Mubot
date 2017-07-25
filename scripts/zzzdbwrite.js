@@ -13,7 +13,7 @@
       if (data) robot.brain.mergeData(JSON.parse(data));
     } catch (err) { if (err.code !== 'ENOENT') console.log(err); }
     return robot.brain.on('save', function(data) {
-      fs.writeFile(Path, JSON.stringify(data), 'utf-8', ()=>{});
+      fs.writeFile(path, JSON.stringify(data), 'utf-8', ()=>{});
     });
   };
 }).call(this);
