@@ -27,7 +27,7 @@
     if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, try crypto me bitmark.")
     if (keys[uid].bitmark.balance >= parseFloat(amount)) {
       if (!keys[recipient]) {
-        bot.emit("createMeEvent", recipient, r); // User has no base key, create one
+        bot.emit("createMeEvent", recipient, res); // User has no base key, create one
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res);
       } else if(!keys[recipient].bitmark) {
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res)
