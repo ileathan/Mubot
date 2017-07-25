@@ -25,6 +25,12 @@ module.exports = bot => {
     alertMe(30000); quit = false;
     res.send("Alert(s) created.")
   })
+  bot.respond(/alerts$/i, res => {
+    res.send("There are " + allRequests.length + " alerts.")
+  })
+  bot.respond(/alerts raw$/i, res => {
+    res.send(allRequests)
+  })
 }
 var alertMe = (delay, coinObj) => {
   if(quit) { return quit = false }
