@@ -1,5 +1,5 @@
 // Description:
-//   Allows sending messages over the max length for discord
+//   Allows sending messages over the max length for discord, also enforces power commands.
 //
 
 (function() {
