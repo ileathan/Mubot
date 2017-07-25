@@ -16,23 +16,18 @@
   path = require('path');
 
   module.exports = function(robot) {
-    var brainPath, data, error;
+    var brainPath, data;
     robot.brain.setAutoSave(false);
     brainPath = process.env.FILE_BRAIN_PATH || __dirname + '/../';
     brainPath = path.join(brainPath, 'brain-dump.json');
     try {
       data = fs.readFileSync(brainPath, 'utf-8');
-      if (data) {
-        robot.brain.mergeData(JSON.parse(data));
-      }
-    } catch (error1) {
-      error = error1;
-      if (error.code !== 'ENOENT') {
-        console.log('Unable to read file', error);
-      }
+      if (data) robot.brain.mergeData(JSON.parse(data));
+    } catch (err) {
+      if (err.code !== 'ENOENT') console.log('Unable to read file', error);
     }
     return robot.brain.on('save', function(data) {
-      return fs.writeFileSync(brainPath, JSON.stringify(data), 'utf-8');
+      fs.writeFile(brainPath, JSON.stringify(data), 'utf-8', ()=>{});
     });
   };
 
