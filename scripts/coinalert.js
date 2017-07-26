@@ -29,7 +29,8 @@ module.exports = bot => {
     res.send("There are " + allRequests.length + " alerts.")
   })
   bot.respond(/alerts raw$/i, res => {
-    res.send(allRequests)
+    // Structure is recurssive, so map it first.
+    res.send(allRequests.map(x=>x.res.message.user.name + ": " + x.alerts.join(', ')).join(', '))
   })
 }
 var alertMe = (delay, coinObj) => {
