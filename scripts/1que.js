@@ -39,7 +39,7 @@
           i++;
           return chunkAndQue(i);
         } else {
-          context.strings[0] = `**${context.strings[0]}**`; 
+          context.strings[0] = `**${context.strings[0]}**`;
         }
       }
       chunkAndQue(0);

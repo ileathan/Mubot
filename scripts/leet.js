@@ -7,13 +7,11 @@
 // Author:
 //   leathan
 //
-
 (function(){
 const leet = require('1337');
   module.exports = function(bot) {
     bot.respond(/leet(?: me)? (.*)/i, function(r) {
       r.send(leet(r.match[1]));
-r.send("CHECK2")
     });
   };
 }).call(this);
