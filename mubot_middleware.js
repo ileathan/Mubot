@@ -22,7 +22,7 @@ Middleware.prototype.run = function(data) {
 // USAGE EXAMPLE
 const middleware = new Middleware();
 middleware.use(function(data, next, done) {
-  return done();
+  //return done(); // You can return early if you'd like
   setTimeout(()=>{
     data.msg += ' is';
     next();
@@ -30,6 +30,7 @@ middleware.use(function(data, next, done) {
 });
 middleware.use(function(data, next) {
   setTimeout(()=>{
+    //throw "errors work too" // You can throw an error and reject the promise
     data.msg += ' the';
     next();
   }, 1000)
