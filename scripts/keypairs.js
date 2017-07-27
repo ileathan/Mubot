@@ -22,26 +22,24 @@
     bot.brain.on('loaded', () => {
       keys = bot.brain.data.keys || (bot.brain.data.keys = {});
     })
-    bot.respond(/crypto me/i, res => {
-      if(keys[res.message.user.id]) return r.send("You already have a keypair.");
-      r.send(createMe(res.message.user.id));
-    })
     bot.respond(/crypto me ?(.+)?$/i, res => {
       const userID = res.message.user.id;
-      if(res.match[1]) coin = res.match[1].toLowerCase(); else coin = 'bitcoin'
-      if(!keys[userID] && res.match[1]) return res.send(createMe(userID) + "\n" +  cryptoMe(userID, coin));
-      if(!keys[userID]) return res.send(createMe(userID))
+      if(!res.match[1] && keys[userID]) return res.send("You already have a keypair.");
+      if(!res.match[1]) return res.send(createMe(userID, res));
+      const coin = res.match[1].toLowerCase();
+      if(!keys[userID] && res.match[1]) return res.send(createMe(userID, res) + "\n" +  cryptoMe(userID, coin,  res));
+      if(!keys[userID]) return res.send(createMe(userID, res))
       if(keys[userID][coin]) return res.send("You already have a " + coin +  " keypair.")
-      res.send(cryptoMe(userID, coin))
+      res.send(cryptoMe(userID, coin, res))
     })
     bot.on('createMeEvent', (userID, res) => {
       createMe(userID, res);
     })
-    bot.on('cryptoMeEvent', (userID, coin, balance, res) => {
-      cryptoMe(userID, coin, balance, res);
+    bot.on('cryptoMeEvent', (userID, coin, res, balance) => {
+      cryptoMe(userID, coin, res, balance);
     })
   }
-  cryptoMe = (userID, version, balance, res) => {
+  cryptoMe = (userID, version, res, balance) => {
     var vByte, ck, importKey;
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
     importKey = cs.encode(Buffer.concat([keys[userID].private, (new Buffer('01', 'hex'))]), vByte);
@@ -54,7 +52,7 @@
       balance: balance || 0,
       txids: []
     };
-    res.bot.brain.save()
+    res.robot.brain.save()
     importKeyToWallet(importKey)
     return 'Done, your address is `' + ck.publicAddress + '`.'
   }
