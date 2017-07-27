@@ -1,25 +1,23 @@
 // MIDDLEWARE CLASS
 'use strict';
-class Middleware {
-  constructor() {
-    this.middlewares = [];
-  }
-  use(fn) {
-     this.middlewares.push(fn);
-  }
-  executeMiddleware(data, done) {
-    var skip = done;
-    this.middlewares.reduceRight((done, next) => () => next(data, done, skip), done)(data);
-  }
-  run(data) {
-    return new Promise((resolve, reject) => {
-      try {
-        this.executeMiddleware(data, done => resolve(data));
-      } catch(e) {
-        reject(e);
-      }
-    })
-  }
+function Middleware() {
+  this.middlewares = [];
+}
+Middleware.prototype.use = function(fn) {
+  this.middlewares.push(fn);
+}
+Middleware.prototype.executeMiddleware = function(data, done) {
+  var skip = done;
+  this.middlewares.reduceRight((done, next) => () => next(data, done, skip), done)(data);
+}
+Middleware.prototype.run = function(data) {
+  return new Promise((resolve, reject) => {
+    try {
+      this.executeMiddleware(data, done => resolve(data));
+    } catch(e) {
+      reject(e);
+    }
+  })
 }
 // USAGE EXAMPLE
 const middleware = new Middleware();
