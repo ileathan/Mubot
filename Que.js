@@ -1,17 +1,60 @@
 // Que CLASS
 'use strict'
+
 function Que() {
   this.que = [];
 }
-Que.prototype.add = function(fn) {
-  this.que.push(fn);
-}
-Que.prototype.executeQue = function(data, done) {
 
+Que.prototype.fill = function(fn, times) {
+  for(let i = 0; i < times; i++) {
+    this.que.push(fn);
+  }
+  return times;
+}
+
+Que.prototype.add = function(fn) {
+  if(fn.constructor.name === 'Array') {
+    let i = 0;
+    for(i = 0; i < fn.length; i++) {
+      this.que.push(fn)
+    }
+    return i;
+  }
+  return this.que.push(fn);
+}
+
+Que.prototype.clear = function(fn) {
+  return this.que = [];
+}
+
+Que.prototype.remove = function(item) {
+  type = item.constructor.name;
+  if(type === 'Number') {
+    return this.que.splice(item, 1);
+  }
+  else {
+    type === 'Function' ? check = item : check = item.toString();
+    total = amount || Infinity;
+    result = [];
+    removed = 0;
+    for(i=0; i<this.que.length; i++) {
+      if(total > amount) break;
+      if(check === item) {
+        result.push(this.que.splice(i, 1));
+        removed++;
+      }
+    }
+    return result;
+  }
+}
+
+Que.prototype.executeQue = function(data, done) {
+  // Allow ques that dont need to consume data.
+  if(!data) data = {};
   // preserve the original callback for potential que rebuilding.
-  let orig = done;
-  // i is our iterator, quit checks if we need to quit early.
-  let i = 0, quit = false, inject = false;
+  var orig = done;
+  // i is our iterator, quit/inject check if we need to quit/inject Promise.
+  var i = 0, quit = false, inject = false;
 
   // Perform nesting.
   this.que.reduceRight((done, next) =>
@@ -30,8 +73,8 @@ Que.prototype.executeQue = function(data, done) {
           inject = i + options.inject;
       }
       else if(options !== data && options) {
-        // Create a temporary que  to hold our new que.
-        let mwRef = [];
+        // create temp que to hold our new que.
+        tmpQue = [];
         // let j be the position we are skipping to.
         // lets say next(-3) was passed, so options = -3.
         // i is the current que spot - 1 that called next(-3).
@@ -41,10 +84,10 @@ Que.prototype.executeQue = function(data, done) {
         var j = i + options - (options < 0);
         if(!this.que[j-1]) throw `${options} out of bounds, no que position ${j} exists.`
         for(let l = this.que.length; j < l; j++) {
-          mwRef.push(this.que[j])
+          tmpQue.push(this.que[j])
         }
         // set new que.
-        this.que = mwRef;
+        this.que = tmpQue;
         // Apend the original data exposure callback.
         this.que.push(orig)
         this.executeQue(data);
@@ -64,11 +107,11 @@ Que.prototype.executeQue = function(data, done) {
       if(inject) {
         if(inject > i) {
           options.promise.then(data => {
-            next(data, done, orig, i++);
+            next(done, data, orig, i++);
           })
         } else {
           inject++
-          next(data, done, orig, i++)
+          next(done, data, orig, i++)
         }
       } else {
         // no special object options were specified just proceed.
@@ -81,6 +124,7 @@ Que.prototype.executeQue = function(data, done) {
   // so call it instantly with data.
   , done)(data);
 }
+
 Que.prototype.run = function(data) {
   // Returns a promise that resolves if the
   // exection of the que yeilded no errors.
