@@ -1,44 +1,58 @@
+Middleware.prototype.executeMiddleware = function(data, done) {
+  var skip = done;
+  this.middlewares.reduceRight((done, next) => () => next(data, done, skip), done)(data);
+}
+
+
 // MIDDLEWARE CLASS
 'use strict';
 function Middleware() {
   this.middlewares = [];
 }
-Middleware.prototype.use = function(fn) {
+Middleware.prototype.add = function(fn) {
   this.middlewares.push(fn);
 }
-Middleware.prototype.executeMiddleware = function(data, done) {
+//function performNesting(data, done) {
+//}
+Middleware.prototype.execute = function(data, done) {
   var skip = done;
-  this.middlewares.reduceRight((done, next) => () => next(data, done, skip), done)(data);
+  this.middlewares.reduceRight(  (done, next) => () => next(data, done, skip), done)(data)
+//performNesting.call(this, data, done)
 }
+
 Middleware.prototype.run = function(data) {
   return new Promise((resolve, reject) => {
     try {
-      this.executeMiddleware(data, done => resolve(data));
-    } catch(e) {
-      reject(e);
+      this.execute(data, function finished(doneData) {
+        resolve(doneData);
+      })
+    } catch(error) {
+      reject(error);
     }
   })
 }
+module.exports = Middleware;
 // USAGE EXAMPLE
 const middleware = new Middleware();
-middleware.use(function(data, next, done) {
+middleware.add(function(data, next, done) {
   //return done(); // You can return early if you'd like
   setTimeout(()=>{
     data.msg += ' is';
     next();
   }, 5000)
 });
-middleware.use(function(data, next) {
+middleware.add(function(data, next) {
   setTimeout(()=>{
     //throw "errors work too" // You can throw an error and reject the promise
     data.msg += ' the';
     next();
   }, 1000)
 });
-middleware.use(function(data, next) {
+middleware.add(function(data, next) {
   data.msg += ' best!!!';
   next();
 });
 middleware.run({msg: 'Mubot'})
   .then(res => console.log(res.msg))
-  .catch(err => console.log('Woopsie!'))
+  .catch(err => console.log('Woopsie! ' + err))
+
