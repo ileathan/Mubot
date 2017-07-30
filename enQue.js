@@ -119,9 +119,9 @@ enQue.prototype.executeQue = function(data, done) {
   // `i` is our iterator, `quit`  and `inject` are used to check if we need
   // to quit early and resolve the data, or inject `Function`.
   var i = 0, quit = false, inject = false, injectFn = false;
-  // The `reduceRight` function allows us to itterate through the que while constantly
-  // nesting callbacks using the accumulator, it has very reasonable performance.
-  this.que.reduceRight((done, next) =>
+  // The `nest` function allows us to itterate through the que while constantly
+  // nesting callbacks.
+  this.nest((done, next) =>
     options => {
       // Options can be any operation to perform while nesting callbacks.
       // Currently options must be a specific `JSON Object`, or a `Number`, if its JSON
@@ -213,5 +213,20 @@ enQue.prototype.run = function(data) {
   // __returns a promise which can be used for chaining__
   })
 }
+
+// ***enQue.nest*** This method should never be called directly
+// unless you know what you are doing. `que.nest()`
+enQue.prototype.nest = function(callback, orig) {
+  var que = this.que, pos = que.length - 1, nest;
+  // Set the initial done to resolve(data).
+  nest = orig;
+  for (; pos >= 0; pos--) {
+    // Now our original done is a callback.
+    // which keeps being nested till pos == 0.
+    nest = callback(nest, que[pos]);
+  }
+  // __returns the fully nested object__
+  return nest;
+};
 
 module.exports = enQue;
