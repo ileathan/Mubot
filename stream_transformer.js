@@ -7,7 +7,7 @@ var transformer = new Transform();
 transformer.setEncoding('utf8')
 transformer._transform = function(data, encoding, cb) {
  string = data.toString('utf8');         // Just an example, any transformation can be done here directly
- string = string.replace(/a/g, "#")      // on the stream. (more effeciently than current hubot core code)
+ string = string.replace(/a/g, "#")
  cb(null, string);
 }
 
