@@ -1,11 +1,4 @@
 [
   "hubot-server",
   "hubot-bustabit",
-  "hubot-calculator",
-  "hubot-help",
-  "hubot-pugme",
-  "hubot-maps",
-  "hubot-rules",
-  "hubot-shipit",
-  "hubot-diagnostics"
 ]

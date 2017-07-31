@@ -9,7 +9,7 @@
 //   /hubot/help
 //
 // Configuration:
-//   HUBOT_HELP_REPLY_IN_PRIVATE - if set to any avlue, all `hubot help` replies are sent in private
+//   HUBOT_HELP_REPLY_IN_PRIVATE - if set to any avlue, all `mubot help` replies are sent in private
 //   HUBOT_HELP_DISABLE_HTTP - if set, no web entry point will be declared
 //   HUBOT_HELP_HIDDEN_COMMANDS - comma-separated list of commands that will not be displayed in help
 //
@@ -21,7 +21,10 @@
   var getHelpCommands, helpContents, hiddenCommandsPattern;
 
   helpContents = function(name, commands) {
-    return "<!DOCTYPE html>\n<html>\n  <head>\n  <meta charset=\"utf-8\">\n  <title>" + name + " Help</title>\n  <style type=\"text/css\">\n    body {\n      background: #d3d6d9;\n      color: #636c75;\n      text-shadow: 0 1px 1px rgba(255, 255, 255, .5);\n      font-family: Helvetica, Arial, sans-serif;\n    }\n    h1 {\n      margin: 8px 0;\n      padding: 0;\n    }\n    .commands {\n      font-size: 13px;\n    }\n    p {\n      border-bottom: 1px solid #eee;\n      margin: 6px 0 0 0;\n      padding-bottom: 5px;\n    }\n    p:last-child {\n      border: 0;\n    }\n  </style>\n  </head>\n  <body>\n    <h1>" + name + " Help</h1>\n    <div class=\"commands\">\n      " + commands + "\n    </div>\n  </body>\n</html>";
+     return "<!DOCTYPE html>\n<html>\n  <head>\n  <meta charset=\"utf-8\">\n  <title>" + name + " Help</title>\n  <style type=\"text/css\">\n    body {\n      background: #d3d6d9;\n"
+     + " color: #636c75;\n      text-shadow: 0 1px 1px rgba(255, 255, 255, .5);\n      font-family: Helvetica, Arial, sans-serif;\n    }\n    h1 {\n      margin: 8px 0;\n      padding: 0;\n"
+     + "    }\n    .commands {\n      font-size: 13px;\n    }\n    p {\n      border-bottom: 1px solid #eee;\n      margin: 6px 0 0 0;\n      padding-bottom: 5px;\n    }\n    p:last-child {\n"
+     + "      border: 0;\n    }\n  </style>\n  </head>\n  <body>\n    <h1>" + name + " Help</h1>\n    <div class=\"commands\">\n      " + commands + "\n    </div>\n  </body>\n</html>";
   };
 
   module.exports = function(robot) {
@@ -75,13 +78,7 @@
         return !hiddenCommandsPattern().test(command);
       });
     }
-    help_commands = help_commands.map(function(command) {
-      if (robot_name.length === 1) {
-        return command.replace(/^hubot\s*/i, robot_name);
-      } else {
-        return command.replace(/^hubot/i, robot_name);
-      }
-    });
+    help_commands = help_commands.map((command) => command.replace(/^(hubot|mubot)/i, robot_name));
     return help_commands.sort();
   };
 
@@ -89,7 +86,7 @@
     var hiddenCommands, ref;
     hiddenCommands = (ref = process.env.HUBOT_HELP_HIDDEN_COMMANDS) != null ? ref.split(',') : void 0;
     if (hiddenCommands) {
-      return new RegExp("^hubot (?:" + (hiddenCommands != null ? hiddenCommands.join('|') : void 0) + ") - ");
+      return new RegExp("^(hubot|mubot) (?:" + (hiddenCommands != null ? hiddenCommands.join('|') : void 0) + ") - ");
     }
   };
 
