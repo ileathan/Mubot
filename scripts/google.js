@@ -10,11 +10,7 @@ var request = require('request')
 
 module.exports = function (robot) {
   robot.respond(/(?:g|google) (?:me )?(.*)/i, function (msg) {
-    try
-      index = msg.match[1].match(/([1-9]|1[1-8])$/)[1]
-     } catch(e) {
-        index = ""
-     }
+    try { var index = msg.match(/([1-9]|1[1-8])$/)[1] } catch(e) { var index = "" }
     query = msg.match[1].slice(0, msg.match[1].length - index.toString().length)
     googleMe(msg, index, query, function(url) {
       msg.send(url)
