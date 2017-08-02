@@ -1,3 +1,15 @@
+// Description:
+//   Returns the JSON of a raw btc tx id.
+//
+// Commands:
+//   mubot getrawtransfer <txid> - Returns JSON format of txid.
+//
+// Author:
+//   leathan
+//
+// Dependencies:
+//   execSync (should be preinstalled)
+//
 execSync = require('child_process').execSync
 
 module.exports = bot => {
