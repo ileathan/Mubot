@@ -7,6 +7,7 @@
       POWER_USERS    = ['183771581829480448', 'U02JGQLSQ'];
 
   module.exports = function(robot) {
+    var adapter = robot.adapterName;
     robot.listenerMiddleware((context, next, done) => {
       if (POWER_COMMANDS.indexOf(context.listener.options.id) >= 0) {
         if (POWER_USERS.indexOf(context.response.message.user.id) >= 0) return next();
@@ -20,7 +21,7 @@
       if (!context.plaintext) return
       if (context.strings[0].length < 1) return done()
       function chunkAndQue(i) { // i is our iterator.
-        var epad = fpad = "**", m; // m is our chunk
+        var epad = fpad = adapter === 'discord' ? "**" : "*", m; // m is our chunk
         if (context.strings[i] && context.strings[i].length > 2000) { // only proceed if we need to break msg down to chunks.
           if (context.response.match[0].indexOf('view') === 0) {
             fpad = '```javascript\n'; // The command is a view code command
@@ -39,7 +40,7 @@
           i++;
           return chunkAndQue(i);
         } else {
-          context.strings[0] = `**${context.strings[0]}**`;
+          context.strings[0] = fpad + context.strings[0] + epad;
         }
       }
       chunkAndQue(0);
