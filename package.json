@@ -41,7 +41,7 @@
     "hubot-redis-brain": "0.0.4",
     "hubot-scripts": "^2.17.2",
     "hubot-server": "^2.0.1",
-    "hubot-slack": "",
+    "hubot-slack": "^4.3.4",
     "inherits": "^2.0.3",
     "libsodium-wrappers": "^0.5.2",
     "log": "^1.4.0",
