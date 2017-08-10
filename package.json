@@ -51,6 +51,7 @@
     "ng-disable-scroll": "^0.1.1",
     "node-opus": "^0.2.6",
     "numeral": "^2.0.6",
+    "optparse": "^1.0.5",
     "opusscript": "0.0.3",
     "randomstring": "^1.1.5",
     "request": "^2.81.0",
