@@ -18,7 +18,7 @@
       } else return next();
     });
     robot.responseMiddleware((context, next, done) => {
-      if (!context.plaintext || !context.strings[0] || !content.strings[0].length) return done();
+      if (!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
       function chunkAndQue(i) { // i is our iterator.
         var epad = fpad = adapter === 'discord' ? "**" : "*", m; // m is our chunk
         if (context.strings[i] && context.strings[i].length > 2000) { // only proceed if we need to break msg down to chunks.
