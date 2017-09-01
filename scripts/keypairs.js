@@ -42,7 +42,7 @@
   cryptoMe = (userID, version, res, balance) => {
     var vByte, ck, importKey;
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
-    importKey = cs.encode(Buffer.concat([keys[userID].private, (new Buffer('01', 'hex'))]), vByte);
+    importKey = cs.encode(Buffer.concat([new Buffer(keys[userID].private), new Buffer('01', 'hex')]), vByte);
     ck = CK.fromWif(importKey);
     if(!keys['_'+version]) keys['_'+version] = []
     keys['_'+version].push(ck.publicAddress, userID)
