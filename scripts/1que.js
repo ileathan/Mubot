@@ -15,12 +15,12 @@
       } else return next()
     });
     robot.responseMiddleware((context, next, done) => {
-      if (!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
-      function chunkAndQue(i) { // i is our iterator.
+      if(!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
+      (function chunkAndQue(i) { // i is our iterator.
         // Pad the start of the message, and the end of the message.
         var epad = fpad = adapter === 'discord' ? "**" : "*";
-        // m is our chunk
-        var m;
+        // our msg chunk
+        var chunk;
         // only proceed if we need to break msg down to chunks.
         if(context.strings[i] && context.strings[i].length > 2000) {
           if(context.response.match[0].indexOf('view') === 0) {
@@ -36,22 +36,21 @@
             epad = '```'
           }
           // Try to get biggest chunk possible until newline char.
-          m = context.strings[i].match(/^([\s\S]{0,1940}\n)/);
-          if(!(m ? m[0] : void 0)) {
+          chunk = context.strings[i].match(/^[\s\S]{0,1940}\n/);
+          if(!chunk) {
             // There was no newline, fallback to biggest chunk.
-            m = context.strings[i].match(/^([\s\S]{0,1940})/)
+            chunk = context.strings[i].match(/^[\s\S]{0,1940}/)
           }
           // Apply the pad to large chunk, and que it.
-          context.strings.push("" + fpad + context.strings[i].slice(m[1].length));
+          context.strings.push(fpad + context.strings[i].slice(chunk[0].length));
           // This is the garanteed small chunk. (first out of que)
-          context.strings[i] = context.strings[i].slice(0, m[1].length) + epad;
-          return chunkAndQue(++i)
+          context.strings[i] = context.strings[i].slice(0, chunk[0].length) + epad;
+          chunkAndQue(++i)
         } else {
           context.strings[0] = fpad + context.strings[0] + epad
         }
-      }
-      chunkAndQue(0);
-      return next()
+      })(0)
+      next()
     })
   }
 }).call(this);
