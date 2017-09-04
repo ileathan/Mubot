@@ -43,11 +43,13 @@
       }
       emit = cmds.join('\n');
       if (filter) {
-        return msg.send(emit);
+        msg.send(emit);
       } else {
-        return robot.send({
-          room: (ref = msg.message) != null ? (ref1 = ref.user) != null ? ref1.id : void 0 : void 0
-        }, emit);
+        let room = msg.message.user.id
+        robot.adapter.send({room: msg.message.user.id}, emit)
+        // robot.send({
+        //   room: (ref = msg.message) != null ? (ref1 = ref.user) != null ? ref1.id : void 0 : void 0
+        // }, emit);
       }
     });
     if (process.env.HUBOT_HELP_DISABLE_HTTP == null) {
