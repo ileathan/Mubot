@@ -157,7 +157,7 @@
 
   Loop = (orderBook, r, msg, robot) => {
     var amountInBtc, c, key, keys, value, reply, totalBtc, totalTicker;
-    ref = Object.keys(orderBook);
+    keys = Object.keys(orderBook);
     for(let i = 0, len = keys.length; i < len; ++i) {
       key = keys[i];
       if(key === 'seq' || key === 'isFrozen') continue;

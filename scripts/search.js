@@ -1,26 +1,26 @@
 // Commands:
 //   search <link> [for <text>] - returns the link data, or the matching text
 
-r = require('request')
-module.exports = function (bot) {
-  bot.hear (/^(?:search )(\S+)(?: for )?(.*)?$/, function (m) {
-    link = m.match[1]; searchFor = m.match[2]
-    if (!/^(https?:\/\/)/.test(link)) link = "http://" + link
-    r(link, function(e,r,h) {
+const request = require('request');
+module.exports = bot => {
+  bot.hear(/^(?:search )(\S+)(?: for )?(.*)?$/, m => {
+    var link = m.match[1], searchFor = m.match[2];
+    if(!/^(https?:\/\/)/.test(link)) link = "http://" + link;
+    request(link, (err, res, data) => {
       try {
-        h = JSON.parse(h)
+        data = JSON.parse(data);
         if (!searchFor) {
-          m.send(h)
+          m.send(data)
         } else {
-          try { m.send(h[searchFor]) } catch(e) { m.send(searchFor + " not found.") }
+          m.send(data[searchFor] ? data[searchFor] : searchFor + " not found.")
         }
       } catch (e) {
         if (!searchFor) {
-          m.send(h)
+          m.send(data)
         } else {
-          re = new RegExp("(.{0,60}" + searchFor + ".{0,60})", "gi")
-          ma = h.match(re)
-          m.send(ma.length + " results found.\n" + "```" + ma.join('\n') + "```")
+          let re = new RegExp(".{0,60}" + searchFor + ".{0,60}", "gi");
+          let myMatch = data.match(re);
+          m.send(myMatch.length + " results found.\n" + "```" + myMatch.join('\n') + "```")
         }
       }
     })
