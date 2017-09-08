@@ -2,17 +2,15 @@
 //   Returns information about crypto coins
 //
 // Commands:
-//   ticker <coin1> <coin2> - returns price/change of coin2 relative to coin1
-//   stats <coin> - returns information about coin
-//   price <coin> - returns the strike price of coin
+//   Hubot ticker <coin1> <coin2> - returns price/change of coin2 relative to coin1
+//   Hubot stats <coin> - returns information about coin
+//   Hubot price <coin> - returns the strike price of coin
 //
 // Author:
 //   leathan
 
 (function() {
-  var tickers;
-
-  tickers = {
+  const tickers = {
     '42': '42-coin',
     '611': 'sixeleven',
     '808': '808coin',
@@ -958,30 +956,33 @@
     MIYU: 'miyucoin'
   };
 
-  module.exports = function(robot) {
-    robot.hear(/^stats (\w+)$/i, function(msg) {
-      if (tickers[msg.match[1].toUpperCase()]) {
-        return robot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[msg.match[1].toUpperCase()] + "/").get()(function(err, response, body) {
-          return msg.send(JSON.stringify(JSON.parse(body)[0], null, 2));
-        });
+  module.exports = bot => {
+    bot.respond(/stats (\w+)$/i, msg => {
+      var ticker;
+      if(msg.match[1] && tickers[ticker = msg.match[1].toUpperCase()]) {
+        bot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[ticker] + "/").get()((err, res, body) => {
+          msg.send(JSON.stringify(JSON.parse(body)[0], null, 2))
+        })
       } else {
-        return msg.send(msg.match[1] + " is not listed.");
+        msg.send(ticker + " is not listed.")
       }
     });
-    robot.hear(/^price (\w+)$/i, function(msg) {
-      if (tickers[msg.match[1].toUpperCase()]) {
-        return robot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[msg.match[1].toUpperCase()] + "/").get()(function(err, response, body) {
-          return msg.send((msg.match[1] + " strike price is ") + JSON.parse(body)[0].price_usd + "$.");
-        });
+    bot.respond(/price (\w+)$/i, msg => {
+      var ticker;
+      if(msg.match[1] && tickers[ticker = msg.match[1].toUpperCase()]) {
+        bot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[ticker] + "/").get()((err, res, body) => {
+          msg.send(ticker + " strike price is " + JSON.parse(body)[0].price_usd + "$.")
+        })
       } else {
-        return msg.send(msg.match[1] + " is not listed.");
+        msg.send(ticker + " is not listed.");
       }
     });
-    return robot.hear(/^ticker (\w+) (\w+)$/i, function(msg) {
-      return robot.http("https://api.cryptonator.com/api/ticker/" + msg.match[1] + "-" + msg.match[2]).get()(function(err, response, body) {
-        return msg.send("One " + (JSON.parse(body).ticker.base) + " gives you " + (JSON.parse(body).ticker.price) + " " + (JSON.parse(body).ticker.target) + ". [24h Change: " + (JSON.parse(body).ticker.change) + "%]");
-      });
-    });
+    bot.respond(/ticker (\w+) (\w+)$/i, msg => {
+      bot.http("https://api.cryptonator.com/api/ticker/" + msg.match[1] + "-" + msg.match[2]).get()((err, res, body) => {
+        body = JSON.parse(body);
+        msg.send("One " + body.ticker.base) + " gives you " + body.ticker.price + " " + body.ticker.target + ". [24h Change: " + body.ticker.change + "%]")
+      })
+    })
   };
 
 }).call(this);
