@@ -9,7 +9,5 @@
 //
 module.exports = bot => {
   const io = bot.io.of('/chat');
-  io.on("connection", (socket) => {
-    socket.on("chat message", data => io.emit("chat message", data))
-  })
+  io.on("connection", socket => socket.on("chat message", data => io.emit("chat message", data)))
 }
