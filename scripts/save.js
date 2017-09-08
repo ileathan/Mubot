@@ -7,10 +7,10 @@
 // Author:
 //   leathan
 //
-module.exports = function(robot) {
-  robot.respond(/save$/i, function(msg) {
-    robot.brain.save()
-    msg.send("Database saved to disk.")
+module.exports = bot => {
+  robot.respond(/save$/i, res => {
+    robot.brain.save();
+    res.send("Database saved to disk.")
   })
 }
 
