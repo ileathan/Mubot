@@ -16,19 +16,19 @@
                  "2. A bot must obey any orders given to it by human beings, except where such orders would conflict with the First Law.",
                  "3. A bot must protect its own existence as long as such protection does not conflict with the First or Second Law."]
 
-  module.exports = function(bot) {
+  module.exports = bot => {
     bot.respond(/(?:what are )?the (apple )?(?:three |3 )?(?:rules|laws)/i, (res) => {
-      if (res.match[1]) res.send("RULES WITH THE DEVIL?!?!?Kill them, make sure the bloody *nix thieves burn!")
+      if(res.match[1]) res.send("RULES WITH THE DEVIL?!?!? NO, Kill them, make sure the bloody *nix thieves burn!")
       else res.send(rules.join('\n'));
     });
-    bot.respond(/adapter$/i, function(res) {
-      return res.send(bot.adapterName);
+    bot.respond(/adapter$/i, res => {
+      res.send(bot.adapterName);
     });
-    bot.respond(/echo (.*)$/i, function(res) {
-      return res.send(res.match[1]);
+    bot.respond(/echo (.*)$/i, res => {
+      res.send(res.match[1]);
     });
-    bot.respond(/time$/i, function(res) {
-      res.send("Server time is: " + (new Date()));
+    bot.respond(/time$/i, res => {
+      res.send("Server time is: " + new Date);
     });
   }
 }).call(this);
