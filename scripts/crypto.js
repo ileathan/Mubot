@@ -13,91 +13,55 @@
 // Author:
 //   leathan
 
-
 (function() {
   var CompatibleBook, Get, Loop;
 
   module.exports = robot => {
     var cR = {};
-    robot.on('CryptoReply', function(r, mode, msg) {
+    robot.on('CryptoReply', function(req, mode, msg) {
       var key;
-      if(key = Object.keys(r)[0]) {
-        cR[key] = r[key]
+      if(key = Object.keys(req)[0]) {
+        cR[key] = req[key]
       }
       if(mode === "all" && Object.keys(cR).length === 3) {
-        if(msg.header != null) {
-          msg.send(cR);
-          return cR = {};
-        } else {
-          msg.send(Object.keys(cR.bids)[0] + " price is " + cR.price + ".\n" + "People are buying " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0] +
-              ".  (worth " + cR.bids.BTC + " BTC)\n" + "People are selling " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + ".  (worth " + cR.asks.BTC + " BTC)");
-          return cR = {};
-        }
+        msg.send(msg.header ? cR : Object.keys(cR.bids)[0] + " price is " + cR.price + ".\n" + "People are buying " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0]
+            + ".  (worth " + cR.bids.BTC + " BTC)\n" + "People are selling " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + ".  (worth " + cR.asks.BTC + " BTC)")
       } else if(mode === "depth" && Object.keys(cR).length === 2) {
-        if(msg.header != null) {
-          msg.send(cR);
-          return cR = {};
-        } else {
-          msg.send("Total " + Object.keys(cR.asks)[0] + " being sold at that depth is " + cR.asks[Object.keys(cR.asks)[0]] + ". (worth " + cR.asks.BTC + " BTC)\n" + "Total " +
-              Object.keys(cR.bids)[0] + " being bought at that depth is " + cR.bids[Object.keys(cR.bids)[0]] + ". (worth " + cR.bids.BTC + " BTC)");
-          return cR = {};
-        }
+        msg.send(msg.header ? cR : "Total " + Object.keys(cR.asks)[0] + " being sold at that depth is " + cR.asks[Object.keys(cR.asks)[0]] + ". (worth " + cR.asks.BTC + " BTC)\n" + "Total "
+            + Object.keys(cR.bids)[0] + " being bought at that depth is " + cR.bids[Object.keys(cR.bids)[0]] + ". (worth " + cR.bids.BTC + " BTC)")
       } else if(mode === "swap") {
-        if(msg.header != null) {
-          cRs = {};
-          cRs[cR.data.target] = cR.data.amount;
-          msg.send({[cR.data.target]: cR.data.amount});
-          return cR = {};
-        } else {
-          msg.send(cR.data.base_amount + " " + cR.data.base + " at current books gives you " + cR.data.amount + " " + cR.data.target + ".");
-          return cR = {};
-        }
+        msg.send(msg.header ? {[cR.target]: cR.amount} : cR.base_amount + " " + cR.base + " at current books gives you " + cR.amount + " " + cR.target + ".")
       } else if(mode === "amount" && Object.keys(cR).length === 2) {
-        if(msg.header != null) {
-          msg.send(cR);
-          return cR = {};
-        } else {
-          msg.send("Buying " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + " at current books gives you " + cR.asks.BTC + " BTC.\n" + "Selling " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0] + " at current books gives you " + cR.bids.BTC + " BTC.");
-          return cR = {};
-        }
-      }
+        msg.send(msg.header ? cR : "Buying " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + " at current books gives you " + cR.asks.BTC + " BTC.\n" + "Selling "
+            + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0] + " at current books gives you " + cR.bids.BTC + " BTC.")
+      } else return;
+      cR = {}
     });
-    robot.on('CryptoRequest', function(r, msg) {
-      var ref;
-      if(!r.market) {
-        r.market = 'p';
-      }
-      r.mode = "all";
-      if(r.depth) {
-        r.mode = "depth";
-      }
-      if(r.ticker2) {
-        r.mode = "swap";
-      }
-      if(r.amount && !r.ticker2) {
-        r.mode = "amount";
-      }
-      r.ticker = r.ticker && r.ticker.toUpperCase();
-      r.ticker2 = r.ticker2 && r.ticker2 !== 'false' && r.ticker2.toUpperCase();
-      r.amount = r.amount || 0;
-      r.depth = r.depth;
+    robot.on('CryptoRequest', (req, msg) => {
+      if(!req.market) req.market = 'p';
+      req.mode = "all";
+      if(req.depth) req.mode = "depth";
+      if(req.ticker2) req.mode = "swap";
+      if(req.amount && !req.ticker2) req.mode = "amount";
+      if(req.ticker) req.ticker = req.ticker.toUpperCase();
+      if(req.ticker2 && req.ticker2 !== 'false') req.ticker2 = req.ticker2.toUpperCase();
+      req.amount = req.amount;
+      req.depth = req.depth;
       // If no depth is specified, use max.
-      if(r.amount || !r.depth) {
-        r.depth = 999999
-      }
-      Get(r.ticker, r.depth, r.market, msg, robot, function(orderBook) {
+      if(req.amount || !req.depth) req.depth = 999999;
+      Get(req.ticker, req.depth, req.market, msg, robot, orderBook => {
         var price;
         if(orderBook.error) return;
         price = parseFloat((+orderBook.asks[0][0] + +orderBook.bids[0][0]) / 2).toFixed(8);
-        if(r.mode === "all") {
+        if(req.mode === "all") {
           robot.emit('CryptoReply', {
             price: price
-          }, r.mode, msg)
+          }, req.mode, msg)
         }
-        Loop(orderBook, r, msg, robot)
+        Loop(orderBook, req, msg, robot)
       })
     });
-    robot.respond(/(?:c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, function(msg) {
+    robot.respond(/(?:c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
       var depth, ticker2;
       if(/^\d{1,6}$/.test(msg.match[4])) {
         depth = msg.match[4]
@@ -155,43 +119,41 @@
     cb(compatibleBook)
   };
 
-  Loop = (orderBook, r, msg, robot) => {
-    var amountInBtc, c, key, keys, value, reply, totalBtc, totalTicker;
+  Loop = (orderBook, req, msg, robot) => {
+    var amountInBtc, cur, key, keys, reply, totalBtc, totalTicker;
     keys = Object.keys(orderBook);
     for(let i = 0, len = keys.length; i < len; ++i) {
       key = keys[i];
       if(key === 'seq' || key === 'isFrozen') continue;
       amountInBtc = totalBtc = totalTicker = 0;
-      value = orderBook[key];
       for(let i = 0, len = value.length; i < len; ++i) {
-        c = value[i];
-        if(+totalTicker > +r.amount && r.amount !== 0) {
-          break
-        }
-        totalTicker = parseFloat(+totalTicker + c[1]).toFixed(8);
-        totalBtc = parseFloat(+totalBtc + c[0] * c[1]).toFixed(8);
-        if(+totalTicker >= +r.amount && r.amount !== 0) {
-          amountInBtc = parseFloat(totalBtc - (totalTicker - r.amount) * c[0]).toFixed(8);
-          if(r.ticker2 && key === 'bids') {
-            Get(r.ticker2, r.depth, r.market, msg, robot, function(orderBook) {
-              var amountTicker2, asks, totalTicker2;
+        cur = orderBook[key][i];
+        // If the amount of coins found is greater than the amount we are looking for stop looping
+        // Short cut for if(totalTicker > req.amount  && req.amount !== 0) break;
+        if(totalTicker > req.amount) break;
+        totalTicker = parseFloat(+totalTicker + cur[1]).toFixed(8);
+        totalBtc = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
+        // This iteration causes the amount of coins found to be greater than the amount were looking for
+        if(totalTicker >= req.amount) {
+          amountInBtc = parseFloat(totalBtc - (totalTicker - req.amount) * cur[0]).toFixed(8);
+          if(req.ticker2 && key === 'bids') {
+            Get(req.ticker2, req.depth, req.market, msg, robot, orderBook => {
+              var amountTicker2, asks, totalTicker2, cur;
               if(orderBook.error) return;
               totalBtc = totalTicker2 = amountTicker2 = 0;
               asks = orderBook.asks;
               for(let i = 0, len = asks.length; i < len; ++i) {
-                c = asks[i];
+                cur = asks[i];
                 if(+totalBtc > +amountInBtc) break;
-                totalTicker2 = parseFloat(+totalTicker2 + c[1]).toFixed(8);
-                totalBtc = parseFloat(+totalBtc + c[0] * c[1]).toFixed(8);
-                if(+totalBtc >= +amountInBtc) {
+                totalTicker2 = parseFloat(+totalTicker2 + cur[1]).toFixed(8);
+                totalBtc = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
+                if(totalBtc >= amountInBtc) {
                   robot.emit('CryptoReply', {
-                    data: {
-                      base: r.ticker,
-                      base_amount: r.amount,
-                      target: r.ticker2,
-                      amount: parseFloat(totalTicker2 - ((totalBtc - amountInBtc) / c[0])).toFixed(8)
-                    }
-                  }, r.mode, msg)
+                    base: req.ticker,
+                    base_amount: req.amount,
+                    target: req.ticker2,
+                    amount: parseFloat(totalTicker2 - ((totalBtc - amountInBtc) / cur[0])).toFixed(8)
+                  }, req.mode, msg)
                 }
               }
             })
@@ -200,22 +162,15 @@
       }
       reply = {};
       reply[key] = {};
-      if(r.amount && !r.ticker2) {
-        reply[key][r.ticker] = r.amount;
-        reply[key]['BTC'] = amountInBtc;
-        robot.emit('CryptoReply', reply, r.mode, msg)
-      } else if(!r.ticker2) {
-        if(r.depth === 999999) {
-          reply[key][r.ticker] = totalTicker;
-          reply[key]['BTC'] = totalBtc;
-          robot.emit('CryptoReply', reply, r.mode, msg)
-        } else {
-          reply[key][r.ticker] = totalTicker;
-          reply[key]['BTC'] = totalBtc;
-          robot.emit('CryptoReply', reply, r.mode, msg)
-        }
+      if(req.amount && !req.ticker2) {
+        reply[key][req.ticker] = req.amount;
+        reply[key].BTC = amountInBtc;
+        robot.emit('CryptoReply', reply, req.mode, msg)
+      } else if(!req.ticker2) {
+        reply[key][req.ticker] = totalTicker;
+        reply[key].BTC = totalBtc;
+        robot.emit('CryptoReply', reply, req.mode, msg)
       }
     }
-  };
-
+  }
 }).call(this);
