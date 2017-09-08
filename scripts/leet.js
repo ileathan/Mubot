@@ -8,10 +8,10 @@
 //   leathan
 //
 (function(){
-const leet = require('1337');
-  module.exports = function(bot) {
-    bot.respond(/leet(?: me)? (.*)/i, function(r) {
-      r.send(leet(r.match[1]));
-    });
-  };
+  const leet = require('1337');
+  module.exports = bot => {
+    bot.respond(/leet(?: me)? (.*)/i, res => {
+      res.send(leet(res.match[1]))
+    })
+  }
 }).call(this);
