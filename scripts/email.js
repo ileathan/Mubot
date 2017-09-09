@@ -18,29 +18,21 @@
 
 (function() {
   var child_process, util;
-
   util = require('util');
-
   child_process = require('child_process');
 
-  module.exports = function(robot) {
-    var emailTime, sendEmail;
-    emailTime = null;
-    sendEmail = function(recipients, subject, msg, from) {
-      var mailArgs, p;
-      mailArgs = ['-s', subject, '-a', "From: " + from, '--'];
-      mailArgs = mailArgs.concat(recipients);
-      p = child_process.execFile('mail', mailArgs, {}, function(error, stdout, stderr) {
-        util.print('stdout: ' + stdout);
-        return util.print('stderr: ' + stderr);
-      });
-      p.stdin.write(msg + "\n");
-      return p.stdin.end();
-    };
-    return robot.respond(/email (.*) -s (.*) -m (.*)/i, function(msg) {
+  function sendEmail(recipients, subject, msg, from) {
+    child_process.exec('echo ' + msg + ' | mail -s "' + subject + ' (From: ' + from + ')" ' + recipients, function(error, stdout, stderr) {
+      stdout && console.log('stdout: ' + stdout);
+      stderr && console.log('stderr: ' + stderr)
+    })
+  }
+
+  module.exports = bot => {
+    bot.respond(/email (.*) -s (.*) -m (.*)/i, function(msg) {
       sendEmail(msg.match[1].split(" "), msg.match[2], msg.match[3], msg.message.user.id);
-      return msg.send("email sent");
-    });
+      msg.send("email sent")
+    })
   };
 
 }).call(this);
