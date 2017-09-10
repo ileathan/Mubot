@@ -2,23 +2,25 @@
 //   Allows sending messages over the max length for discord, also enforces power commands.
 //
 (function() {
-  var POWER_COMMANDS = ['create.file', 'view.file', 'create.break', 'create.die'], POWER_USERS = ['183771581829480448', 'U02JGQLSQ'];
-  module.exports = function(robot) {
-    var adapter = robot.adapterName;
-    robot.listenerMiddleware((context, next, done) => {
+  const POWER_COMMANDS = ['create.file', 'view.file', 'create.break', 'create.die'], POWER_USERS = ['183771581829480448', 'U02JGQLSQ'];
+  module.exports = bot => {
+    const ADAPTER = bot.adapterName;
+    bot.listenerMiddleware((context, next, done) => {
+      // If its a powerful commnad being issued make sure the user is a power user.
       if(POWER_COMMANDS.includes(context.listener.options.id)) {
-        if(POWER_USERS.includes(context.response.message.user.id)) return next();
+        if(POWER_USERS.includes(context.response.message.user.id)) next();
         else {
           context.response.send("I'm sorry, @" + context.response.message.user.name + ", but you don't have access to do that.");
-          return done()
+          done()
         }
-      } else return next()
+      } else next()
     });
-    robot.responseMiddleware((context, next, done) => {
+    bot.responseMiddleware((context, next, done) => {
       if(!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
-      (function chunkAndQue(i) { // i is our iterator.
+      // i is our iterator representing que position of msg chunk.
+      (function chunkAndQue(i) {
         // Pad the start of the message, and the end of the message.
-        var epad = fpad = adapter === 'discord' ? "**" : "*";
+        var epad = fpad = ADAPTER === 'discord' ? "**" : "*";
         // our msg chunk
         var chunk;
         // only proceed if we need to break msg down to chunks.
@@ -49,7 +51,7 @@
         } else {
           context.strings[0] = fpad + context.strings[0] + epad
         }
-      })(0)
+      })(0);
       next()
     })
   }
