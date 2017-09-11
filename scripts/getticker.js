@@ -980,7 +980,7 @@
     bot.respond(/ticker (\w+) (\w+)$/i, msg => {
       bot.http("https://api.cryptonator.com/api/ticker/" + msg.match[1] + "-" + msg.match[2]).get()((err, res, body) => {
         body = JSON.parse(body);
-        msg.send("One " + body.ticker.base) + " gives you " + body.ticker.price + " " + body.ticker.target + ". [24h Change: " + body.ticker.change + "%]")
+        msg.send("One " + body.ticker.base + " gives you " + body.ticker.price + " " + body.ticker.target + ". [24h Change: " + body.ticker.change + "%]")
       })
     })
   };
