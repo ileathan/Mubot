@@ -86,23 +86,22 @@
   };
 
   module.exports = function(robot) {
-    var _, language, language_choices, pattern;
-    language_choices = ((function() {
-      var results;
-      results = [];
-      for (_ in languages) {
-        language = languages[_];
-        results.push(language);
+    var language_choices, pattern;
+    language_choices = (function() {
+      var results = [];
+      for(let _ in languages) {
+        results.push(languages[_])
       }
       return results;
-    })()).sort().join('|');
+    })().sort().join('|');
     pattern = new RegExp('translate(?: me)?' + ("(?: from (" + language_choices + "))?") + ("(?: (?:in)?to (" + language_choices + "))?") + '(.*)', 'i');
-    return robot.respond(pattern, function(msg) {
-      var origin, ref, target, term;
-      term = "\"" + ((ref = msg.match[3]) != null ? ref.trim() : void 0) + "\"";
-      origin = msg.match[1] !== void 0 ? getCode(msg.match[1], languages) : 'auto';
-      target = msg.match[2] !== void 0 ? getCode(msg.match[2], languages) : 'en';
-      return msg.http("https://translate.google.com/translate_a/single").query({
+    robot.respond(pattern, msg => {
+      var origin, ref, target, term, text;
+      if(!msg.match[3]) return msg.send("Nothing to translate.");
+      term = "\"" + msg.match[3].trim() + "\"";
+      origin = msg.match[1] ? getCode(msg.match[1], languages) : 'auto';
+      target = msg.match[2] ? getCode(msg.match[2], languages) : 'en';
+      msg.http("https://translate.google.com/translate_a/single").query({
         client: 't',
         hl: 'en',
         sl: origin,
@@ -114,36 +113,36 @@
         oe: 'UTF-8',
         otf: 1,
         dt: ['bd', 'ex', 'ld', 'md', 'qca', 'rw', 'rm', 'ss', 't', 'at']
-      }).header('User-Agent', 'Mozilla/5.0').get()(function(err, res, body) {
+      }).header('User-Agent', 'Mozilla/5.0').get()((err, res, body) => {
         var parsed;
-        if (err) {
+        if(err) {
           msg.send("Failed to connect to GAPI");
           robot.emit('error', err, res);
-          return;
+          return
         }
         try {
-          if (body.length > 4 && body[0] === '[') {
+          if(body.length > 4 && body[0] === '[') {
             parsed = eval(body);
             language = languages[parsed[2]];
             parsed = parsed[0] && parsed[0][0] && parsed[0][0][0];
             parsed && (parsed = parsed.trim());
-            if (parsed) {
-              if (msg.match[2] === void 0) {
-                return msg.send(term + " is " + language + " for " + parsed);
+            if(parsed) {
+              if(msg.match[2] === void 0) {
+                msg.send(term + " is " + language + " for " + parsed)
               } else {
-                return msg.send("The " + language + " " + term + " translates as " + parsed + " in " + languages[target]);
+                msg.send("The " + language + " " + term + " translates as " + parsed + " in " + languages[target])
               }
             }
           } else {
-            throw new SyntaxError('Invalid JS code');
+            throw new SyntaxError('Invalid JS code')
           }
         } catch (error) {
           err = error;
           msg.send("Failed to parse GAPI response");
-          return robot.emit('error', err);
+          robot.emit('error', err)
         }
-      });
-    });
-  };
+      })
+    })
+  }
 
 }).call(this);
