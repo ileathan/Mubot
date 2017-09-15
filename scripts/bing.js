@@ -13,25 +13,17 @@
 // Author:
 //   leathan
 
-
 (function() {
-  var bingMe;
-
-  module.exports = function(robot) {
-    return robot.respond(/(bing)( me)? (.*)/i, function(msg) {
-      return bingMe(msg, msg.match[3], function(url) {
-        return msg.send(url);
-      });
-    });
+  module.exports = bot => {
+    bot.respond(/bing(?: me)? (.*)/i, msg => {
+      bingMe(msg, msg.match[1])
+    })
   };
-
-  bingMe = function(msg, query, cb) {
-    return msg.http('http://www.bing.com/search').query({
+  function bingMe(msg, query) {
+    msg.http('http://www.bing.com/search').query({
       q: query
-    }).get()(function(err, res, body) {
-      var ref;
-      return cb(((ref = body.match(/<li class="b_algo"><h2><a href="([^"]*)"/)) != null ? ref[1] : void 0) || ("Sorry, Bing had zero results for '" + query + "'"));
-    });
-  };
-
+    }).get()((err, res, body) => {
+      msg.send((body = body.match(/<li class="b_algo"><h2><a href="([^"]*)"/)) ? body[1] : "Sorry, Bing had zero results for '" + query + "'")
+    })
+  }
 }).call(this);

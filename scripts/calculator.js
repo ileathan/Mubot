@@ -12,26 +12,23 @@
 //   convert <expression> in <units> - Convert expression to given units.
 //
 // Author:
+//   leathan
 //   canadianveggie
 
 (function() {
   const mathjs = require("mathjs");
 
-  module.exports = function(bot) {
-    return bot.respond(/(calc|calculate|calculator|convert|math|maths)( me)? (.*)/i, function(res) {
+  module.exports = bot => {
+    bot.respond(/(?:calc|calculate|calculator|convert|math|maths)(?: me)? (.*)/i, res => {
       var result;
       try {
-        result = mathjs["eval"](res.match[3]);
-        result = mathjs.format(result, {
-          notation: 'fixed',
-          precision: 14
-        });
+        result = mathjs.eval(res.match[1]);
+        result = mathjs.format(result, { notation: 'fixed', precision: 14 });
         result = (result * 1).toString();
-        return res.send("" + result);
-      } catch (error) {
-        return res.send(error.message || 'Could not compute.');
+        res.send(result)
+      } catch(e) {
+        res.send(e.message || 'Could not compute.')
       }
-    });
-  };
-
+    })
+  }
 }).call(this);
