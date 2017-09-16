@@ -9,24 +9,19 @@
 //
 
 (function(){
-  module.exports = function(bot) {
-    bot.respond(/pong(?: me)?/i, function(r) {
-      r.send(bot.client.pings[0] + 'ms.');
-    });
-    bot.respond(/check(?: me)? (.*)/i, function(r) {
-      rr = scanMe(bot, r.match[1])
-      console.log(rr)
-      r.send(rr)
-    });
+  module.exports = bot => {
+    bot.respond(/ping(?: me)?/i, res => res.send(bot.client.pings[0] + 'ms.'));
+    bot.respond(/check(?: me)? (.*)/i, res => res.send(scanMe(bot, r.match[1])))
   };
-  scanMe = (bot, string) => {
-    var r = [];
-    for (i=0; i<bot.listeners.length; i++) {
-      if (!bot.listeners[i].regex) continue; // The listener has no regex, probably a catchAll.
-      if (bot.listeners[i].regex.test(string)) r.push('Match @ index ' + i + ' ```' + bot.listeners[i].regex + '```')
+  function scanMe(bot, string) => {
+    var results = [];
+    for(let i = 0, l = bot.listeners.length; i < l; ++i) {
+      // The listener has no regex, probably a catchAll.
+      if(!bot.listeners[i].regex) continue;
+      if(bot.listeners[i].regex.test(string)) results.push('Match @ index ' + i + ' ```' + bot.listeners[i].regex + '```')
     }
-    if (!r.length) r.push("No matches found.")
-    return r.toString();
+    if(!results.length) results.push("No matches found.");
+    return results.toString()
   }
 }).call(this);
 
