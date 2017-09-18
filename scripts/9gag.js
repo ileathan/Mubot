@@ -18,83 +18,72 @@
 //   dedeibel (gif support)
 
 (function() {
-  var HTMLParser, Select, escape_html_characters, get_meme_image, get_meme_title, select_element, send_meme;
+  var escape_html_characters, get_meme_image, get_meme_title, select_element;
+  const Select = require("soupselect").select,
+        HTMLParser = require("htmlparser");
 
-  Select = require("soupselect").select;
-
-  HTMLParser = require("htmlparser");
-
-  module.exports = function(robot) {
-    return robot.respond(/meme( me)?$/i, function(message) {
-      return send_meme(message, false, function(title, src) {
-        return message.send(title, src);
-      });
-    });
+  module.exports = bot => {
+    bot.respond(/meme(?: me)?$/i, msg => {
+      sendMeme(message, false, (title, src) => {
+        msg.send(title, src);
+      })
+    })
   };
 
-  send_meme = function(message, location, response_handler) {
+  function sendMeme(message, location, response_handler) {
     var meme_domain, url;
     meme_domain = "http://9gag.com";
     location || (location = "/random");
-    if (location.substr(0, 4) !== "http") {
+    if(location.substr(0, 4) !== "http") {
       url = meme_domain + location;
     } else {
       url = location;
     }
-    return message.http(url).get()(function(error, response, body) {
+    message.http(url).get()((error, response, body) => {
       var img_src, img_title, selectors;
-      if (error) {
-        return response_handler("Sorry, something went wrong");
+      if(error) {
+        response_handler("Sorry, something went wrong");
       }
-      if (response.statusCode === 302) {
-        location = response.headers['location'];
-        return send_meme(message, location, response_handler);
+      if(response.statusCode === 302) {
+        location = response.headers.location;
+        sendMeme(message, location, response_handler);
       }
       selectors = ["a img.badge-item-img"];
-      if (process.env.HUBOT_9GAG_NO_GIFS == null) {
-        selectors.unshift("div.badge-animated-container-animated img");
+      if(!process.env.HUBOT_9GAG_NO_GIFS) {
+        selectors.unshift("div.badge-animated-container-animated img")
       }
-      img_src = get_meme_image(body, selectors);
-      if (img_src.substr(0, 4) !== "http") {
+      img_src = getMemeImage(body, selectors);
+      if(img_src.substr(0, 4) !== "http") {
         img_src = "http:" + img_src;
       }
-      img_title = escape_html_characters(get_meme_title(body, [".badge-item-title"]));
-      return response_handler(img_title, img_src);
-    });
+      img_title = escapeHtmlChars(getMemeTitle(body, [".badge-item-title"]));
+      response_handler(img_title, img_src);
+    })
   };
-
-  select_element = function(body, selectors) {
-    var html_handler, html_parser, i, img_container, len, selector;
-    html_handler = new HTMLParser.DefaultHandler((function() {}), {
-      ignoreWhitespace: true
-    });
-    html_parser = new HTMLParser.Parser(html_handler);
+  function selectElement(body, selectors) {
+    const html_handler = new HTMLParser.DefaultHandler(()=>{}, { ignoreWhitespace: true }),
+          html_parser = new HTMLParser.Parser(html_handler);
     html_parser.parseComplete(body);
-    for (i = 0, len = selectors.length; i < len; i++) {
-      selector = selectors[i];
-      img_container = Select(html_handler.dom, selector);
-      if (img_container && img_container[0]) {
+    for(let i = 0, len = selectors.length; i < len; ++i) {
+      let selector = selectors[i];
+      let img_container = Select(html_handler.dom, selector);
+      if(img_container && img_container[0]) {
         return img_container[0];
       }
     }
-  };
-
-  get_meme_image = function(body, selectors) {
-    return select_element(body, selectors).attribs.src;
-  };
-
-  get_meme_title = function(body, selectors) {
-    return select_element(body, selectors).children[0].raw;
-  };
-
-  escape_html_characters = function(text) {
-    var i, len, r, replacements;
-    replacements = [[/&/g, '&amp;'], [/</g, '&lt;'], [/"/g, '&quot;'], [/'/g, '&#039;']];
-    for (i = 0, len = replacements.length; i < len; i++) {
-      r = replacements[i];
-      text = text.replace(r[0], r[1]);
+  }
+  function getMemeImage(body, selectors) {
+    return selectElement(body, selectors).attribs.src;
+  }
+  function getMemeTitle(body, selectors) {
+    return selectElement(body, selectors).children[0].raw;
+  }
+  function escapeHtmlChars(text) {
+    var replacements = [[/&/g, '&amp;'], [/</g, '&lt;'], [/"/g, '&quot;'], [/'/g, '&#039;']];
+    for(let i = 0, len = replacements.length; i < len; ++i) {
+      let ref = replacements[i];
+      text = text.replace(ref[0], ref[1])
     }
-    return text;
-  };
-
+    return text
+  }
 }).call(this);
