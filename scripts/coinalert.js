@@ -7,7 +7,7 @@
 
 (function(){
   const request = require('request');
-  var quit = fals, allRequests = [], alertMe;
+  var quit = false, allRequests = [], alertMe;
   module.exports = bot => {
     bot.respond(/stop scanner(?:s| alerts)/i, res => {
       res.send("Stopping alert scanner.")
