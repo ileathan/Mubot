@@ -19,7 +19,7 @@
 
 (function() {
   module.exports = bot => {
-    function findUser function(name) {
+    function findUser(name) {
       var users = bot.brain.usersForFuzzyName(name);
       if(users.length === 1) {
         return users[0]
