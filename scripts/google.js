@@ -12,7 +12,7 @@
   module.exports = bot => {
     bot.respond(/(g|google|image) (?:me )?(.*)/i, msg => {
       var index, query;
-      index = msg.match[2].match(/[1-9]|1[1-8]$/) && index = index[1];
+      index = msg.match[2].match(/[1-9]|1[1-8]$/) && (index = index[1]);
       query = msg.match[2].slice(0, -index.length);
       msg.match[1] === 'image' ?
         googleImgMe(bot, index, query, url => msg.send(url))
