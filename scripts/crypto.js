@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   swap|crypto|c [amount] <coin> [coin2] [depth] a coin - Returns information about the coin(s).
+//   hubot swap|crypto|c [market] [amount] <coin> [coin2] [depth] a coin - Returns information about the coin(s).
 //
 // Author:
 //   leathan
