@@ -61,7 +61,7 @@
         Loop(orderBook, req, msg, robot)
       })
     });
-    robot.respond(/(?:c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
+    robot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
       var depth, ticker2;
       if(/^\d{1,6}$/.test(msg.match[4])) {
         depth = msg.match[4]
@@ -126,7 +126,7 @@
       key = keys[i];
       if(key === 'seq' || key === 'isFrozen') continue;
       amountInBtc = totalBtc = totalTicker = 0;
-      for(let i = 0, len = value.length; i < len; ++i) {
+      for(let i = 0, len = orderBook[key].length; i < len; ++i) {
         cur = orderBook[key][i];
         // If the amount of coins found is greater than the amount we are looking for stop looping
         // Short cut for if(totalTicker > req.amount  && req.amount !== 0) break;
