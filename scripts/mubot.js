@@ -18,108 +18,112 @@
 //   Project Bitmark
 //
 (function() {
-  var adapter, deposit_marks, exec, marks, symbol, why_context, keys
+  var adapter, exec, symbol, keys
   exec = require('child_process').exec;
   symbol = '₥';
-  function transfer_marks(res, recipient, amount, bot, why_context) {
-    if (!why_context) why_context = "N/A"
-    var uid = res.message.user.id
-    if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, try crypto me bitmark.")
-    if (keys[uid].bitmark.balance >= parseFloat(amount)) {
-      if (!keys[recipient]) {
-        bot.emit("createMeEvent", recipient, res); // User has no base key, create one
+  function transfer_marks(res, recipient, amount, why_context) {
+    var bot = res.bot, uid = res.message.user.id;
+    if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, use the crypto me bitmark command.");
+    if(!why_context) why_context = "N/A";
+    if(keys[uid].bitmark.balance >= parseFloat(amount)) {
+      if(!keys[recipient]) {
+        // User has no base key, create one
+        bot.emit("createMeEvent", recipient, res);
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res);
       } else if(!keys[recipient].bitmark) {
         bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res)
       } else {
         keys[recipient].bitmark.balance += parseFloat(amount);
-        keys[uid].bitmark.balance -= parseFloat(amount);
+        keys[uid].bitmark.balance -= parseFloat(amount)
       }
       bot.brain.save()
-      return res.send(res.message.user.name + ' has marked ' + bot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )');
+      res.send(res.message.user.name + ' has marked ' + bot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )')
     } else {
-      return res.send('Sorry, but you dont have enough marks. Try depositng.');
+      res.send('Sorry, but you dont have enough marks. Try depositng.')
     }
   }
-  function withdraw_marks(r, address, amount, bot) {
-    if (keys[r.message.user.id].bitmark.balance >= parseFloat(amount)) {
+  function withdraw_marks(res, address, amount) {
+    if(keys[res.message.user.id].bitmark.balance >= parseFloat(amount)) {
       var command = 'bitmarkd sendtoaddress ' + address + ' ' + (parseFloat(amount) / 1000.0);
-      return exec(command, (error, stdout, stderr) => {
-        keys[r.message.user.id].bitmark.balance -= parseFloat(amount);
-        return r.send(stdout);
-      });
+      exec(command, (error, stdout, stderr) => {
+        keys[res.message.user.id].bitmark.balance -= parseFloat(amount);
+        res.bot.brain.save();
+        res.send(stdout)
+      })
     } else {
-      return r.send('Sorry, you have not been marked that many times yet.');
+      res.send('Sorry, you have not been marked that many times yet.')
     }
   }
   module.exports = bot => {
     adapter = bot.adapterName;
-    bot.brain.on('loaded', () => {
-      keys = bot.brain.data.keys || (bot.brain.data.keys = {});
-    })
-    bot.respond(/withdraw\s+(\w{34})\s+(.*)\s*$/i, r => withdraw_marks(r, r.match[1], r.match[2], bot))
-    bot.respond(/marks\s*$/i, r => {
-      try { var balance = keys[r.message.user.id].bitmark.balance } catch(e) { var balance = 0 }
-      r.send('You have ' + balance + symbol + '.');
+    bot.brain.on('loaded', () => keys = bot.brain.data.keys || (bot.brain.data.keys = {}));
+    bot.respond(/withdraw\s+(\w{34})\s+(.*)\s*$/i, res => withdraw_marks(res, res.match[1], res.match[2))
+    bot.respond(/marks\s*$/i, res => {
+      try { var bal = keys[res.message.user.id].bitmark.balance } catch(e) { var bal = 0 }
+      res.send('You have ' + balance + symbol + '.');
     });
-    //bot.router.get("/api/marks", (req, res) => {});
-    if(adapter == 'discord') {
-      bot.hear(/marks\s+@? (.*)#(\d{4})/i, r => {
-        arr = bot.brain.usersForFuzzyName(r.match[1])
-        if (arr.length == 1 && keys[arr[0].id] && keys[arr[0].id].bitmark) {
-          return r.send(r.match[1] + ' has ' + keys[arr[0].id].bitmark.balance + symbol + '.')
-        } else if (arr.length > 1)  {
-          for (i=0; i<arr.length; i++)
-            if (arr[i].discriminator == r.match[2])
+    if(adapter === 'discord') {
+      bot.hear(/marks\s+@? (.*)#(\d{4})/i, res => {
+        var arr = bot.brain.usersForFuzzyName(res.match[1])
+        if(arr.length === 1 && keys[arr[0].id] && keys[arr[0].id].bitmark) {
+          return res.send(res.match[1] + ' has ' + keys[arr[0].id].bitmark.balance + symbol + '.')
+        } else if(arr.length > 1)  {
+          for(let i = 0, l = arr.length; i < l; ++i) {
+            if(arr[i].discriminator === res.match[2]) {
               try { var bal = keys[arr[i].id].bitmark.balance } catch(e) { var bal = 0 }
-              return r.send(r.match[1] + ' has ' + bal + symbol + '.')
-        } else if (arr.length < 1) return r.send('User ' + r.match[1] + ' was not found.')
-        return r.send(r.match[1] + ' has 0' + symbol + '.')
+              return res.send(res.match[1] + ' has ' + bal + symbol + '.')
+            }
+          }
+        } else if(arr.length < 1) return res.send('User ' + res.match[1] + ' was not found.')
+       res.send(res.match[1] + ' has 0' + symbol + '.')
       })
-      bot.hear(/marks\s+<@?!?(\d+)>$/i, r => {
-       if (user = bot.brain.userForId(r.match[1])) {
-          try { var balance = keys[r.match[1]].bitmark.balance } catch(e) { var balance = 0 }
-          return r.send(user.name + ' has ' + keys[r.match[1]].bitmark.balance + symbol + '.');
+      bot.hear(/marks\s+<@?!?(\d+)>$/i, res => {
+       var user = bot.brain.userForId(res.match[1]);
+       if(user) {
+          try { var bal = keys[res.match[1]].bitmark.balance } catch(e) { var bal = 0 }
+          res.send(user.name + ' has ' + bal + symbol + '.')
         } else {
-          return r.send("Sorry, I can't find that user.");
+          res.send("Sorry, I can't find that user.")
         }
       })
-      bot.hear(/^\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, r => {
-        if (r.match[2] === bot.client.user)   return r.send("Sorry but I am currently unmarkable.");
-        if (r.match[2] === r.message.user.id) return r.send("Sorry but you cannot mark yourself.");
-        if (r.match[1] <= 100) { return transfer_marks(r, r.match[2], r.match[1], bot, r.match[3]) } else { return r.send('Max is +100') }
+      bot.hear(/^\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, res => {
+        if(res.match[2] === bot.client.user)  return res.send("Sorry but I am currently unmarkable.");
+        if(res.match[2] === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
+        if(res.match[1] <= 100) transfer_marks(res, res.match[2], res.match[1], res.match[3]);
+        else res.send('Max is +100')
       })
-      bot.hear(/\+(\d+)\s+@ (.*)#(\d{4}) ?(.*)/i, r => {
-        var rec; var arr = bot.brain.usersForFuzzyName(r.match[2])
-        if (arr.length == 1) { rec = arr[0].id }
-        else if (arr.length > 1)  {
-          for (i=0; i<arr.length; i++) if (arr[i].discriminator == r.match[3]) rec = arr[i].id }
-        else if (arr.length < 1) { return r.send('User ' + r.match[2] + ' was not found.') }
-        if ((r.match[2].toLowerCase() == bot.name.toLowerCase()) && r.match[3] == bot.client.user.discriminator) return r.send("Sorry but I am currently unmarkable.");
-        if (rec === r.message.user.id) return r.send("Sorry but you cannot mark yourself.");
-        if (r.match[1] <= 100) transfer_marks(r, rec, r.match[1], bot, r.match[4]); else r.send('Max is +100')
+      bot.hear(/\+(\d+)\s+@ (.*)#(\d{4}) ?(.*)/i, res => {
+        var rec, arr = bot.brain.usersForFuzzyName(res.match[2]);
+        if(arr.length === 1) rec = arr[0].id;
+        else if(arr.length > 1)  {
+          for (let i = 0, l = arr.length; i < l; ++i) if(arr[i].discriminator === res.match[3]) rec = arr[i].id;
+        }
+        else if(arr.length < 1) { return res.send('User ' + res.match[2] + ' was not found.') }
+        if(res.match[3] === bot.client.user.discriminator) return res.send("Sorry but I am currently unmarkable.");
+        if(rec === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
+        if(res.match[1] <= 100) transfer_marks(res, rec, res.match[1], res.match[4]);
+        else res.send('Max is +100')
       })
     } else if(adapter == 'slack') {
-      bot.react(r => {
-        if(r.message.type === 'added' && r.message.reaction === 'mh') {
-          var senderID = r.message.user.id;
-          var receiverID = r.message.item_user.id
-          transfer_marks(r, r.message.item_user.id, 1, bot, "reaction")
+      bot.react(res => {
+        if(res.message.type === 'added' && res.message.reaction === 'mh') {
+          transfer_marks(res, res.message.item_user.id, 1, "reaction")
         }
       })
-      bot.hear(/marks\s*@? ?(\w+)$/i, r => {
-        var user = bot.brain.userForName(r.match[1]);
-        if (user == null) return r.send("Sorry but I cant find that user.");
-        try { var balance = keys[user.id].bitmark.balance } catch(e) { var balance = 0 }
-        r.send(r.match[1] + ' has ' + balance + symbol + '.');
+      bot.hear(/marks\s*@? ?(\w+)$/i, res => {
+        var user = bot.brain.userForName(res.match[1]);
+        if(!user) return res.send("Sorry but I cant find that user.");
+        try { var bal = keys[user.id].bitmark.balance } catch(e) { var bal = 0 }
+        res.send(res.match[1] + ' has ' + bal + symbol + '.')
       })
-      bot.hear(/\+(\d+)\s+@? ?(\w+)\s*(.*)?$/i, r => {
-        var rec = bot.brain.userForName(r.match[2])
-        if (rec == null) return r.send("Sorry but I cant find that user.");
-        if (rec.id == bot.adapter.self.id) return r.send("Sorry but I am currently unmarkable.");
-        if (rec.id == r.message.user.id) return r.send("Sorry but you cannot mark yourself.");
-        if (r.match[1] <= 100) transfer_marks(r, rec.id, r.match[1], bot, r.match[3]); else return r.send('Max is +100')
+      bot.hear(/\+(\d+)\s+@? ?(\w+)\s*(.*)?$/i, res => {
+        var rec = bot.brain.userForName(res.match[2]);
+        if(!rec) return res.send("Sorry but I cant find that user.");
+        if(rec.id === bot.adapter.self.id) return res.send("Sorry but I am currently unmarkable.");
+        if(rec.id === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
+        if(res.match[1] <= 100) transfer_marks(res, rec.id, res.match[1], res.match[3]);
+        else return res.send('Max is +100')
       })
     }
-  };
+  }
 }).call(this);
