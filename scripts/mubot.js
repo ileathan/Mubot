@@ -18,42 +18,9 @@
 //   Project Bitmark
 //
 (function() {
-  var adapter, exec, symbol, keys
+  var adapter, exec, symbol, keys;
   exec = require('child_process').exec;
   symbol = '₥';
-  function transfer_marks(res, recipient, amount, why_context) {
-    var bot = res.bot, uid = res.message.user.id;
-    if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, use the crypto me bitmark command.");
-    if(!why_context) why_context = "N/A";
-    if(keys[uid].bitmark.balance >= parseFloat(amount)) {
-      if(!keys[recipient]) {
-        // User has no base key, create one
-        bot.emit("createMeEvent", recipient, res);
-        bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res);
-      } else if(!keys[recipient].bitmark) {
-        bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res)
-      } else {
-        keys[recipient].bitmark.balance += parseFloat(amount);
-        keys[uid].bitmark.balance -= parseFloat(amount)
-      }
-      bot.brain.save()
-      res.send(res.message.user.name + ' has marked ' + bot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )')
-    } else {
-      res.send('Sorry, but you dont have enough marks. Try depositng.')
-    }
-  }
-  function withdraw_marks(res, address, amount) {
-    if(keys[res.message.user.id].bitmark.balance >= parseFloat(amount)) {
-      var command = 'bitmarkd sendtoaddress ' + address + ' ' + (parseFloat(amount) / 1000.0);
-      exec(command, (error, stdout, stderr) => {
-        keys[res.message.user.id].bitmark.balance -= parseFloat(amount);
-        res.bot.brain.save();
-        res.send(stdout)
-      })
-    } else {
-      res.send('Sorry, you have not been marked that many times yet.')
-    }
-  }
   module.exports = bot => {
     adapter = bot.adapterName;
     bot.brain.on('loaded', () => keys = bot.brain.data.keys || (bot.brain.data.keys = {}));
@@ -122,8 +89,41 @@
         if(rec.id === bot.adapter.self.id) return res.send("Sorry but I am currently unmarkable.");
         if(rec.id === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
         if(res.match[1] <= 100) transfer_marks(res, rec.id, res.match[1], res.match[3]);
-        else return res.send('Max is +100')
+        else res.send('Max is +100')
       })
+    }
+  }
+  function transfer_marks(res, recipient, amount, why_context) {
+    var bot = res.bot, uid = res.message.user.id;
+    if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, use the crypto me bitmark command.");
+    if(!why_context) why_context = "N/A";
+    if(keys[uid].bitmark.balance >= parseFloat(amount)) {
+      if(!keys[recipient]) {
+        // User has no base key, create one
+        bot.emit("createMeEvent", recipient, res);
+        bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res);
+      } else if(!keys[recipient].bitmark) {
+        bot.emit("cryptoMeEvent", recipient, 'bitmark', parseFloat(amount), res)
+      } else {
+        keys[recipient].bitmark.balance += parseFloat(amount);
+        keys[uid].bitmark.balance -= parseFloat(amount)
+      }
+      bot.brain.save()
+      res.send(res.message.user.name + ' has marked ' + bot.brain.userForId(recipient).name + ' ' + amount + symbol + '. ( ' + why_context + ' )')
+    } else {
+      res.send('Sorry, but you dont have enough marks. Try depositng.')
+    }
+  }
+  function withdraw_marks(res, address, amount) {
+    if(keys[res.message.user.id].bitmark.balance >= parseFloat(amount)) {
+      var command = 'bitmarkd sendtoaddress ' + address + ' ' + (parseFloat(amount) / 1000.0);
+      exec(command, (error, stdout, stderr) => {
+        keys[res.message.user.id].bitmark.balance -= parseFloat(amount);
+        res.bot.brain.save();
+        res.send(stdout)
+      })
+    } else {
+      res.send('Sorry, you have not been marked that many times yet.')
     }
   }
 }).call(this);
