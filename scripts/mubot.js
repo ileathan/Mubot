@@ -94,7 +94,7 @@
     }
   }
   function transfer_marks(res, recipient, amount, why_context) {
-    var bot = res.bot, uid = res.message.user.id;
+    var bot = res.robot, uid = res.message.user.id;
     if(!keys[uid] || !keys[uid].bitmark) return res.send("Sorry but you dont have an account, use the crypto me bitmark command.");
     if(!why_context) why_context = "N/A";
     if(keys[uid].bitmark.balance >= parseFloat(amount)) {
@@ -119,7 +119,7 @@
       var command = 'bitmarkd sendtoaddress ' + address + ' ' + (parseFloat(amount) / 1000.0);
       exec(command, (error, stdout, stderr) => {
         keys[res.message.user.id].bitmark.balance -= parseFloat(amount);
-        res.bot.brain.save();
+        res.robot.brain.save();
         res.send(stdout)
       })
     } else {

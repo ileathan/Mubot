@@ -34,7 +34,7 @@
       fs.readFile(__dirname + "/" + msg.match[1], function(err, data) {
         if(err) return msg.send(err);
         data = data.toString().replace(/`/g, '\\\`');
-        msg.send("Viewing ```" + msg.match[1] + "```Contents ```coffeescript\n" + data + "```", msg)
+        msg.send("Viewing ```" + msg.match[1] + "```Contents ```coffeescript\n" + data + "```")
       })
     })
   }

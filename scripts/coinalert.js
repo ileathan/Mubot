@@ -7,7 +7,7 @@
 
 (function(){
   const request = require('request');
-  var quit = false, allRequests = [], alertMe;
+  var quit = false, allRequests = [];
   module.exports = bot => {
     bot.respond(/stop scanner(?:s| alerts)/i, res => {
       res.send("Stopping alert scanner.")
@@ -35,7 +35,7 @@
       res.send(allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
     })
   }
-  alertMe = (delay, coinObj) => {
+  function alertMe(delay, coinObj) {
     var scanTimer;
     if(quit) return quit = false;
     if(coinObj) {
