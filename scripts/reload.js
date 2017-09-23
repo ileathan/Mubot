@@ -28,7 +28,7 @@
   };
   reloadAllScripts = msg => {
     var scripts, bot;
-    bot = msg.bot;
+    bot = msg.robot;
     bot.events._events = {}
     bot.middleware.listener.stack = [];
     bot.middleware.response.stack = [];
