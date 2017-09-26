@@ -24,7 +24,7 @@
       msg.http('http://finance.google.com/finance/info?client=ig&q=' + ticker).get()((err, res, body) => {
         var result;
         result = JSON.parse(body.replace(/\/\/ /, ''));
-        msg.send(result[0].l_cur + "(" + result[0].c + ")");
+        msg.send(result[0].l_cur + "(" + result[0].c + ")")
       })
     })
   }
