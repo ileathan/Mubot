@@ -17,25 +17,22 @@
 //   ajacksified
 
 (function() {
-  var querystring;
+  const querystring = require('querystring');
 
-  querystring = require('querystring');
-
-  module.exports = function(robot) {
-    return robot.router.get("/hubot/say", function(req, res) {
+  module.exports = rob => {
+    bot.router.get("/hubot/say", function(req, res) {
       var envelope, query;
       query = querystring.parse(req._parsedUrl.query);
       envelope = {};
       envelope.user = {};
-      if (query.room) {
-        envelope.user.room = envelope.room = query.room;
+      if(query.room) {
+        envelope.user.room = envelope.room = query.room
       } else {
-        query.room = '328708919746887682';
+        query.room = '328708919746887682'
       }
       envelope.user.type = query.type || 'groupchat';
-      robot.send(envelope, query.message);
-      return res.end("Said " + query.message);
-    });
-  };
-
+      bot.send(envelope, query.message);
+      res.end("Said " + query.message)
+    })
+  }
 }).call(this);
