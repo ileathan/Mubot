@@ -955,34 +955,31 @@
     BOND: 'bond',
     MIYU: 'miyucoin'
   };
-
   module.exports = bot => {
-    bot.respond(/stats (\w+)$/i, msg => {
-      var ticker;
-      if(msg.match[1] && tickers[ticker = msg.match[1].toUpperCase()]) {
+    var ticker;
+    bot.respond(/stats (\w+)$/i, res => {
+      if(tickers[ticker = res.match[1].toUpperCase()]) {
         bot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[ticker] + "/").get()((err, res, body) => {
-          msg.send(JSON.stringify(JSON.parse(body)[0], null, 2))
+          res.send(JSON.stringify(JSON.parse(body)[0], null, 2))
         })
       } else {
-        msg.send(ticker + " is not listed.")
+        res.send(ticker + " is not listed.")
       }
     });
     bot.respond(/price (\w+)$/i, msg => {
-      var ticker;
-      if(msg.match[1] && tickers[ticker = msg.match[1].toUpperCase()]) {
+      if(tickers[ticker = res.match[1].toUpperCase()]) {
         bot.http("https://api.coinmarketcap.com/v1/ticker/" + tickers[ticker] + "/").get()((err, res, body) => {
-          msg.send(ticker + " strike price is " + JSON.parse(body)[0].price_usd + "$.")
+          res.send(ticker + " strike price is " + JSON.parse(body)[0].price_usd + "$.")
         })
       } else {
-        msg.send(ticker + " is not listed.");
+        res.send(ticker + " is not listed.");
       }
     });
-    bot.respond(/ticker (\w+) (\w+)$/i, msg => {
-      bot.http("https://api.cryptonator.com/api/ticker/" + msg.match[1] + "-" + msg.match[2]).get()((err, res, body) => {
+    bot.respond(/ticker (\w+) (\w+)$/i, res => {
+      bot.http("https://api.cryptonator.com/api/ticker/" + res.match[1] + "-" + res.match[2]).get()((err, res, body) => {
         body = JSON.parse(body);
-        msg.send("One " + body.ticker.base + " gives you " + body.ticker.price + " " + body.ticker.target + ". [24h Change: " + body.ticker.change + "%]")
+        res.send("One " + body.ticker.base + " gives you " + body.ticker.price + " " + body.ticker.target + ". [24h Change: " + body.ticker.change + "%]")
       })
     })
-  };
-
+  }
 }).call(this);
