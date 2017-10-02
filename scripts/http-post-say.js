@@ -24,7 +24,7 @@
 //
 (function() {
   module.exports = bot => {
-    bot.router.post("/hubot/say", function(req, res) {
+    bot.router.post("/hubot/say", (req, res) => {
       var body, envelope, message, room;
       body = req.body;
       room = body.room;
