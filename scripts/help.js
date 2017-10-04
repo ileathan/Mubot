@@ -40,19 +40,13 @@
   }
   module.exports = bot => {
     bot.respond(/help(?:\s+(.*))?$/i, msg => {
-      var cmds, replyText, filter;
-      cmds = getHelpCommands(bot);
-      filter = msg.match[1];
-      if(filter) {
-        cmds = cmds.filter(cmd => new RegExp(filter, 'i').test(cmd));
-        if(cmds.length === 0) {
-          return msg.send("No available commands match " + filter)
-        }
-        replyText = cmds.join('\n');
-        msg.send(replyText);
+      const FILTER = msg.match[1];
+      var cmds = getHelpCommands(bot),
+      if(FILTER) {
+        cmds = cmds.filter(cmd => new RegExp(FILTER, 'i').test(cmd));
+        msg.send(cmds.length === 0 ? "No available commands match " + FILTER : cmds.join('\n'));
       } else {
-        let room = msg.message.user.id
-        bot.adapter.send({room: msg.message.user.id}, replyText)
+        bot.adapter.send({room: msg.message.user.id}, cmds.join('\n'))
       }
     });
     if(!process.env.HUBOT_HELP_DISABLE_HTTP) {
