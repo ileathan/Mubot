@@ -15,11 +15,10 @@
 //
 // Author:
 //   ajacksified
-
+//
 (function() {
   const querystring = require('querystring');
-
-  module.exports = rob => {
+  module.exports = bot => {
     bot.router.get("/hubot/say", function(req, res) {
       var envelope, query;
       query = querystring.parse(req._parsedUrl.query);
