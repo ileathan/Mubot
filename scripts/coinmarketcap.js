@@ -46,7 +46,7 @@
         for(let i = 0, l = data.length; i < l; ++i) {
           if(+data[i].market_cap_usd < 1000000 || +data[i]["24h_volume_usd"] < 1000) break
           if(+data[i].percent_change_1h > p.hv1h) {
-            p.hv1h = +h[i].percent_change_1h;
+            p.hv1h = +data[i].percent_change_1h;
             p.hv1hMsg = data[i].symbol + " has the highest 1h change of " + data[i].percent_change_1h + "%."
           }
           if(+data[i].percent_change_24h > p.hv24h) {
