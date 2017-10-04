@@ -31,7 +31,7 @@
       }
     });
     bot.respond(/^view (.+)$/, { id: 'view.file' }, msg => {
-      var file = /\./.test(data) ? msg.match[1] : msg.match[1] + '.js');
+      var file = /\./.test(data) ? msg.match[1] : msg.match[1] + '.js';
       fs.readFile(__dirname + "/" + file, (err, data) => {
         if(err) return msg.send(err);
         data = data.toString().replace(/`/g, '\\\`');
