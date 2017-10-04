@@ -18,7 +18,7 @@
 (function() {
   const fs = require('fs');
   module.exports = bot => {
-    bot.hear(/^create(?:me )? (\w )?(.*?)(?:\s|\n)(.|\s)+```$/, { id: 'create.file' }, msg => {
+    bot.respond(/create(?:me )? (\w )?(.*?)(?:\s|\n)(.|\s)+```$/, { id: 'create.file' }, msg => {
       // $1 = mode, $2 = filename, $3 = content
       if(msg.match[1] === 'a ') {
         fs.appendFile(__dirname + "/" + msg.match[2], "\n" + msg.match[3], err => {
@@ -30,7 +30,7 @@
         })
       }
     });
-    bot.respond(/^view (.+)$/, { id: 'view.file' }, msg => {
+    bot.respond(/view (.+)$/, { id: 'view.file' }, msg => {
       var file = /\./.test(data) ? msg.match[1] : msg.match[1] + '.js';
       fs.readFile(__dirname + "/" + file, (err, data) => {
         if(err) return msg.send(err);
