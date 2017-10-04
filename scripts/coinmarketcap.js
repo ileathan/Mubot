@@ -74,4 +74,4 @@
       })
     })
   }
-}).call(this)'
+}).call(this);
