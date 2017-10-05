@@ -41,7 +41,7 @@
   module.exports = bot => {
     bot.respond(/help(?:\s+(.*))?$/i, msg => {
       const FILTER = msg.match[1];
-      var cmds = getHelpCommands(bot),
+      var cmds = getHelpCommands(bot);
       if(FILTER) {
         cmds = cmds.filter(cmd => new RegExp(FILTER, 'i').test(cmd));
         msg.send(cmds.length === 0 ? "No available commands match " + FILTER : cmds.join('\n'));
