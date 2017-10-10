@@ -66,17 +66,18 @@
     this.alerts = result
   }
   Request.prototype.areTrue = function(compareObj) {
-    var results = [];
+    var results = [], base = 'BTC_';
     for(let i = 0, l = this.alerts.length; i < l; ++i) {
       let [match, coin, condition, price] = this.alerts[i].match(/([^ ]*) (<|>) ([^ ]*)/);
+      if(coin.toUpperCase() === 'BTC') base = 'USDT_';
       if(condition === '>') {
-        if(parseFloat(compareObj['BTC_'+coin.toUpperCase()].last) > parseFloat(price)) {
+        if(parseFloat(compareObj[base + coin.toUpperCase()].last) > parseFloat(price)) {
           results.push(match);
           delete this.alerts[i]
         }
       }
       if(condition === '<') {
-        if(parseFloat(compareObj['BTC_'+coin.toUpperCase()].last) < parseFloat(price)) {
+        if(parseFloat(compareObj[base + coin.toUpperCase()].last) < parseFloat(price)) {
           results.push(match);
           delete this.alerts[i]
         }
