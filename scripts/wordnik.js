@@ -28,7 +28,7 @@
     bot.respond(/define( me)? (.*)/i, msg => {
       var word;
       word = msg.match[2];
-      fetch_wordnik_resource(msg, word, 'definitions', {})(function(err, res, body) {
+      fetch_wordnik_resource(msg, word, 'definitions', {}, (err, res, body) => {
         var definitions, lastSpeechType, reply;
         definitions = JSON.parse(body);
         if (definitions.length === 0) {
@@ -51,7 +51,7 @@
     });
     bot.respond(/(pronounce|enunciate)( me)? (.*)/i, msg => {
       var word = msg.match[3];
-      fetch_wordnik_resource(msg, word, 'audio', {})(function(err, res, body) {
+      fetch_wordnik_resource(msg, word, 'audio', {}, (err, res, body) => {
         var pronunciation, pronunciations;
         pronunciations = JSON.parse(body);
         if (pronunciations.length === 0) {
@@ -64,7 +64,7 @@
     });
     bot.respond(/spell(?: me)? (.*)/i, msg => {
       var word = msg.match[1];
-      fetch_wordnik_resource(msg, word, '', { includeSuggestions: 'true' })(function(err, res, body) {
+      fetch_wordnik_resource(msg, word, '', { includeSuggestions: 'true' }, (err, res, body) => {
         var list, wordinfo;
         wordinfo = JSON.parse(body);
         if (wordinfo.canonicalForm) {
@@ -79,7 +79,7 @@
     });
     bot.respond(/bigram(?: me)? (.*)/i, msg => {
       var word = msg.match[1];
-      fetch_wordnik_resource(msg, word, 'phrases', {})(function(err, res, body) {
+      fetch_wordnik_resource(msg, word, 'phrases', {}, (err, res, body) => {
         var phrases, reply;
         phrases = JSON.parse(body);
         if (phrases.length === 0) {
