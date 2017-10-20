@@ -4,7 +4,7 @@
 (function(){
   const request = require('request');
   module.exports = bot => {
-    bot.respond(/^(?:search )(\S+)(?: for )?(.*)?$/, res => {
+    bot.respond(/(?:search )(\S+)(?: for )?(.*)?$/, res => {
       var link = res.match[1], searchFor = res.match[2];
       if(!/^(https?:\/\/)/.test(link)) link = "http://" + link;
       request(link, (err, res, data) => {
