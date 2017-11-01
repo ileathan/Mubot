@@ -8,8 +8,8 @@
 //   leathan
 //
 module.exports = bot => {
-  robot.respond(/save$/i, res => {
-    robot.brain.save();
+  bot.respond(/save$/i, res => {
+    bot.brain.save();
     res.send("Database saved to disk.")
   })
 }
