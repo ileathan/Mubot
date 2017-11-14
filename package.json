@@ -6,6 +6,7 @@
   "description": "A Marking U Bot, on crack!",
   "dependencies": {
     "1337": "^1.0.1",
+    "argon2-ffi": "^1.0.1",
     "async": "^2.5.0",
     "basic-auth": "^1.1.0",
     "basic-auth-connect": "^1.0.0",
