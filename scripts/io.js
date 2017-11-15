@@ -8,10 +8,11 @@
 //   leathan
 //
 (function(){
+const request      = require('request')
 const exec         = require('child_process').exec; // Used to access monero daemon.
 const randomstring = require('randomstring'); // Used for cookie generation.
-const mongoose = require('mongoose');
-const argon = require('argon2-ffi').argon2i;
+const mongoose     = require('mongoose');
+const argon        = require('argon2-ffi').argon2i;
 
 mongoose.Promise = global.Promise;
 //mongoose.connect('mongodb://localhost/gambler-api', { useMongoClient: true })
@@ -47,12 +48,13 @@ module.exports = bot => {
   const io = bot.io.of('/chat');
 
   bot.router.post('/gambler/api', (req, res) => {
-    console.log("[/gambler/api/]: " + JSON.stringify(req.body))
+    if(!req.body.username) return res.end("No username provided")
     SharesFound.findOneAndUpdate({'result':req.body.result,'nonce':req.body.nonce,'jobid':req.body.job_id},{$set:{'miner':req.body.username,'hashes':req.body.hashes,'hashesPerSecond':req.body.hashesPerSecond}},(err,share)=>{
       if(err) return res.end(err);
-      Users.findOneAndUpdate({'username': req.body.username }, { $inc: {'shares': 1 } }, (err, user) => {
-        usersOnline[req.body.username].shares += 1;
+      Users.findOneAndUpdate({'username': new RegExp('^' + req.body.username + '$', 'i') }, { $inc: {'shares': 1 } }, (err, user) => {
+        if(usersOnline[req.body.username]) ++usersOnline[req.body.username].shares;
         if(share && user) return res.end("Okay")
+        else return res.end("No share or user found")
         return res.end("Error")
       })
     })
@@ -63,7 +65,7 @@ module.exports = bot => {
     res.end('1');
     // Verify that the hash is not fabricated.
     argon.verify(req.params.hash, req.params.jobid + req.params.result + req.params.nonce + process.env.SECRET_SECRET || "secret_secret").then(correct => {
-      if(correct) SharesFound.create(req.params, (err, share) => !console.log("Share added to db") && console.log(share))
+      if(correct) SharesFound.create(req.params, (err, share) => void 0); //!console.log("Share added to db") && console.log(share))
     }, incorrect => console.log("HASH FAILURE!"));
   });
 
@@ -78,10 +80,16 @@ module.exports = bot => {
       // Logged in users only API
       if(!username) return; // Its a guest, dont allow entry.
       socket.on("log out", () => logout(username));
-      socket.on('share totals', (_, callback) => {
-        Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => callback(users || {}));
-      });
     })
+    socket.on('share totals', (_, callback) => {
+      Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
+        if(users) {
+          request({uri: 'https://localhost:3000/stats', strictSSL: false}, (err, res, data)=> {
+            callback(users, JSON.parse(data))
+          })
+        }
+      })
+   });
     // Client is checknnig to see if a username is available.
     socket.on("check username", (username, callback) => {
       Users.findOne({username: new RegExp('^' + username + '$', 'i') }, (err, user) => {
@@ -91,15 +99,17 @@ module.exports = bot => {
     })
     socket.on("log in", (data, callback) => {
       var login_cookie = randomstring.generate();
-      Users.findOneAndUpdate({'username': new RegExp('^' + data.username + '$', 'i'), 'password': data.password },  {'login-cookie': login_cookie},  (err, user) => {
-        if(err) return next(err);
-        // Set their login cookie.
-        callback(user ? login_cookie : false)
+      Users.findOne({'username': new RegExp('^' + data.username + '$', 'i'), 'password': data.password, "login-cookie": {$exists: true, $ne: 'logged-out'} },  {'login-cookie': login_cookie},  (err, user) => {
+        if(user) return callback(user['login-cookie'])
+        Users.find({'username': data.username, 'password': test.toString()  },  (err3, user3) => { !console.log('user3') && console.log(user3)})
+        Users.findOneAndUpdate({'username': data.username, 'password': data.password  },  {$set:{'login-cookie': login_cookie}},  (err2, user2) => {
+          callback(user2 ? login_cookie : false)
+        })
       })
     })
     socket.on("create account", (data, callback) => {
-     if(/^_|[^a-zA-Z0-9_]/.test(data.username)) return callback({error: 'Illegally formatted name'});
-      Users.findOne({username: data.username }, (err, user) => {
+     if(!data.username || /^_|[^a-zA-Z0-9_]/.test(data.username)) return callback({error: 'Illegally formatted name'});
+      Users.findOne({username: new RegExp('^' + data.username + '$', 'i') }, (err, user) => {
         if(err) return next(err);
         if(user) callback({error: 'Username already exists.'});
         else {
@@ -108,10 +118,11 @@ module.exports = bot => {
             data.wallet = "";
             data.balance = 0;
             data.shares = 0;
+            data.password = data.password.replace(/\\/g, '\\');
             Users.create(data, (err, user) => {
               if(err) return next(err);
-              console.log("Account created")
-              console.log(user)
+              //console.log("Account created")
+              //console.log(user)
               callback(data['login-cookie']);
             })
           })
@@ -121,7 +132,7 @@ module.exports = bot => {
   })
 
   function logout(user) {
-    Users.findOneAndUpdate({'username': user }, { 'login-cookie': 'logged-out' }, (err, user) => {
+    Users.findOneAndUpdate({'username': new RegExp('^' + user + '$', 'i') }, { 'login-cookie': 'logged-out' }, (err, user) => {
       delete logged[user['login-cookie']]
     });
     USER_SOCKETS[user].broadcast.emit('user logged out', user);
