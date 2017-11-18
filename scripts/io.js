@@ -13,14 +13,10 @@ const exec         = require('child_process').exec; // Used to access monero dae
 const randomstring = require('randomstring'); // Used for cookie generation.
 const mongoose     = require('mongoose');
 const argon        = require('argon2-ffi').argon2i;
+const path         = require('path');
 
 mongoose.Promise = global.Promise;
-//mongoose.connect('mongodb://localhost/gambler-api', { useMongoClient: true })
-//  .then(() => console.log('[mongoose] Gambler connection succesful.'))
-//  .catch(err => console.log('[mongoose GAMBLER ERROR] ' + err));
-// Set up database.
-// The above code kept connecting to bitmark-api so i did the bellow
-var conn = mongoose.createConnection('mongodb://localhost/gambler-api');
+const conn = mongoose.createConnection('mongodb://localhost/gambler-api');
 
 const SharesFoundSchema = new mongoose.Schema({
   'hashes': String,
@@ -64,10 +60,8 @@ const UsersSchema = new mongoose.Schema({
 // Beautiful hack to allow hotreloading when models already exists.
 const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema);
 const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema);
-const Users = conn.models.Users || conn.model('Users', UsersSchema);
 const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema);
-
-const path = require('path');
+const Users = conn.models.Users || conn.model('Users', UsersSchema);
 
 module.exports = bot => {
   const io = bot.io.of('/0');
@@ -77,18 +71,15 @@ module.exports = bot => {
     if(req.cookies && !req.cookies.ref) res.cookie('ref', req.params.number)
     res.sendFile(path.join(__dirname + '/../node_modules/hubot-server/public/io.html'))
   })
-
-  //bot.router.post(['/gambler/api/', '/0/api'], (req, res) => {
   function shareFound(username, data, callback) {
     if(!username) return callback(false, "No username provided")
     SharesFound.findOneAndUpdate({'result': data.result}, {$set:{'miner': username,'mined_for': data.mineForUser || '_self','hashes': data.hashes,'hashesPerSecond': data.hashesPerSecond}},(err,share)=>{
       if(err || !share) return callback(false, err || "Share not found");
-      //Users.findOne({'username': new RegExp('^' + username + '$', 'i') }, (err, user) => {
-      let needs_to_pay = false;
-      let myuser = usersOnline[username];
+      var needs_to_pay = false;
+      var myuser = usersOnline[username];
       ++myuser.shares_found;
       if(myuser.ref != null && !myuser.ref_payments) needs_to_pay = true;
-      if(myuser.ref != null && myuser.shares && myuser.ref_payments && (myuser.ref_payments / myuser.shares_found) < .03) needs_to_pay = true;
+      else if(myuser.ref != null && myuser.ref_payments / myuser.shares_found < .03) needs_to_pay = true;
       if(needs_to_pay) {
         Users.findOneAndUpdate({'id': myuser.ref }, {$inc: {'shares': 1, 'ref_payments_received': 1 } }, (err, userBeingPaid) => {
           if(err || !userBeingPaid) return callback(false, err || "User being paid via ref not found.");
@@ -97,10 +88,10 @@ module.exports = bot => {
           if(usersOnline[userBeingPaid.username]) {
             ++usersOnline[userBeingPaid.username].shares;
             ++usersOnline[userBeingPaid.username].ref_payments_received
-            USER_SOCKETS[userBeingPaid.username].emit("ref payment");
-           }
+            USER_SOCKETS[userBeingPaid.username].emit("ref payment", username);
+          }
           ++myuser.ref_payments;
-          callback(true, null)
+          callback(userBeingPaid.username, null)
         })
       } else if(data.mineForUser) {
         Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i') }, {$inc: {'shares_found': 1, 'mined_payments': 1 } }, (err, user) => {
@@ -111,23 +102,21 @@ module.exports = bot => {
             if(usersOnline[userBeingPaid.username]) {
               ++usersOnline[userBeingPaid.username].shares;
               ++usersOnline[userBeingPaid.username].mined_payments_received;
-              USER_SOCKETS[userBeingPaid.username].emit("mined for payment")
+              USER_SOCKETS[userBeingPaid.username].emit("mined for payment", username)
             }
             ++myuser.mined_payments;
-            callback(true, null)
+            callback(userBeingPaid.username, null)
           })
         })
       } else {
         Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i') }, {$inc: {'shares': 1, 'shares_found': 1 } }, (err, user) => {
           ++myuser.shares;
-          if(user) return callback(true, null)
-          else return callback(false, "No user found: " + err)
+          if(user) callback(user.username, null)
+          else callback(false, "No user found: " + err)
         })
       }
-      //})
     })
   }
-
   bot.router.get(['/gambler/api/:jobid/:result/:nonce/:hash', '/0/api/:jobid/:result/:nonce/:hash'], (req, res) => {
     // Close the connection immediatly, so client doesnt wait.
     res.end('1');
@@ -138,24 +127,23 @@ module.exports = bot => {
       if(correct) SharesFound.findOne({result: req.params.result}, (err, share) => {
         if(!share) SharesFound.create(req.params, (err, share) => void 0);
       })
-    }, incorrect => console.log("HASH FAILURE!"));
+    }, incorrect => console.log("HASH AUTHENTICATION FAILURE!"));
   });
-
   io.on("connection", socket => {
     isLoggedIn(socket, username => {
       socket.on("whoami", (_, callback) => {
         ChatMessages.find({}, {_id: 0, __v: 0}).sort({'date': -1}).limit(20).exec((err, chatMsgs)=> {
           if(username) {
             let userRegex = new RegExp('^' + username + '$', 'i');
-            Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans)=> callback(usersOnline[username], chatMsgs, trans));
+            Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans)=> callback(usersOnline[username], chatMsgs.reverse(), trans));
           }
-          else callback({"username": false, "shares": 0, "balance": 0}, chatMsgs, []);
+          else callback({"username": false, "shares": 0, "balance": 0}, chatMsgs.reverse(), []);
         })
       });
       // Client is sending a new chat message.
-      socket.on("chat message", data => {
-        io.emit("chat message", (username || "Guest User") + ": " + data)
-        ChatMessages.create({username: username || "Guest User", message: data}, ()=>{})
+      socket.on("chat message", msg => {
+        io.emit("chat message", (username || "Guest User") + ": " + msg)
+        ChatMessages.create({username: username || "Guest User", message: msg}, ()=>{})
       })
       // Logged in users only API
       if(!username) return; // Its a guest, dont allow entry.
@@ -208,7 +196,7 @@ module.exports = bot => {
             Transactions.create({from: username, to: toUser, type: 'transfer', amount: amount}, ()=>{})
             if(usersOnline[user.username]) {
               usersOnline[user.username].shares += amount;
-              USER_SOCKETS[user.username].emit("transfer payment", amount);
+              USER_SOCKETS[user.username].emit("transfer payment", amount, username);
             }
             usersOnline[username].shares -= amount;
             Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $inc: {'shares': -amount} }, (err, user) => {
@@ -269,6 +257,7 @@ module.exports = bot => {
             data.wallet = "";
             data.balance = 0;
             data.shares = 0;
+            data.shares_found = 0;
             data.ref_payments = 0;
             data.ref_payments_received = 0;
             data.mined_payments = 0;
@@ -317,6 +306,7 @@ module.exports = bot => {
         let cleanedUser = {
           balance:      user.balance,
           shares:       user.shares,
+          shares_found: user.shares_found,
           username:     user.username,  // make sure sensitive info isn't sent.
           status:       'online',
           address:      user.wallet,
