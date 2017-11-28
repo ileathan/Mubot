@@ -185,8 +185,8 @@ global.io = io;
   io.on("connection", socket => {
     isLoggedIn(socket, (username, cookie) => {
       socket.on("whoami", (_, callback) => {
-        Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
-          SharesFound.count({}, function(err, count) {
+        //Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
+          //SharesFound.count({}, function(err, count) {
             request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats)=> {
               stats = JSON.parse(stats);
               // temporary fix - remove hardcoded 9500 later, conservativly update the total again.
@@ -195,18 +195,18 @@ global.io = io;
                 if(username) {
                   let userRegex = new RegExp('^' + username + '$', 'i');
                   Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans)=>
-                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, server: stats, users: users}))
+                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, users: USERS_INFO}))
                   )
                 }
                 else {
                   let user = (socket.handshake.address.split(':').pop() || crypto.randomBytes(1)).toString();
                   USERS_INFO[user] = {username: 'Guest' + ++guests, shares: 0, balance: 0};
-                  callback(Object.assign({}, USERS_INFO[user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: users, server: stats}));
+                  callback(Object.assign({}, USERS_INFO[user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS_INFO}));
                 }
               })
             })
-          })
-        })
+          //})
+        //})
       });
       // Client is sending a new chat message.
       socket.on("chat message", msg => {
@@ -286,14 +286,11 @@ console.log("BEEP BEEP BEEP")
       })
     })
     socket.on('server stats', (_, callback) => {
-console.log("BEEP BEEP BEEP")
-console.log("BEEP BEEP BEEP")
-console.log("BEEP BEEP BEEP")
       Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
         SharesFound.count({}, (err, count) => {
           request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
             // temporary fix - remove hardcoded 1500 later
-            stats.total_hashes = count + 1500;
+            stats.total_hashes = count + 9500;
             callback(users, JSON.parse(stats))
           })
         })
