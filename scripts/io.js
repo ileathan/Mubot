@@ -154,6 +154,11 @@ module.exports = bot => {
   var guests = 0;
   const io = bot.io.of('/0');
 
+
+console.log(io)
+global.io = io;
+
+
   bot.router.get(LEGACY_ENDPOINTS, (req, res) => res.sendFile(path.join(__dirname+SERVER_ROOT)));
 
   bot.router.get('/:number/', (req, res, next) => {
@@ -190,12 +195,13 @@ module.exports = bot => {
                 if(username) {
                   let userRegex = new RegExp('^' + username + '$', 'i');
                   Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans)=>
-                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, server: stats, users: users}));
+                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, server: stats, users: users}))
+                  )
                 }
                 else {
                   let user = (socket.handshake.address.split(':').pop() || crypto.randomBytes(1)).toString();
                   USERS_INFO[user] = {username: 'Guest' + ++guests, shares: 0, balance: 0};
-                  callback(Object.assign({}, {USERS_INFO[user], chatMsgs: chatMsgs.reverse(), transactions: [], users: users, server: stats});
+                  callback(Object.assign({}, USERS_INFO[user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: users, server: stats}));
                 }
               })
             })
@@ -280,6 +286,9 @@ console.log("BEEP BEEP BEEP")
       })
     })
     socket.on('server stats', (_, callback) => {
+console.log("BEEP BEEP BEEP")
+console.log("BEEP BEEP BEEP")
+console.log("BEEP BEEP BEEP")
       Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
         SharesFound.count({}, (err, count) => {
           request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
@@ -447,7 +456,7 @@ function shareFound(username, user, callback) {
 }
 function isLoggedIn(socket, cb) {
   if(socket.handshake.headers.cookie) {
-    var cookie = /login_cookie=(.*?)(?:; |$)/.exec(socket.handshake.headers.cookie);
+    var cookie = /loginCookie=(.*?)(?:; |$)/.exec(socket.handshake.headers.cookie);
     if(cookie) {
       cookie = cookie[1];
       let ic = decode(cookie).slice(0, 32);
