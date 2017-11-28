@@ -6,6 +6,7 @@ The main webservice is a marking implementation that uses an included back end m
 ![Image of coloring](https://preview.ibb.co/bwkMfF/Screen_Shot_2017_07_17_at_10_30_29_PM.png)
 
 The documentation page for the API is another webservice included and is a great place to learn how to actually enable bitmarking in your applications.
+
 ![Image of coloring](https://preview.ibb.co/j8HCnv/Screen_Shot_2017_07_17_at_10_36_24_PM.png)
 
 Another webservice included is a logger, which logs all servers.
