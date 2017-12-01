@@ -64,7 +64,7 @@ const UsersSchema = new mongoose.Schema({
  	'username': String,
  	'loginCookies': Array,
  	'password': String,
-  '2fa': Boolean,
+  'tfa': Boolean,
  	'wallet': String,
  	'balance': { type: Number, default: 0 },
  	'ref': Number,
@@ -287,8 +287,10 @@ module.exports = bot => {
       Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
          SharesFound.count({}, (err, count) => {
            request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
-             stats.total_hashes = +stats.total_hashes + count;
-             callback(callback(users, JSON.parse(stats)))
+             stats = JSON.parse(stats);
+             stats.total_hashes = stats.total_hashes|0 + count;
+console.log(stats) 
+            callback(users, stats)
           })
         })
       })
@@ -359,7 +361,7 @@ module.exports = bot => {
 };
 function transferShares(data, callback) {
   var username = this;
-  if(USERS_INFO[username].2fa) {
+  if(USERS_INFO[username].tfa) {
     if(!USERS_INFO[username]._verified) return callback(false, "Enter 2FA code.");
     else delete USERS_INFO[username]._verified
   }
