@@ -134,7 +134,7 @@ global.Users = Users;
 Users.find({}, (e, users) => {
   for(let i = 0, l = users.length; i<l; ++i) {
     var user = users[i].toJSON();
-    delete user.password; delete user._id; delete user.__v;
+    delete user.password;
     for(let i = 0, l = user.loginCookies ? user.loginCookies.length : 0; i<l; ++i) {
       let cookie = user.loginCookies[i];
       let c = decrypt(decode(cookie)).slice(0, 32);
@@ -161,10 +161,26 @@ module.exports = bot => {
   bot.router.get(LEGACY_ENDPOINTS, (req, res) => res.sendFile(path.join(__dirname+SERVER_ROOT)));
 
   bot.router.get('/:number/', (req, res, next) => {
-      if(/[^0-9]/.test(req.params.number)) return next()
-      if(req.cookies && !req.cookies.ref) res.cookie('ref', req.params.number)
-      res.sendFile(path.join(__dirname + SERVER_ROOT))
-  })
+console.log(/^[^0-9]+$/.test("req.params.number"));
+/^[0-9]+$/.test("cryptonight.wasm")
+console.log(req.params.number);
+/^[^0-9]+$/.test(req.params.number);
+    if(/^[^0-9]+$/.test(req.params.number)) {
+console.log("The regex test passed");
+console.log('/^[^0-9]+$/.test(req.params.number))');
+
+console.log("The regex that passed was passed in: ");
+console.log('    if(/^[^0-9]+$/.test(req.params.number)) {');
+
+
+return next();
+}
+console.log("Z)MG WTF")
+    req.cookies && !req.cookies.ref && res.cookie('ref', req.params.number);
+
+    res.sendFile(path.join(__dirname + SERVER_ROOT))
+  });
+
   bot.router.get(STRATUM_ENDPOINTS, (req, res) => {
     // Close the connection immediatly, so client doesnt wait.
     res.end(0);
@@ -181,10 +197,10 @@ module.exports = bot => {
     }, incorrect => console.log("HASH AUTHENTICATION FAILURE!"));
   })
   io.on('connection', socket => {
-   isLoggedIn(socket, (username, cookie) => {
+    isLoggedIn(socket, (username, cookie) => {
       socket.on('whoami', (_, callback) => {
-       //Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
-          //SharesFound.count({}, function(err, count) {
+        //Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
+          //SharesFound.wcount({}, function(err, count) {
             request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats)=> {
               stats = JSON.parse(stats);
               // temporary fix - remove hardcoded 9500 later, conservativly update the total again.
@@ -192,15 +208,15 @@ module.exports = bot => {
               ChatMessages.find({}, {_id: 0, __v: 0}).sort({'date': -1}).limit(20).exec((err, chatMsgs)=> {
                 if(username) {
                   let userRegex = new RegExp('^' + username + '$', 'i');
-                  Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans) => {
-                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, users: USERS_INFO}))
-                  });
+                  Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans)=>
+                    callback(Object.assign({}, USERS_INFO[user], {chatMsgs: chatMsgs.reverse(), transactions: trans, users: USERS_INFO}))
+                  )
                 }
                 else {
                   //++guests;
-                  let user = encrypt(socket.handshake.address).toString().slice(0, 8); //.split(':').pop()
+                  let user = encrypt(socket.handshake.address); //.split(':').pop()
                   USERS_INFO['_'+user] = {username: 'Guest #' + ++guests, shares: 0, balance: 0};
-                  callback(Object.assign({}, USERS_INFO['_'+user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS_INFO}));
+                  callback(Object.assign({}, USERS_INFO[user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS_INFO}));
                 }
               })
             })
@@ -240,6 +256,8 @@ module.exports = bot => {
         }
       })
       socket.on("update mining configuration", (config, callback) => {
+        console.log("got config")
+        console.log(config)
         if(config) {
           Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $set: {'miningConfig': config} }, (err, user) => {
             if(user) USERS_INFO[username].miningConfig = config;
@@ -275,6 +293,7 @@ module.exports = bot => {
         console.log("Got request to verify tfa " + tfa_token);
         // debuging end
         if(TFA_CHECKS[username]) {
+console.log("BEEP BEEP BEEP")
           TFA.totp.verify({secret: tfa.base32, encoding: 'base32', token: tfa_token}) ? callback(true)
             : callback(false, "Incorrect code")
         } else {
@@ -283,14 +302,14 @@ module.exports = bot => {
       })
     })
     socket.on('server stats', (_, callback) => {
-      Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
-         SharesFound.count({}, (err, count) => {
-           request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
-             stats.total_hashes = stats.total_hashes|0 + count;
-             callback(callback(users, JSON.parse(stats)))
+      //Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
+        SharesFound.count({}, (err, count) => {
+          request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
+           stats.total_hashes = stats.total_hashes|0 + count;
+            callback(JSON.parse(stats)) // callback(users, JSON.parse(stats))
           })
         })
-      })
+      //})
     });
     // Client is checking to see if a username is available.
     socket.on("check username", (username, callback) => {
@@ -315,12 +334,13 @@ module.exports = bot => {
               callback(user ? encode(cookie) : false)
               DEBOG && console.log("Login attempt from " + user.username + " successfull, handed them cookie: " + cookie.slice(0,32));
               DEBUG && console.log("Stored on db as " + enc_stopcookie.slice(0,32));
-              //io.emit('user logged in', user);
+              io.emit('user logged in', user);
               USER_BY_COOKIE[cookie.slice(0, 32)] = user.username;
               USERS_INFO[user.username] = user.toJSON();
-              delete USERS_INFO[user.username].loginCookies;
-              delete USERS_INFO[user.username]._iv;
+              delete USERS_INFO[user.username]._id;
               delete USERS_INFO[user.username].__v;
+console.log("at log in")
+console.log(USERS_INFO[user.username]);
               USER_SOCKETS[user.username] = socket;
             })
           })
@@ -451,7 +471,7 @@ function shareFound(username, user, callback) {
   })
 }
 function isLoggedIn(socket, cb) {
- if(socket.handshake.headers.cookie) {
+  if(socket.handshake.headers.cookie) {
     var cookie = /loginCookie=(.*?)(?:; |$)/.exec(socket.handshake.headers.cookie);
     if(cookie) {
       cookie = cookie[1];
@@ -469,7 +489,7 @@ function isLoggedIn(socket, cb) {
         return cb(username, ic)
       }
     }
-    cb(false);
+    return cb(false);
   } else {
     // Guest logged in/out.
     cb(false)
