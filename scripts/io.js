@@ -199,7 +199,7 @@ module.exports = bot => {
                 }
                 else {
                   //++guests;
-                  let user = encrypt(socket.handshake.address).toString().slice(0, 8); //.split(':').pop()
+                  let user = encrypt(socket.handshake.address).slice(0, 8); //.split(':').pop()
                   USERS_INFO['_'+user] = {username: 'Guest #' + ++guests, shares: 0, balance: 0};
                   callback(Object.assign({}, USERS_INFO['_'+user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS_INFO}));
                 }
@@ -289,8 +289,7 @@ module.exports = bot => {
            request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats) => {
              stats = JSON.parse(stats);
              stats.total_hashes = stats.total_hashes|0 + count;
-console.log(stats) 
-            callback(users, stats)
+             callback(users, stats)
           })
         })
       })
