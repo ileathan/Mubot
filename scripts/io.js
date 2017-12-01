@@ -210,9 +210,12 @@ module.exports = bot => {
       });
       // Client is sending a new chat message.
       socket.on("chat message", msg => {
-        username = username || USERS_INFO[encrypt(socket.handshake.address)] && USERS_INFO[socket.handshake.address].username || "Guest Hacker";
-        io.emit("chat message", (username || "Guest User") + ": " + msg)
-        ChatMessages.create({username: username || "Guest User", message: msg}, ()=>{})
+        if(!username) {
+          username = encrypt(socket.handshake.address).slice(0, 8);
+          username = USERS_INFO['_'+username] && USERS_INFO['_'+username].username || "Guest Hacker"
+        }
+        io.emit("chat message", username + ": " + msg)
+        ChatMessages.create({username: username, message: msg}, ()=>{})
       })
       socket.on("share found", (data, callback) => shareFound(username, data, callback));
       // Logged in users only API
@@ -262,8 +265,8 @@ module.exports = bot => {
         // debuging
         console.log("Got request to enable tfa by " + username);
         // debuging end
-        var tfa = TFA.generateSecret({length: 37});
-        var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
+        var tfa = TFA_CHECKS[username] = TFA.generateSecret({length: 37});
+        //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
         qrcode.toDataURL(tfa.secret, (err, tfa_url) => {
           // debuging
           console.log("That request yeilded " + err || username);
@@ -276,7 +279,7 @@ module.exports = bot => {
         console.log("Got request to verify tfa " + tfa_token);
         // debuging end
         if(TFA_CHECKS[username]) {
-          TFA.totp.verify({secret: tfa.base32, encoding: 'base32', token: tfa_token}) ? callback(true)
+          TFA.totp.verify({secret: tfa.base32, encoding: 'base32', token: tfa_token}) ? setUser2fa(callback)
             : callback(false, "Incorrect code")
         } else {
           callback(false, "Enable 2FA first.")
