@@ -318,7 +318,7 @@ module.exports = bot => {
             var enc_cookie = encode(encrypt(cookie));
             Users.findOneAndUpdate({'username': user.username}, {$set: {password: encode(encrypt(new_phash))  }, $push: {loginCookies: enc_cookie}},  (err, user) => {
               callback(user ? encode(cookie) : false)
-              DEBOG && console.log("Login attempt from " + user.username + " successfull, handed them cookie: " + cookie.slice(0,32));
+              DEBUG && console.log("Login attempt from " + user.username + " successfull, handed them cookie: " + cookie.slice(0,32));
               DEBUG && console.log("Stored on db as " + enc_stopcookie.slice(0,32));
               //io.emit('user logged in', user);
               USER_BY_COOKIE[cookie.slice(0, 32)] = user.username;
@@ -334,7 +334,7 @@ module.exports = bot => {
     })
     socket.on("create account", (acntdata, callback) => {
       if(!acntdata.username || acntdata.username === 'false' || /^_|[^a-zA-Z0-9_]/.test(acntdata.username)) return callback({error: 'Illegal name, try again.'});
-      acntdata.date = Date.now();
+      acntdata.date = new Date;
       Users.findOne({username: new RegExp('^' + acntdata.username + '$', 'i') }, (err, user) => {
         if(user) callback({error: 'Username already exists.'});
         else {
@@ -361,8 +361,17 @@ module.exports = bot => {
     })
   })
 };
+global.setUserPass = (user, pass) => {
+
+ argonp.hash(ssalt(pass), dsalt({date: new Date}), ARGON_PCONF).then(pass_hash => {
+   Users.findOneAndUpdate({username: new RegExp('^' + user + '$', 'i') }, {$set:{password: encode(encrypt(pass_hash))}}, ()=>{
+    console.log("Done.")
+   })
+ })
+
+};
 function transferShares(data, callback) {
-  var username = this;
+  vusername = this;
   if(USERS_INFO[username].tfa) {
     if(!USERS_INFO[username]._verified) return callback(false, "Enter 2FA code.");
     else delete USERS_INFO[username]._verified
@@ -414,6 +423,8 @@ function logout(user, remove_cookie) {
   })
 }
 function shareFound(username, user, callback) {
+console.log(username)
+console.log(user)
   if(!username) return callback(false, "No username provided")
   SharesFound.findOneAndUpdate({result: user.result}, {$set:{miner: username,mined_for: user.mineForUser || '_self',hashes: user.hashes,hashesPerSecond: user.hashesPerSecond}},(err,share)=>{
     if(err || !share) return callback(false, err || "Share not found");
@@ -460,7 +471,7 @@ function shareFound(username, user, callback) {
   })
 }
 function isLoggedIn(socket, cb) {
- if(socket.handshake.headers.cookie) {
+  if(socket.handshake.headers.cookie) {
     var cookie = /loginCookie=(.*?)(?:; |$)/.exec(socket.handshake.headers.cookie);
     if(cookie) {
       cookie = cookie[1];
