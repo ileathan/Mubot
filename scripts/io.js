@@ -12,6 +12,7 @@
 const DEBUG = 1;
 const qrcode = require('qrcode');
 const TFA = require('speakeasy');
+const md5 = require('md5');
 const STRATUM_API_ENDPOINT = 'https://localhost:3000/stats';
 const STRATUM_ENDPOINTS = ['/gambler/api/:jobid/:result/:nonce/:hash', '/0/api/:jobid/:result/:nonce/:hash'];
 const SERVER_ROOT = '/../node_modules/hubot-server/public/io.html';
@@ -21,7 +22,7 @@ const SECRET = process.env.SECRET;
 // As is, these route back to the referal 0, I will change this to the seed 20 users.
 const LEGACY_ENDPOINTS = ['/chat', '/miner', '/gamble'];
 // Save every users socket, by user.
-const USERS_INFO = {}, USER_BY_COOKIE = {}, USER_SOCKETS = {}; USER_TFA_CHECKS = {};
+const USERS = {}, USER_BY_COOKIE = {}, USER_SOCKETS = {}; TFA_CHECKS = {};
 const request      = require('request');            // Easy http requests.
 const exec	       = require('child_process').exec; // Used to access monero daemon.
 const mongoose     = require('mongoose');           // Our db.
@@ -140,13 +141,13 @@ Users.find({}, (e, users) => {
       let cookie = user.loginCookies[i];
       let c = decrypt(decode(cookie)).slice(0, 32);
       USER_BY_COOKIE[c] = user.username;
-      USERS_INFO[user.username] = user;
+      USERS[user.username] = user;
       if(DEBUG) {
         console.log("Added cookie to mem from db: " + c.slice(0, 32));
       }
     }
-    if(USERS_INFO[user.username])
-      delete USERS_INFO[user.username].loginCookies;
+    if(USERS[user.username])
+      delete USERS[user.username].loginCookies;
   }
 })
 // Begin exports.
@@ -167,6 +168,7 @@ module.exports = bot => {
       res.sendFile(path.join(__dirname + SERVER_ROOT))
   })
   bot.router.get(STRATUM_ENDPOINTS, (req, res) => {
+console.log("STRATUM JUST REPORTED A SHARE FOUND")
     // Close the connection immediatly, so client doesnt wait.
     res.end(0);
     // Verify that the hash is not fabricated.
@@ -175,9 +177,9 @@ module.exports = bot => {
     // needed. so argonp is used for data hashing and no salts.
     argonp.verify(req.params.hash, req.params.jobid + req.params.result + req.params.nonce + SECRET).then(correct => {
 
-     if(correct) SharesFound.findOne({result: req.params.result}, (err, share) => {
-       if(!share) SharesFound.create(req.params, (err, share) => void 0);
-     })
+      if(correct) SharesFound.findOne({result: req.params.result}, (err, share) => {
+        if(!share) SharesFound.create(req.params, (err, share) => void 0);
+      })
 
     }, incorrect => console.log("HASH AUTHENTICATION FAILURE!"));
   })
@@ -194,14 +196,14 @@ module.exports = bot => {
                 if(username) {
                   let userRegex = new RegExp('^' + username + '$', 'i');
                   Transactions.find({ $or:[ {from: userRegex}, {to: userRegex} ]}, {_id: 0, __v: 0}, (err, trans) => {
-                    callback(Object.assign({}, USERS_INFO[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, users: USERS_INFO}))
+                    callback(Object.assign({}, USERS[username], {chatMsgs: chatMsgs.reverse(), transactions: trans, users: USERS}))
                   });
                 }
                 else {
                   //++guests;
-                  let user = encrypt(socket.handshake.address).slice(0, 8); //.split(':').pop()
-                  USERS_INFO['_'+user] = {username: 'Guest #' + ++guests, shares: 0, balance: 0};
-                  callback(Object.assign({}, USERS_INFO['_'+user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS_INFO}));
+                  let user = md5(socket.handshake.address).slice(0, 8);
+                  USERS['_'+user] = {username: 'Guest #' + ++guests, shares: 0, balance: 0};
+                  callback(Object.assign({}, USERS['_'+user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS}));
                 }
               })
             })
@@ -210,9 +212,10 @@ module.exports = bot => {
       });
       // Client is sending a new chat message.
       socket.on("chat message", msg => {
+        if(!msg.trim()) return;
         if(!username) {
-          username = encrypt(socket.handshake.address).slice(0, 8);
-          username = USERS_INFO['_'+username] && USERS_INFO['_'+username].username || "Guest Hacker"
+          username = md5(socket.handshake.address).slice(0, 8);
+          username = USERS['_'+username] && USERS['_'+username].username || "Guest Hacker"
         }
         io.emit("chat message", username + ": " + msg)
         ChatMessages.create({username: username, message: msg}, ()=>{})
@@ -235,23 +238,23 @@ module.exports = bot => {
       socket.on("mine for user", (user, callback) => {
         if(user) {
           Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $set: {'isMiningFor': user} }, (err, user0) => {
-            if(user0) USERS_INFO[username].isMiningFor = user;
+            if(user0) USERS[username].isMiningFor = user;
             callback(!!user0, err || !user0 && "User not found")
           })
         } else {
-          delete USERS_INFO[username].isMiningFor;
+          delete USERS[username].isMiningFor;
           Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $unset: {'isMiningFor': 1} }, (err, user) => callback(!!user, err))
         }
       })
       socket.on("update mining configuration", (config, callback) => {
         if(config) {
           Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $set: {'miningConfig': config} }, (err, user) => {
-            if(user) USERS_INFO[username].miningConfig = config;
+            if(user) USERS[username].miningConfig = config;
               callback(!!user, err)
           })
         } else {
           Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $unset: {'miningConfig': 1} }, (err, user) => {
-            if(user) delete USERS_INFO[username].miningConfig;
+            if(user) delete USERS[username].miningConfig;
             callback(!!user, err)
           })
         }
@@ -265,26 +268,35 @@ module.exports = bot => {
         // debuging
         console.log("Got request to enable tfa by " + username);
         // debuging end
-        var tfa = TFA_CHECKS[username] = TFA.generateSecret({length: 37});
+        var tfa = TFA_CHECKS[username] = TFA.generateSecret({name: 'leathan.xyz/' + USERS[username].id + '/ :' + username, length: 37});
         //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
-        qrcode.toDataURL(tfa.secret, (err, tfa_url) => {
+        qrcode.toDataURL(tfa.otpauth_url, (err, tfa_url) => {
           // debuging
           console.log("That request yeilded " + err || username);
           // debuging end
           callback(err || tfa_url) //'<img src="' + tfa_url + '">'
         })
       })
-      socket.on("verify tfa", (tfa_token, callaback) => {
+      socket.on("verify tfa", (tfa_token, callback) => {
         // debuging
         console.log("Got request to verify tfa " + tfa_token);
         // debuging end
         if(TFA_CHECKS[username]) {
-          TFA.totp.verify({secret: tfa.base32, encoding: 'base32', token: tfa_token}) ? setUser2fa(callback)
+          TFA.totp.verify({secret: TFA_CHECKS[username].base32, encoding: 'base32', token: tfa_token}) ? setUser2fa(username, callback)
             : callback(false, "Incorrect code")
         } else {
-          callback(false, "Enable 2FA first.")
+          getUser2fa(username, tfa => callback(TFA.totp.verify({secret: tfa, encoding: 'base32', token: tfa_token})))
         }
       })
+      function setUser2fa(username, callback) {
+        Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i') }, {$set:{ tfa: encrypt(TFA_CHECKS[username].base32)  }}, (err, user) => {
+          callback(!!user, !user && "User not updated")
+          delete TFA_CHECKS[username];
+        })
+      }
+      function getUser2fa(username, callback) {
+        Users.findOne({username: new RegExp('^' + username + '$', 'i') }, (err, user) =>  callback(decrypt(user.tfa)))
+      }
     })
     socket.on('server stats', (_, callback) => {
       Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
@@ -322,10 +334,10 @@ module.exports = bot => {
               DEBUG && console.log("Stored on db as " + enc_stopcookie.slice(0,32));
               //io.emit('user logged in', user);
               USER_BY_COOKIE[cookie.slice(0, 32)] = user.username;
-              USERS_INFO[user.username] = user.toJSON();
-              delete USERS_INFO[user.username].loginCookies;
-              delete USERS_INFO[user.username]._iv;
-              delete USERS_INFO[user.username].__v;
+              USERS[user.username] = user.toJSON();
+              delete USERS[user.username].loginCookies;
+              delete USERS[user.username]._iv;
+              delete USERS[user.username].__v;
               USER_SOCKETS[user.username] = socket;
             })
           })
@@ -372,9 +384,9 @@ global.setUserPass = (user, pass) => {
 };
 function transferShares(data, callback) {
   vusername = this;
-  if(USERS_INFO[username].tfa) {
-    if(!USERS_INFO[username]._verified) return callback(false, "Enter 2FA code.");
-    else delete USERS_INFO[username]._verified
+  if(USERS[username].tfa) {
+    if(!USERS[username]._verified) return callback(false, "Enter 2FA code.");
+    else delete USERS[username]._verified
   }
   if(data) {
     let toUser = data.username;
@@ -382,15 +394,15 @@ function transferShares(data, callback) {
     if(!Number(amount) && (!toUser || toUser === 'false' || /^_|[^a-zA-Z0-9_]/.test(toUser))) return callback(false, "Amount / User invalid.");
     if(!Number(amount)) return callback(false, "Amount wasnt a number.");
     if(toUser === 'false' || /^_|[^a-zA-Z0-9_]/.test(toUser)) return callback(false, "Not a valid name.");
-    if(USERS_INFO[username].shares < amount) return callback(false, "Not enough funds.");
+    if(USERS[username].shares < amount) return callback(false, "Not enough funds.");
     Users.findOneAndUpdate({username: new RegExp('^' + toUser + '$', 'i')}, { $inc: {'shares': amount} }, (err, user) => {
       if(!user) return callback(false, "Username not found.");
         Transactions.create({from: username, to: toUser, type: 'transfer', amount: amount}, ()=>{})
-        if(USERS_INFO[user.username]) {
-          USERS_INFO[user.username].shares += amount;
+        if(USERS[user.username]) {
+          USERS[user.username].shares += amount;
           USER_SOCKETS[user.username].emit("transfer payment", amount, username);
         }
-        USERS_INFO[username].shares -= amount;
+        USERS[username].shares -= amount;
         Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i')}, { $inc: {'shares': -amount} }, (err, user) => {
         if(!user) {
           console.log("CRITICAL ERROR!! PAYMENT SENT BUT BALANCE NOT DEDUCTED!" + err);
@@ -415,7 +427,7 @@ function logout(user, remove_cookie) {
     }
     Users.findOneAndUpdate({username: new RegExp('^' + user + '$', 'i')}, {$pull: {loginCookies: remove_cookie }}, (err, user) => {
       delete USER_BY_COOKIE[remove_cookie];
-      delete USERS_INFO[user];
+      delete USERS[user];
       delete USER_SOCKETS[user];
       // {projection: {username: 0, _id: 0}}, (err, user) => {
       //USER_SOCKETS[user].broadcast.emit('user logged out', user);
@@ -429,7 +441,7 @@ console.log(user)
   SharesFound.findOneAndUpdate({result: user.result}, {$set:{miner: username,mined_for: user.mineForUser || '_self',hashes: user.hashes,hashesPerSecond: user.hashesPerSecond}},(err,share)=>{
     if(err || !share) return callback(false, err || "Share not found");
     var needs_to_pay = false;
-    var myuser = USERS_INFO[username];
+    var myuser = USERS[username];
     ++myuser.sharesFound;
     if(myuser.ref != null && !myuser.refPayments) needs_to_pay = true;
     else if(myuser.ref != null && myuser.refPayments / myuser.sharesFound < .03) needs_to_pay = true;
@@ -438,9 +450,9 @@ console.log(user)
         if(err || !userBeingPaid) return callback(false, err || "User being paid via ref not found.");
         Transactions.create({from: username, to: userBeingPaid.username, type: 'ref', amount: 1}, ()=>{})
         Users.findOneAndUpdate({username: new RegExp('^' + username + '$', 'i') }, {$inc: {'refPayments': 1, 'sharesFound': 1 } }, ()=>{})
-        if(USERS_INFO[userBeingPaid.username]) {
-          ++USERS_INFO[userBeingPaid.username].shares;
-          ++USERS_INFO[userBeingPaid.username].refPaymentsReceived
+        if(USERS[userBeingPaid.username]) {
+          ++USERS[userBeingPaid.username].shares;
+          ++USERS[userBeingPaid.username].refPaymentsReceived
           USER_SOCKETS[userBeingPaid.username].emit("ref payment", username);
         }
         ++myuser.refPayments;
@@ -452,9 +464,9 @@ console.log(user)
         Users.findOneAndUpdate({username: new RegExp('^' + user.mineForUser + '$', 'i') }, {$inc: {'shares': 1, 'minedPaymentsReceived': 1 } }, (err, userBeingPaid)=>{
           if(err || !userBeingPaid) return callback(false, err || "User being paid via mining not found.");
           Transactions.create({from: username, to: userBeingPaid.username, type: 'mined_for', amount: 1}, ()=>{})
-          if(USERS_INFO[userBeingPaid.username]) {
-            ++USERS_INFO[userBeingPaid.username].shares;
-            ++USERS_INFO[userBeingPaid.username].minedPaymentsReceived;
+          if(USERS[userBeingPaid.username]) {
+            ++USERS[userBeingPaid.username].shares;
+            ++USERS[userBeingPaid.username].minedPaymentsReceived;
             USER_SOCKETS[userBeingPaid.username].emit("mined for payment", username)
           }
           ++myuser.minedPayments;
