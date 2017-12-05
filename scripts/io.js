@@ -1,4 +1,3 @@
-
 // Description:
 //   Miner/gambler servers
 //
@@ -132,6 +131,7 @@ function dsalt(data) {
 }
 // For debugging.
 global.Users = Users;
+var totalShares = 0;
 // Load logged in users into memory.
 Users.find({}, (e, users) => {
   for(let i = 0, l = users.length; i<l; ++i) {
@@ -150,8 +150,14 @@ Users.find({}, (e, users) => {
       delete USERS[user.username].loginCookies;
   }
 })
+SharesFound.count({}, (err, count) => {
+  totalShares = count;
+})
+
+
 // Begin exports.
 module.exports = bot => {
+
   // keep track of our unlogged in users
   var guests = 0;
 
@@ -162,9 +168,10 @@ module.exports = bot => {
 
   bot.router.get(LEGACY_ENDPOINTS, (req, res) => res.sendFile(path.join(__dirname+SERVER_ROOT)));
 
-  bot.router.get('/:number/', (req, res, next) => {
+  bot.router.get(['/', '/:number/'], (req, res, next) => {
+      if(req.path === '/') req.params.number = Math.floor(Math.random() * (1000 - 0) + 0);
       if(/[^0-9]/.test(req.params.number)) return next()
-      if(req.cookies && !req.cookies.ref) res.cookie('ref', req.params.number)
+      if(req.cookies && !Number.isInteger(req.cookies.ref)) res.cookie('ref', req.params.number)
       res.sendFile(path.join(__dirname + SERVER_ROOT))
   })
   bot.router.get(STRATUM_ENDPOINTS, (req, res) => {
@@ -268,7 +275,7 @@ console.log("STRATUM JUST REPORTED A SHARE FOUND")
         // debuging
         console.log("Got request to enable tfa by " + username);
         // debuging end
-        var tfa = TFA_CHECKS[username] = TFA.generateSecret({name: 'leathan.xyz/' + USERS[username].id + '/ :' + username, length: 37});
+        var tfa = TFA_CHECKS[username] = TFA.generateSecret({name: 'leat.io/' + USERS[username].id + '/ :' + username, length: 37});
         //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
         qrcode.toDataURL(tfa.otpauth_url, (err, tfa_url) => {
           // debuging
@@ -358,8 +365,15 @@ console.log("STRATUM JUST REPORTED A SHARE FOUND")
               Users.count({}, function(err, count) {
                 if(err || !count) return callback({error: "Internal server error (counting users) " + err});
                 acntdata.id = count;
-                if(acntdata.id > 20) acntdata.ref = acntdata.ref || 0;
-                else delete acntdata.ref;
+                if(!acntdata.ref) {
+                  let keys = Object.keys(users);
+                  let rndIdx = Math.floor(Math.random() * keys.length);
+                  let rndkey = keys[rndIdx];
+                  acntdata.ref = USERS[rndKey].id|0;
+                } else {
+                  if(acntdata.ref >= count) acntdata.ref = 0;
+                }
+                if(acntdata.id <= 27) delete acntdata.ref;
                 acntdata.loginCookies = [ encode(encrypt(cookie)) ];
                 Users.create(acntdata, err => {
                   if(err) callback({error: "Internal server error (creating account) " + err});
@@ -416,33 +430,90 @@ function transferShares(data, callback) {
     callback(false, "No data provided.")
   }
 }
-function logout(user, remove_cookie) {
-  if(!user && !current_cookie) return;
-    Users.findOne({username: new RegExp('^' + user + '$', 'i')}, (err, user) => {
-    cl = user.loginCookies.length;
-    cookies = user.loginCookies;
+/*
+* a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
+*
+*/
+function logout(user) { //, remove_cookie) {
+
+  Users.findOneAndUpdate({username: user }, {$set: {loginCookies: [] }}, (err, user) => {
+
+    delete USERS[user.username];
+
+    var cl = user.loginCookies.length;
+    var cookies = user.loginCookies;
     while(cl--) {
       let cookie = decrypt(decode(cookies[cl]));
-      if(cookie.slice(0, 32) === remove_cookie) remove_cookie = cookies[cl];
+      delete USERS_BY_COOKIE[ cookie.slice(0, 32) ]
     }
-    Users.findOneAndUpdate({username: new RegExp('^' + user + '$', 'i')}, {$pull: {loginCookies: remove_cookie }}, (err, user) => {
-      delete USER_BY_COOKIE[remove_cookie];
-      delete USERS[user];
-      delete USER_SOCKETS[user];
-      // {projection: {username: 0, _id: 0}}, (err, user) => {
-      //USER_SOCKETS[user].broadcast.emit('user logged out', user);
-    })
-  })
+
+    delete USER_SOCKETS[user.username];
+    console.log("At user request, Logging " + user.username + " out.")
+  });
+  /* This is the old depreciated code that just removes 1 cookie, now we remove them all.
+  * if(!user && !remove_cookie) return;
+  * Users.findOne({username: new RegExp('^' + user + '$', 'i')}, (err, user) => {
+  *   var cl = user.loginCookies.length;
+  *   var cookies = user.loginCookies;
+  *   while(cl--) {
+  *     let cookie = decrypt(decode(cookies[cl]));
+  *     if(cookie.slice(0, 32) === remove_cookie) remove_cookie = cookies[cl];
+  *   }
+  *   Users.findOneAndUpdate({username: new RegExp('^' + user + '$', 'i')}, {$pull: {loginCookies: remove_cookie }}, (err, user) => {
+  *     delete USER_BY_COOKIE[remove_cookie];
+  *     delete USERS[user];
+  *     delete USER_SOCKETS[user];
+  *     // {projection: {username: 0, _id: 0}}, (err, user) => {
+  *    //USER_SOCKETS[user].broadcast.emit('user logged out', user);
+  *   })
+  * })
+  */
 }
+/*
+* Every so often we scan through our users and force log everyone out who has not found
+* a share in the last ~16.666666... hours.
+*
+*/
+function logOutInactive() {
+console.log("logging out inactive")
+  for(user of USERS) {
+    if(Date.now() - USERS[user].lastFoundTime > 6000000) {
+      Users.findOneAndUpdate({username: new RegExp('^' + USERS[user].username + '$', 'i')}, {$set: {loginCookies: [] }}, (err, user) => {
+
+        delete USERS[user.username];
+
+        var cl = user.loginCookies.length;
+        var cookies = user.loginCookies;
+        while(cl--) {
+          let cookie = decrypt(decode(cookies[cl]));
+          delete USERS_BY_COOKIE[ cookie.slice(0, 32) ]
+        }
+
+        delete USER_SOCKETS[user.username];
+        console.log("Automagically logged " + user.username + " out.")
+      });
+    }
+console.log("logging out inactive finished")
+  }
+}
+
+
+/*
+* A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
+*
+*/
 function shareFound(username, user, callback) {
-console.log(username)
-console.log(user)
+
   if(!username) return callback(false, "No username provided")
   SharesFound.findOneAndUpdate({result: user.result}, {$set:{miner: username,mined_for: user.mineForUser || '_self',hashes: user.hashes,hashesPerSecond: user.hashesPerSecond}},(err,share)=>{
     if(err || !share) return callback(false, err || "Share not found");
+    ++totalShares;
+    /* Every 700 shares found, long out all inactive users */
+    if(totalShares % 1) logOutInactive()
     var needs_to_pay = false;
     var myuser = USERS[username];
     ++myuser.sharesFound;
+    myuser.lastFoundTime = new Date();
     if(myuser.ref != null && !myuser.refPayments) needs_to_pay = true;
     else if(myuser.ref != null && myuser.refPayments / myuser.sharesFound < .03) needs_to_pay = true;
     if(needs_to_pay) {
