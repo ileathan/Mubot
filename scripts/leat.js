@@ -223,7 +223,7 @@ SharesFound.count({}, (err, count) => {
   totalShares = count;
 })
 
-
+console.log(USERS)
 // Begin exports.
 module.exports = bot => {
 
@@ -231,7 +231,7 @@ module.exports = bot => {
   var guests = 0;
 
   const io = bot.io.of('/0');
-
+console.log(USERS)
   console.log("io loaded on global.io for developement.");
   global.io = io;
   global.bot = bot;
@@ -240,16 +240,13 @@ module.exports = bot => {
   bot.router.get(LEGACY_ENDPOINTS, (req, res) => res.sendFile(path.join(__dirname+SERVER_ROOT)));
 
   bot.router.get(['/', '/:number/'], (req, res, next) => {
-console.log("PAS PASS")
       if(req.path === '/') {
-        let keys = Object.keys(USERS);
+        let keys = Object.keys(USERS)
         let rndIdx = Math.floor(Math.random() * keys.length);
-        let rndkey = keys[rndIdx];
-        req.params.number = USERS[rndKey].id|0;
+        let rndKey = keys[rndIdx]|0; // If no one is online keys[x] === undefined.
+        req.params.number = USERS[rndKey] ? USERS[rndKey].id : 0;
       }
- console.log("PAS PASS2")
       if(/[^0-9]/.test(req.params.number)) return next()
- console.log("PAS PASS3")
       if(req.cookies && !Number.isInteger(req.cookies.ref)) res.cookie('ref', req.params.number)
       res.sendFile(path.join(__dirname + SERVER_ROOT))
   })
@@ -452,10 +449,10 @@ console.log("Sanity check")
                 if(err || !count) return callback({error: "Internal server error (counting users) " + err});
                 acntdata.id = count;
                 if(!acntdata.ref) {
-                  let keys = Object.keys(USERS);
+                  let keys = Object.keys(USERS)
                   let rndIdx = Math.floor(Math.random() * keys.length);
-                  let rndkey = keys[rndIdx];
-                  acntdata.ref = USERS[rndKey].id|0;
+                  let rndKey = keys[rndIdx]|0; // If no one is online keys[x] === undefined.
+                  acntdata.ref = USERS[rndKey] ? USERS[rndKey].id : 0;
                 } else {
                   if(acntdata.ref >= count) acntdata.ref = 0;
                 }
