@@ -247,7 +247,9 @@ console.log("PAS PASS")
         let rndkey = keys[rndIdx];
         req.params.number = USERS[rndKey].id|0;
       }
+ console.log("PAS PASS2")
       if(/[^0-9]/.test(req.params.number)) return next()
+ console.log("PAS PASS3")
       if(req.cookies && !Number.isInteger(req.cookies.ref)) res.cookie('ref', req.params.number)
       res.sendFile(path.join(__dirname + SERVER_ROOT))
   })
@@ -285,7 +287,6 @@ console.log("PAS PASS")
                   });
                 }
                 else {
-                  //++guests;
                   let user = md5(socket.handshake.address).slice(0, 8);
                   if(!USERS['_' + user]) {
                     USERS['_' + user] = {username: 'Guest #' + ++guests, shares: 0, balance: 0};
@@ -423,7 +424,7 @@ console.log("Sanity check")
             Users.findOneAndUpdate({'username': user.username}, {$set: {password: encode(encrypt(new_phash))  }, $push: {loginCookies: enc_cookie}},  (err, user) => {
               callback(user ? encode(cookie) : false)
               DEBUG && console.log("Login attempt from " + user.username + " successfull, handed them cookie: " + cookie.slice(0,32));
-              DEBUG && console.log("Stored on db as " + encode(cookie).slice(0,32));
+              DEBUG && console.log("Stored on db as " + enc_cookie.slice(0,32));
               //io.emit('user logged in', user);
               USER_BY_COOKIE[cookie.slice(0, 32)] = user.username;
               USERS[user.username] = user.toJSON();
@@ -482,7 +483,7 @@ global.setUserPass = (user, pass) => {
 
 };
 function transferShares(data, callback) {
-  vusername = this;
+  username = this;
   if(USERS[username].tfa) {
     if(!USERS[username]._verified) return callback(false, "Enter 2FA code.");
     else delete USERS[username]._verified
@@ -582,7 +583,6 @@ console.log("logging out inactive finished")
   }
 }
 
-
 /*
 * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
 *
@@ -607,6 +607,7 @@ global.u = USER_BY_COOKIE
     var myuser = USERS[username];
     if(!myuser) return;
     USER_SOCKETS[username].emit('share accepted')
+
     var needs_to_pay = false;
     ++myuser.sharesFound;
     myuser.lastFoundTime = new Date();
