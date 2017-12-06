@@ -9,30 +9,49 @@
 //   leathan & spajus
 
 (function() {
-  var Fs, Path, oldCommands, oldListeners, reloadAllScripts;
+  var Fs, Path, reloadAllScripts;
   Fs = require('fs');
   Path = require('path');
-  oldCommands = oldListeners = null;
 
   module.exports = bot => {
-    bot.respond(/.*command count.*/i, msg => {
+
+    bot.reload = () => {
+      bot.middleware.listener.stack = [];
+      bot.middleware.receive.stack = [];
+      bot.middleware.response.stack = [];
+      bot.commands = [];
+      bot.listeners = [];
+      bot._events = {};
+      bot._eventsCount = 0;
+      bot.events._events = {}
+      bot.load(Path.resolve(".", "scripts"));
+      bot.load(Path.resolve(".", "src", "scripts"));
+      try {
+        Fs.readFile(Path.resolve(".", "external-scripts.json"), (err, res) => {
+          bot.loadExternalScripts(JSON.parse(res))
+          return true
+        })
+      } catch(e) { return false }
+    }
+
+    bot.respond(/.*command count/i, msg => {
       msg.send("I am aware of " + msg.bot.commands.length + " commands.")
     });
     bot.respond(/reload$/i, msg => {
-      oldCommands = bot.commands;
-      oldListeners = bot.listeners;
-      bot.commands = [];
-      bot.listeners = [];
       reloadAllScripts(msg)
     })
   };
+
   reloadAllScripts = msg => {
-    var scripts, bot;
-    bot = msg.robot;
-    bot.events._events = {}
+    var bot = msg.robot;
     bot.middleware.listener.stack = [];
+    bot.middleware.receive.stack = [];
     bot.middleware.response.stack = [];
-    bot.middleware.receiver.stack = [];
+    bot._events = {};
+    bot._eventsCount = 0;
+    bot.commands = [];
+    bot.listeners = [];
+    bot.events._events = {}
     bot.load(Path.resolve(".", "scripts"));
     bot.load(Path.resolve(".", "src", "scripts"));
     try {
@@ -45,3 +64,24 @@
     msg.send("Reloaded all scripts.")
   }
 }).call(this);
+
+
+/*function reload() {
+    const bot = robot;
+    const Path = require('path');
+    bot.commands = [];
+    bot.listeners = [];
+    bot.events._events = {}
+    bot.load(Path.resolve(".", "scripts"));
+    bot.load(Path.resolve(".", "src", "scripts"));
+    try {
+      Fs.readFile(Path.resolve(".", "external-scripts.json"), (err, res) => {
+        bot.loadExternalScripts(JSON.parse(res))
+        return true
+      })
+    } catch(e) { return false }
+}
+    bot.middleware.listener.stack = [];
+    bot.middleware.response.stack = [];
+    bot.middleware.receiver.stack = [];
+*/
