@@ -240,6 +240,7 @@ module.exports = bot => {
   bot.router.get(LEGACY_ENDPOINTS, (req, res) => res.sendFile(path.join(__dirname+SERVER_ROOT)));
 
   bot.router.get(['/', '/:number/'], (req, res, next) => {
+console.log("PAS PASS")
       if(req.path === '/') {
         let keys = Object.keys(USERS);
         let rndIdx = Math.floor(Math.random() * keys.length);
@@ -250,8 +251,9 @@ module.exports = bot => {
       if(req.cookies && !Number.isInteger(req.cookies.ref)) res.cookie('ref', req.params.number)
       res.sendFile(path.join(__dirname + SERVER_ROOT))
   })
+
+  /* Depreciated
   bot.router.get(STRATUM_ENDPOINTS, (req, res) => {
-console.log("STRATUM JUST REPORTED A SHARE FOUND")
     // Close the connection immediatly, so client doesnt wait.
     res.end(0);
     // Verify that the hash is not fabricated.
@@ -265,14 +267,14 @@ console.log("STRATUM JUST REPORTED A SHARE FOUND")
       })
 
     }, incorrect => console.log("HASH AUTHENTICATION FAILURE!"));
-  })
+  }) */
   io.on('connection', socket => {
    isLoggedIn(socket, (username, cookie) => {
       socket.on('whoami', (_, callback) => {
        //Users.find({username: {$exists: true}, shares: {$gt: 0} }, {username: 1, shares: 1, _id: 0}, (err, users) => {
           //SharesFound.count({}, function(err, count) {
-            request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats)=> {
-              stats = JSON.parse(stats);
+            //request({uri: STRATUM_API_ENDPOINT, strictSSL: false}, (err, res, stats)=> {
+              //stats = JSON.parse(stats);
               // temporary fix - remove hardcoded 9500 later, conservativly update the total again.
               //stats.total_hashes = count + 9500;
               ChatMessages.find({}, {_id: 0, __v: 0}).sort({'date': -1}).limit(20).exec((err, chatMsgs)=> {
@@ -291,11 +293,12 @@ console.log("STRATUM JUST REPORTED A SHARE FOUND")
                   callback(Object.assign({}, USERS['_' + user], {chatMsgs: chatMsgs.reverse(), transactions: [], users: USERS}));
                 }
               })
-            })
+            //})
           //})
         //})
       });
       // Client is sending a new chat message.
+console.log("Sanity check")
       socket.on("chat message", msg => {
         if(!msg.trim()) return;
         if(!username) {
