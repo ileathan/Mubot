@@ -41,31 +41,42 @@ try {
 // Begin mongoose schematic configuration.
 mongoose.Promise = global.Promise;
 const conn = mongoose.createConnection(DATABASE_ENDPOINT);
+
+const BlockChainSchema = new mongoose.Schema({
+    'share': String,
+    'salt': String,
+    'previousBlockHash': String,
+    'hash': String,
+});
+const PokerGamesSchema = new mongoose.Schema({
+  	'status': Number,
+    'players': Object,
+ 	'config': Object,
+ 	'index': Number, // In the chain of shares that seaded game sequences.
+    'share': String,
+});
 const SharesFoundSchema = new mongoose.Schema({
  	'workerId': String,
- 	'result': String,
-  'username': String,
+  	'result': String,
+    'username': String,
  	'jobid': String,
  	'nonce': String,
- 	'date': { type: Date, default: Date.now }
 });
 const TransactionsSchema = new mongoose.Schema({
  	'from': String,
  	'to': String,
  	'amount': Number,
  	'type': String,
- 	'date': { type: Date, default: Date.now }
 });
 const ChatMessagesSchema = new mongoose.Schema({
  	'username': String,
  	'message': String,
- 	'date': { type: Date, default: Date.now }
 });
 const UsersSchema = new mongoose.Schema({
  	'username': String,
  	'loginCookies': Array,
  	'password': String,
-  'tfa': Boolean,
+    'tfa': Boolean,
  	'wallet': String,
  	'balance': { type: Number, default: 0 },
  	'ref': Number,
@@ -78,9 +89,12 @@ const UsersSchema = new mongoose.Schema({
  	'shares': { type: Number, default: 0 },
  	'sharesFound': { type: Number, default: 0 },
  	'miningConfig': Object,
- 	'date': { type: Date, default: Date.now }
 });
 // Beautiful hack to allow hotreloading.
+
+const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema);
+const PokerGames = conn.models.PokerGames || conn.model('PokerGames', PokerGamesSchema);
+
 const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema);
 const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema);
 const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema);
@@ -128,6 +142,11 @@ leatProxy.on('accepted', data => {
 
   shareFound(user, data.cookie);
 
+
+  lS.isBlocksNeeded(games => {
+      games && lS.mineBlock(data.result);
+  })
+  
 })
 
 leatProxy.on('found', data => {
@@ -142,6 +161,244 @@ leatProxy.on('found', data => {
 
 })
 
+
+
+/*
+  this.listeners = {};
+  this.on = function(event, params) {
+    this.listeners[event] = callback
+  }
+  this.emit = function(event, params) {
+    this.listeners[event](params)
+  }
+*/
+
+//socket.on("poker quick join", () => {
+
+const leatServer = new lS;
+
+const MAX_PLAYERS = 10
+    , BIG_BLIND   = 10
+    , SMALL_BLIND = 5
+;
+
+
+/* Our leatServer */
+function PokerGame(config) {
+
+    this.seats       = MAX_PLAYERS;
+    this.small_blind = SMALL_BLIND;
+    this.big_blind   = BIG_BLIND;
+
+    this.betRound  = null; // seats is total.
+    this.cardRound = null; // 4 is total.
+
+    this.que       = []; // players waiting to sit.
+    this.players   = []; // seated players.
+    this.sequences = []; // game data.
+
+    Object.assign(this, config); 
+
+
+    this.listeners = {};
+    this.on = function(event, params) {
+      this.listeners[event] = callback
+    }
+    this.emit = function(event, params) {
+      this.listeners[event](params)
+    }
+
+};
+
+
+PokerGame.prototype.deal = () => {
+
+  for(let i = 0, l = this.players.length; i < l; ++i) {
+
+    
+  }
+
+};
+
+PokerGame.prototype.getOpenSeats = () => this.seats - this.players.length + this.que.length;
+
+PokerGame.prototype.isBlockNeeded = () => this.cardRound === null;
+
+PokerGame.prototype.disconnectPlayer = (username, reason) => {
+
+  if(this.betturn || this.cardTurn) throw 'Cant disconnect carded user.'
+
+  delete this.players[username]
+  USERS[username] && socket.emit("poker disconnect", reason);
+
+};
+
+PokerGame.prototype.sitUser = player => {
+  player.wager(this, this.small_blind)
+};
+
+PokerGame.prototype.connectPlayer = player => {
+
+  if(this.getOpenSeats() < 1) throw 'Table full.'
+
+  player.games.push(
+    Object.assign(this, {
+      _seat: this.players.length + this.que.length
+    })
+  );
+
+  this.que.push(player)
+
+};
+
+
+
+
+function lS() {
+
+  this.games = [];
+}
+
+/*
+* Load our lucky strings.
+*
+* Just to ensure the server has no chance to precompute hashes
+* we introduce the previousHash the work AND this. A set of
+* leatClient set strings which hash our hash to create the end
+* sequence hash, of which, each digit is devided by the base - 1
+* and then multiplied by the cards in a deck - 1.
+* (minus 1 because 0 is the first digit)
+*
+* Note: repeat characters are thrown out before the sequence is computed.
+*/
+lS.prototype.getLuckyStrings = (usernames, callback) => {
+  var sequence = this.sequences.length - 1;
+  if(sequence < 0) throw 'Negative sequence.'
+
+
+  Users.find({username: {$in: this.players}}).then(users => {
+    var luckyS = "";
+    for(let i = 0, l = users.length; i < l; ++i) {
+      let user = users[i]
+
+      if(!luckyS) {
+        this.disconnectUser(user.username, "No secret.")
+      }
+
+      luckyS += user.luckyS;
+      this.sequences[sequence].secrets.push(
+        user.luckyS
+      );
+    }
+
+    callback(luckyS);
+
+  })
+
+};
+
+lS.prototype.quickJoin = function(username) {
+
+  player = new Player(username);
+  
+  if(!this.games.map(_=>_.getOpenSeats() > 0).includes(true)) {
+
+    this.games[0] = new PokerGame;
+  }
+
+  var randomGame = Math.floor(Math.random() * this.games.length)
+
+  this.games[randomGame].connectPlayer(player)
+};
+
+
+
+
+/*lS.prototype.getSequence = (index = this.sequence) => {
+
+  return this.sequenceData[index];
+
+};*/
+
+
+
+/* Returns an array of games that need blocks */
+lS.prototype.isBlockNeeded = (games = this.games) => {
+
+  if(!(games instanceof Array))
+    games = [games]
+  ;
+  var result = false;
+  for(let i = 0, l = games.length; i < l; ++i)
+    game[i].isBlockNeeded() &&
+      (result = true)
+  ;
+  return result
+}
+
+/*
+* Create a player.
+*/
+function Player(name) {
+
+  var user = USERS[name];
+
+  if(!user) throw 'User not in memory.'
+  if(!user.shares) throw 'No balance.'
+
+  
+  this.username = user.username;
+  this.shares = user.shares;
+
+  this.luckyS = user.luckyS;
+
+  this.games = [];
+
+}
+
+socket.on("poker next bet", (pokerGame, callback) => {
+
+  pokerGame.
+
+})
+
+/*
+* The algorithm is as follows;
+* An unkown user mines a shares, we then take
+* the last hash found and concatenate it with
+* that share's result in hex and randomBytes salt.
+* 
+* We take that resulting concatenation and hash it.
+* Thats our block.
+*/
+lS.mineBlock = share => {
+
+  /* find our previous hash */
+  BlockChain.findOne().sort({ _id: -1}).then(result => {
+    /* Deal with our first block (it has no previous hash) */
+    var previousHash = result ? result.hash : GENESIS;
+
+    const options = { timeCost: 77, memoryCost: 17777, parallelism: 77, hashLength: 77 };
+    const salt = crypto.randomBytes(17);
+
+    argond.hash(previousHash + share, salt, options).then(block_hash => {
+
+      var block = {
+        share: share,
+        previousHash: previousHash,
+        hash: block_hash
+      };
+
+      BlockChain.create(block);
+
+      lS.games.forEach(game => game.emit('block found', block)));
+
+      socket.emit("block found", block)
+
+    })
+  })
+
+}
 
 
 /*********************************************
