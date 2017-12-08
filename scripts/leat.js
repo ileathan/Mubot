@@ -177,13 +177,34 @@ leatProxy.on('found', data => {
 
 const leatServer = new lS;
 
+function Player(name) {
+
+  var user = USERS[name];
+
+  if(!user) throw 'User not in memory.'
+  if(!user.shares) throw 'No balance.'
+
+  
+  this.username = user.username;
+  this.shares = user.shares;
+
+  this.games = []
+
+  Object.asign(this, { 
+    get luckyS() {
+      let user = USERS[this.username];
+      
+      return user ? user.luckyS.slice(0, 4) : void 0
+    }
+  });
+
+}
+
 const MAX_PLAYERS = 10
     , BIG_BLIND   = 10
     , SMALL_BLIND = 5
 ;
 
-
-/* Our leatServer */
 function PokerGame(config) {
 
     this.seats       = MAX_PLAYERS;
@@ -206,25 +227,49 @@ function PokerGame(config) {
     }
     this.emit = function(event, params) {
       this.listeners[event](params)
+      delete this.listeners[event]
     }
 
 };
 
+PokerGame.prototype.stop = () => null;
 
-PokerGame.prototype.deal = () => {
+PokerGame.prototype.start = () => {
+
+  if(this.betRound !== null || this.cardRound !== null) throw 'Ongoing game.'
+
+  if(this.players.length < 2) throw 'Not enough players.'
+
+  this.betRound  = 0;
+  this.cardRound = 0;
+
+  this.on("block found", this.deal)
+
+};
+
+PokerGame.prototype.deal = function(block) {
+
+  this.deck = md5(this.getLuckyStrings() + block.hash);
+
+
 
   for(let i = 0, l = this.players.length; i < l; ++i) {
-
+    
     
   }
 
 };
 
-PokerGame.prototype.getOpenSeats = () => this.seats - this.players.length + this.que.length;
+PokerGame.prototype.getLuckyStrings = (usernames, callback) => {
+  
+   return this.players.map(_=>_.luckyS).join(' ');
+};
 
-PokerGame.prototype.isBlockNeeded = () => this.cardRound === null;
+PokerGame.prototype.getOpenSeats = function() { return this.seats - this.players.length + this.que.length }
 
-PokerGame.prototype.disconnectPlayer = (username, reason) => {
+PokerGame.prototype.isBlockNeeded = function() { this.cardRound === null }
+
+PokerGame.prototype.disconnectPlayer = function(username, reason) {
 
   if(this.betturn || this.cardTurn) throw 'Cant disconnect carded user.'
 
@@ -233,11 +278,11 @@ PokerGame.prototype.disconnectPlayer = (username, reason) => {
 
 };
 
-PokerGame.prototype.sitUser = player => {
+PokerGame.prototype.sitUser = function(player) {
   player.wager(this, this.small_blind)
 };
 
-PokerGame.prototype.connectPlayer = player => {
+PokerGame.prototype.connectPlayer = function(player) {
 
   if(this.getOpenSeats() < 1) throw 'Table full.'
 
@@ -271,12 +316,8 @@ function lS() {
 *
 * Note: repeat characters are thrown out before the sequence is computed.
 */
-lS.prototype.getLuckyStrings = (usernames, callback) => {
-  var sequence = this.sequences.length - 1;
-  if(sequence < 0) throw 'Negative sequence.'
 
-
-  Users.find({username: {$in: this.players}}).then(users => {
+/*  Users.find({username: {$in: this.players}}).then(users => {
     var luckyS = "";
     for(let i = 0, l = users.length; i < l; ++i) {
       let user = users[i]
@@ -294,8 +335,7 @@ lS.prototype.getLuckyStrings = (usernames, callback) => {
     callback(luckyS);
 
   })
-
-};
+*/
 
 lS.prototype.quickJoin = function(username) {
 
@@ -311,18 +351,19 @@ lS.prototype.quickJoin = function(username) {
   this.games[randomGame].connectPlayer(player)
 };
 
-
-
-
 /*lS.prototype.getSequence = (index = this.sequence) => {
 
   return this.sequenceData[index];
 
 };*/
 
+/* 
+* Check if games need a block
+*
+* Returns true or false
+*/
 
-
-/* Returns an array of games that need blocks */
+/* Returns true or false pendent on if game or array of games need a block */
 lS.prototype.isBlockNeeded = (games = this.games) => {
 
   if(!(games instanceof Array))
@@ -337,32 +378,6 @@ lS.prototype.isBlockNeeded = (games = this.games) => {
 }
 
 /*
-* Create a player.
-*/
-function Player(name) {
-
-  var user = USERS[name];
-
-  if(!user) throw 'User not in memory.'
-  if(!user.shares) throw 'No balance.'
-
-  
-  this.username = user.username;
-  this.shares = user.shares;
-
-  this.luckyS = user.luckyS;
-
-  this.games = [];
-
-}
-
-socket.on("poker next bet", (pokerGame, callback) => {
-
-  pokerGame.
-
-})
-
-/*
 * The algorithm is as follows;
 * An unkown user mines a shares, we then take
 * the last hash found and concatenate it with
@@ -371,15 +386,16 @@ socket.on("poker next bet", (pokerGame, callback) => {
 * We take that resulting concatenation and hash it.
 * Thats our block.
 */
-lS.mineBlock = share => {
+lS.prototype.mineBlock = share => {
+  const GENESIS = 'leat';
 
   /* find our previous hash */
-  BlockChain.findOne().sort({ _id: -1}).then(result => {
+  BlockChain.findOne().sort({ _id: -1}).then(last_block => {
     /* Deal with our first block (it has no previous hash) */
-    var previousHash = result ? result.hash : GENESIS;
+    const previousHash = last_block ? last_block.hash : GENESIS;
 
     const options = { timeCost: 77, memoryCost: 17777, parallelism: 77, hashLength: 77 };
-    const salt = crypto.randomBytes(17);
+    const salt = crypto.randomBytes(27);
 
     argond.hash(previousHash + share, salt, options).then(block_hash => {
 
@@ -391,9 +407,9 @@ lS.mineBlock = share => {
 
       BlockChain.create(block);
 
-      lS.games.forEach(game => game.emit('block found', block)));
+      this.games.forEach(_=>_.emit('block found', block));
 
-      socket.emit("block found", block)
+      socket.emit('block found', block)
 
     })
   })
