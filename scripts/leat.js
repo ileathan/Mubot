@@ -5,64 +5,85 @@
 //   leathan
 //
 (function() {
-  const DEBUG = process.env.DEBUG;
-  const qrcode = require('qrcode');
-  const TFA = require('speakeasy');
-  const md5 = require('md5');
-  const STRATUM_API_ENDPOINT = 'https://localhost:3000/stats';
-  const STRATUM_ENDPOINTS = ['/gambler/api/:jobid/:result/:nonce/:hash', '/0/api/:jobid/:result/:nonce/:hash'];
-  const SERVER_ROOT = '/../node_modules/hubot-server/public/io.html';
-  const DATABASE_ENDPOINT = 'mongodb://localhost/gambler-api';
-  const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.slice(0, 32);
+  // Our debug level (will depreciate for --inspect)
+  const DEBUG = process.env.DEBUG
+  ;
+  // For authy apps and such.
+  const qrcode = require('qrcode')
+  ;
+  // 2fa
+  const TFA = require('speakeasy')
+  ;
+  // Quick guest hash ip-auth
+  const md5 = require('md5')
+  ;
+  const SERVER_ROOT = '/../node_modules/hubot-server/public/leat.html'
+  ;
+  const DATABASE_ENDPOINT = 'mongodb://localhost/gambler-api'
+  ;
+  // Used for storing cookie data on db.
+  const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.slice(0, 32)
+  ;
+  // Depreciated, but still used in static salts.
   const SECRET = process.env.SECRET;
-  // As is, these route back to the referal 0, I will change this to the seed 20 users.
+  // These currently map to a random online user id.
   const LEGACY_ENDPOINTS = ['/chat', '/miner', '/gamble'];
   // Save every users socket, by user.
 
   const users = {}
     , cookieToUsername = {}
     , usernameToSocket = {}
-    , usernameTo2fa = {};
+    , usernameTo2fa = {}
+  ;
+
   global.self = {
     users,
     cookieToUsername,
     usernameToSocket,
     usernameTo2fa
-  };
+  }
+  ;
 
-  const request = require('request');
   // Easy http requests.
-  const exec = require('child_process').exec;
+  const request = require('request')
+  ;
   // Used to access monero daemon.
-  const mongoose = require('mongoose');
+  const exec = require('child_process').exec
+  ;
   // Our db.
-  const path = require('path');
+  const mongoose = require('mongoose')
+  ;
   // OS independant path resolves.
-  const crypto = require('crypto');
+  const path = require('path')
+  ;
   // For encryption.
-  const argonp = require('argon2-ffi').argon2i;
-  // Our password hash algo.
-  const argond = require('argon2-ffi').argon2d;
+  const crypto = require('crypto')
+  ;
+  // Our password / data hashers.
+  const argonp = require('argon2-ffi').argon2i
+  ;
+  const argond = require('argon2-ffi').argon2d
+  ;
+  // Our salter.
+  const salt = () => crypto.randomBytes(77)
+  ;
   // Infinite base encoder I made and maintain.
-  const c = require('encode-x')();
-  Object.assign(self, {
-    c
-  });
+  const c = require('encode-x')()
+  ;
+  Object.assign(self, {c})
+  ;
 
   // $argon2i$v=19$m=7777,t=77,p=77$user.date + crypto.randomBytes + $ + hash
-  // Memory cost 7777 KiB (1024*7777), relative time cost, and the number of threads sustained and concurrent threads needed.
+  // Memory cost 7777 KiB (1024*7777), relative time cost, and the number 
+  // of threads sustained and concurrent threads needed.
   const ARGON_PCONF = {
     parallelism: 77,
     memoryCost: 7777,
     timeCost: 77
   };
 
-  // Our salter.
-  crypto.salt = ()=>crypto.randomBytes(77);
 
-  Object.assign(self, {
-    crypto
-  });
+
   // Begin mongoose schematic configuration.
   mongoose.Promise = global.Promise;
 
@@ -148,7 +169,7 @@
   const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema);
   const Users = conn.models.Users || conn.model('Users', UsersSchema);
 
-  /**********************************************
+/**********************************************
 *   _____ _             _                     *
 *  / ____| |           | |                    *
 * | (___ | |_ _ __ __ _| |_ _   _ _ __ ___    *
@@ -172,15 +193,14 @@
   console.log("Stratum launched on port 3000.")
 
   /*    -- Events -- 
-leatProxy.on('job', console.log)
-leatProxy.on('error', console.log)
-leatProxy.on('authed', console.log)
-leatProxy.on('open', console.log)
-leatProxy.on('close', console.log)
-*/
+  leatProxy.on('job', console.log)
+  leatProxy.on('error', console.log)
+  leatProxy.on('authed', console.log)
+  leatProxy.on('open', console.log)
+  leatProxy.on('close', console.log)
+  */
 
   function leatServer() {
-
     this.games = [];
   }
 
@@ -188,50 +208,41 @@ leatProxy.on('close', console.log)
 
     var player = new Player(username);
 
-    if(!this.games.map(_=>_.getOpenSeats() > 0).includes(true)) {
+    if(this.games.map(getOpenSeats).sort().pop()) {
 
-      this.games[0] = new PokerGame;
+      return this.games[0] = new PokerGame
     }
 
-    var randomGame = Math.floor(Math.random() * this.games.length)
+    var openGames = this.games.filter(getOpenSeats);
 
-    this.games[randomGame].connectPlayer(player)
+    var randomGame = Math.floor(Math.random() * openGames.length)
+
+    openGames[randomGame].connectPlayer(player)
   }
   ;
 
-  /*leatServer.prototype.getSequence = (index = this.sequence) => {
-
-  return this.sequenceData[index];
-
-};*/
-
   /* 
-* Check if games need a block
-*
-* Returns true or false
-*/
-
-  /* Returns true or false pendent on if game or array of games need a block */
-  leatServer.prototype.isBlockNeeded = function(games=this.games) {
+  * Check if games need a block
+  *
+  * Returns true or false
+  */
+  leatServer.prototype.isBlockNeeded = function(games = this.games) {
 
     if(!(games instanceof Array))
       games = [games];
-    console.log(games)
-    var result = false;
-    for(let i = 0, l = games.length; i < l; ++i)
-      games[i].isBlockNeeded() && (result = true);
-    return result
+
+    return games.filter(isBlockNeeded).lnegth;
   }
 
   /*
-* The algorithm is as follows;
-* An unkown user mines a shares, we then take
-* the last hash found and concatenate it with
-* that share's result in hex and randomBytes salt.
-* 
-* We take that resulting concatenation and hash it.
-* Thats our block.
-*/
+  * The algorithm is as follows;
+  * An unkown user mines a shares, we then take
+  * the last hash found and concatenate it with
+  * that share's result in hex and randomBytes salt.
+  * 
+  * We take that resulting concatenation and hash it.
+  * Thats our block.
+  */
   leatServer.prototype.mineBlock = share => {
     const GENESIS = 'leat';
 
@@ -320,18 +331,6 @@ leatProxy.on('close', console.log)
 
   }
   )
-
-  /*
-  this.listeners = {};
-  this.on = function(event, params) {
-    this.listeners[event] = callback
-  }
-  this.emit = function(event, params) {
-    this.listeners[event](params)
-  }
-*/
-
-  //socket.on("poker quick join", () => {
 
   function Player(name) {
 
@@ -425,8 +424,8 @@ leatProxy.on('close', console.log)
   }
   ;
 
-  PokerGame.prototype.getOpenSeats = function() {
-    return this.seats - this.players.length + this.que.length
+  PokerGame.prototype.getOpenSeats = function(game = this) {
+    return game.seats - game.players.length + game.que.length
   }
 
   PokerGame.prototype.isBlockNeeded = function() {
@@ -516,6 +515,35 @@ leatProxy.on('close', console.log)
       return null;
     }
   }
+  
+  global.self.decrypt = function(text) {
+    try {
+      var salt = Buffer.from(text.substring(0, 32), 'hex');
+      var encrypted = Buffer.from(text.substring(32), 'hex');
+      var decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
+      var decrypted = decipher.update(encrypted);
+      // Close the stream and updated decrepted.
+      decrypted = Buffer.concat([decrypted, decipher.final()]);
+      // return UTF8 buffer as string
+      return decrypted.toString()
+    } catch (e) {
+      return null;
+    }
+  }
+  global.self.encrypt = function (text) {
+    if(text === null)
+      return;
+    // For AES, this is always 16.
+    var salt = crypto.randomBytes(16);
+    // Open AES encryption stream.
+    var cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
+    var encrypted = cipher.update(text);
+    // Close the stream and update encrypted.
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    // Return buffers as hex strings.
+    return Buffer.concat([salt, encrypted]).toString('hex');
+  }
+  
   // Our very own home baked encoders.
   function encode(data) {
     return c.from16To64(data)
@@ -840,65 +868,53 @@ leatProxy.on('close', console.log)
       }
       )
       socket.on("log in", (logindata, callback) => {
-debugger;
         Users.findOne({
           'username': RegExp('^' + logindata.username + '$','i')
         }, (err, user) => {
           if(!user)
             return callback(false, "No such user.")
-debugger
+
           argonp.verify(
             decrypt(decode(user.password)),
             ssalt(logindata.password),
-            ARGON_PCONF).then(correct => {
-debugger;
+            ARGON_PCONF
+          ).then(correct => {
             if(!correct)
               return callback(false, "Bad password.");
-debugger;
-            // Create new password hash.
-            argonp.hash(
-              ssalt(logindata.password), 
-              crypto.salt(), 
-              ARGON_PCONF
 
-            ).then(new_phash => {
-debugger;
-              delete logindata.password;
-
-              // Create new login cookie.
-              var cookie = crypto.randomBytes(32).toString('hex');
-              var enc_cookie = encode(encrypt(cookie));
-              Users.findOneAndUpdate({
-                'username': user.username
-              }, {
-                $set: {
-                  password: encode(encrypt(new_phash))
-                },
-                $push: {
-                  loginCookies: enc_cookie
-                }
-              }, (err, user) => {
-    
-                if(!user) return callback('');
-
-                callback(encode(cookie));
-
-                cookieToUsername[cookie] = user.username
-                ;
-                usernameToSocket[user.username] = socket
-                ;
-                users[user.username] = user.toJSON()
-                ;
-
-                delete users[n].loginCookies
-                ;
-                delete users[n]._id
-                ;
-                delete users[n].__v
-                ;
-                delete users[n].password
+            delete logindata.password;
+            // Create new login cookie.
+            var cookie = crypto.randomBytes(32).toString('hex');
+            var enc_cookie = encode(encrypt(cookie));
+            Users.findOneAndUpdate({
+              'username': user.username
+            }, {
+              $set: {
+                password: encode(encrypt(new_phash))
+              },
+              $push: {
+                loginCookies: enc_cookie
               }
-              )
+            }, (err, user) => {
+
+              if(!user) return callback('');
+
+              callback(encode(cookie));
+
+              cookieToUsername[cookie] = user.username
+              ;
+              usernameToSocket[user.username] = socket
+              ;
+              users[user.username] = user.toJSON()
+              ;
+
+              delete users[n].loginCookies
+              ;
+              delete users[n]._id
+              ;
+              delete users[n].__v
+              ;
+              delete users[n].password
             }
             )
           }
@@ -926,7 +942,7 @@ debugger;
             })
           ;
           else {
-            argonp.hash(ssalt(acntdata.password), crypto.salt(), ARGON_PCONF).then(pass_hash => {
+            argonp.hash(ssalt(acntdata.password), salt(), ARGON_PCONF).then(pass_hash => {
 
               acntdata.password = encode(encrypt(pass_hash))
               ;
@@ -941,10 +957,10 @@ debugger;
                   if(!acntdata.ref || acntdata.ref >= count) {
 
                     // Get random ID from logged in users.
-                    let 
+                    let
 
                      keys = Object.keys(
-                       users.filter(_ => 
+                       users.filter(_ =>
                          _.slice(0, 1) !== '_'
                        )
                      )
@@ -954,8 +970,8 @@ debugger;
                      rndKey = keys[rndIdx]
                      ;
                      acntdata.ref = users[rndKey] ? users[rndKey].id : 0
-                    
-                  } 
+
+                  }
                   acntdata.id <= SEED_REFS && delete acntdata.ref
                   ;
                   acntdata.loginCookies = [ encode(encrypt(cookie)) ]
@@ -994,7 +1010,7 @@ debugger;
   }
   ;
   global.self.setUserPass = (user, pass) => {
-    argonp.hash(ssalt(pass), crypto.salt(), ARGON_PCONF).then(pass_hash => {
+    argonp.hash(ssalt(pass), salt(), ARGON_PCONF).then(pass_hash => {
       Users.findOneAndUpdate({
         username: new RegExp('^' + user + '$','i')
       }, {
