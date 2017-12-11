@@ -18,7 +18,7 @@
 (function() {
   const fs = require('fs');
   module.exports = bot => {
-    bot.respond(/create(?:me )? (\w )?(.*?)(?:\s|\n)(.|\s)+```$/, { id: 'create.file' }, msg => {
+    bot.respond(/create(?:me )? ```(\w )?(.*?)(?:\s|\n)(.|\s)+```$/, { id: 'create.file' }, msg => {
       // $1 = mode, $2 = filename, $3 = content
       if(msg.match[1] === 'a ') {
         fs.appendFile(__dirname + "/" + msg.match[2], "\n" + msg.match[3], err => {
