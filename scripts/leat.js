@@ -231,7 +231,7 @@
     if(!(games instanceof Array))
       games = [games];
 
-    return games.filter(isBlockNeeded).lnegth;
+    return games.filter(this.isBlockNeeded).length;
   }
 
   /*
