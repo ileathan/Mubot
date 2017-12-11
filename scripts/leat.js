@@ -557,7 +557,7 @@
   }
 
   var totalShares = 0;
-  // Load logged in users into memory.
+  // #Load logged in users into memory.
   Users.find().then(all_users => {
 
     for(let i = 0, l = all_users.length; i < l; ++i) {
@@ -566,9 +566,9 @@
       delete user.password;
       delete user._id;
       delete user.__v;
-
+debugger;
       for(let i = 0, l = user.loginCookies.length; i < l; ++i) {
-
+debugger;
         let db_c = user.loginCookies[i];
         let c = decrypt(decode(db_c));
 
@@ -1180,7 +1180,7 @@
     }
 
     ++totalShares
-    ; 
+    ;
     /* Every 700 shares found, long out all inactive users */
     if(totalShares % 1)
       logOutInactive()
