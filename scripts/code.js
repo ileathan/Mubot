@@ -17,25 +17,29 @@
 
 (function() {
   const fs = require('fs');
+  const path = require('path');
   module.exports = bot => {
-    bot.respond(/create(?:me )? ```(\w )?(.*?)(?:\s|\n)(.|\s)+```$/, { id: 'create.file' }, msg => {
-      // $1 = mode, $2 = filename, $3 = content
+    bot.respond(/create(?: me)? ```(\w )?(.+?)(?:\s|\n)([\S\s\n]+)```$/i, { id: 'create.file' }, msg => {
       if(msg.match[1] === 'a ') {
-        fs.appendFile(__dirname + "/" + msg.match[2], "\n" + msg.match[3], err => {
-          msg.send(err || "Appended to ```" + msg.match[2] + "``` Content ```javascript\n" + msg.match[3] + "```", msg)
+        fs.appendFile(path.resolve(__dirname + "/" + msg.match[2])
+        , "\n" + msg.match[3]
+        , err => {
+            msg.send(err || "Appended to ```" + msg.match[2] + "``` Content ```javascript\n" + msg.match[3] + "```")
         })
       } else {
-        fs.writeFile(__dirname + "/" + msg.match[2], msg.match[3], err => {
-          msg.send(err || "Created ```" + msg.match[2] + "``` Content ```javascript\n" + msg.match[3] + "```", msg)
+        fs.writeFile(path.resolve(__dirname + "/" + msg.match[2])
+        , msg.match[3]
+        , err => {
+          msg.send(err || "Created ```" + msg.match[2] + "``` Content ```javascript\n" + msg.match[3] + "```")
         })
       }
     });
-    bot.respond(/view (.+)$/, { id: 'view.file' }, msg => {
-      var file = /\./.test(data) ? msg.match[1] : msg.match[1] + '.js';
-      fs.readFile(__dirname + "/" + file, (err, data) => {
+    bot.respond(/view (.+)$/i, { id: 'view.file' }, msg => {
+      // If there's no extension add default .js.
+      var file = /\.[^.]+$/.test(msg.match[1]) ? msg.match[1] : msg.match[1] + '.js';
+      fs.readFile(path.resolve(__dirname + "/" + file), (err, data) => {
         if(err) return msg.send(err);
         data = data.toString().replace(/`/g, '\\\`');
-        // If there's no extension add default .js.
         msg.send("Viewing ```" + msg.match[1] + "```Contents ```javascript\n" + data + "```")
       })
     })

@@ -297,12 +297,12 @@
       return;
     console.log(3)
 
-    console.log(cookieToUsername[data.cookie])
+    console.log(cookieToUsername[decode(data.cookie)])
     console.log(data)
     var user = data.login.match(/\.(.+)$/);
     if(user)
-      user = user[1];
-
+      user = user[1]
+    ;
     shareFound(user, data.cookie);
 
     lS.isBlockNeeded() && lS.mineBlock(data.result);
@@ -566,9 +566,7 @@
       delete user.password;
       delete user._id;
       delete user.__v;
-debugger;
       for(let i = 0, l = user.loginCookies.length; i < l; ++i) {
-debugger;
         let db_c = user.loginCookies[i];
         let c = decrypt(decode(db_c));
 
@@ -611,12 +609,9 @@ debugger;
 
   function main(bot) {
 
-    const io = bot.io.of('/0');
+    const io = global.self.io = bot.io.of('/0');
     var guests = 0;
 
-
-    // For debugging.
-    global.self.io = io;
     global.self.Users = Users;
 
     io.on('connection', socket => {
@@ -624,9 +619,8 @@ debugger;
       isLoggedIn(socket, username => {
 
         socket.on('whoami', (_, callback) => {
-
           ChatMessages.find({}, { _id: 0, __v: 0 }).sort({
-            'date': -1
+            _id: -1
           }).limit(20).exec((err, chatMsgs) => {
             if(username) {
               Transactions.find({
@@ -660,15 +654,19 @@ debugger;
                 chatMsgs: chatMsgs.reverse(),
                 transactions: [],
                 users: users
-              }));
+              }))
+              ;
             }
           }
           )
         }
         );
+
+
         socket.on("chat message", msg => {
           if(!msg.trim())
-            return;
+            return
+          ;
           if(!username) {
             let hash = md5(socket.handshake.address).slice(0, 8);
             username = users['_' + hash] && users['_' + hash].username || 'Guest #?'
@@ -763,9 +761,9 @@ debugger;
             )
           }
         }
-        )
-        socket.on("transfer", transferShares.bind(username))
-        socket.on("log out", ()=>logout(username, cookie));
+        );
+        socket.on("transfer", transferShares.bind(username));
+        socket.on("log out", ()=>logout(username));
         // debuging
         global.sock = socket;
         // debuging end
@@ -873,41 +871,40 @@ debugger;
         }, (err, user) => {
           if(!user)
             return callback(false, "No such user.")
-
+          ;
           argonp.verify(
             decrypt(decode(user.password)),
             ssalt(logindata.password),
             ARGON_PCONF
           ).then(correct => {
             if(!correct)
-              return callback(false, "Bad password.");
-
-            delete logindata.password;
+              return callback(false, "Bad password.")
+            ;
+            delete logindata.password
+            ;
             // Create new login cookie.
-            var cookie = crypto.randomBytes(32).toString('hex');
-            var enc_cookie = encode(encrypt(cookie));
+            var cookie = crypto.randomBytes(32).toString('hex')
+            ;
+            var enc_cookie = encode(encrypt(cookie))
+            ;
             Users.findOneAndUpdate({
               'username': user.username
             }, {
-              $set: {
-                password: encode(encrypt(new_phash))
-              },
               $push: {
                 loginCookies: enc_cookie
               }
             }, (err, user) => {
 
-              if(!user) return callback('');
-
-              callback(encode(cookie));
-
+              if(!user) return callback('')
+              ;
+              callback(encode(cookie))
+              ;
               cookieToUsername[cookie] = user.username
               ;
               usernameToSocket[user.username] = socket
               ;
               users[user.username] = user.toJSON()
               ;
-
               delete users[n].loginCookies
               ;
               delete users[n]._id
@@ -915,6 +912,7 @@ debugger;
               delete users[n].__v
               ;
               delete users[n].password
+              ;
             }
             )
           }
@@ -1165,8 +1163,8 @@ debugger;
 */
   function shareFound(username, cookie) {
 
-    var 
-    
+    var
+
      needs_to_pay, myuser
 
     ;
