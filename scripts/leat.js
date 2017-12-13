@@ -429,7 +429,7 @@
       throw 'Cant disconnect carded user.'
 
     delete this.players[username]
-    users[username] && socket.emit("poker disconnect", reason);
+    users[username] && emitToUserSockets(username, "poker disconnect", reason);
 
   }
   ;
@@ -671,8 +671,8 @@
           }
           )
         }
-        );
-
+        )
+        ;
 
         socket.on("chat message", msg => {
           if(!msg.trim())
@@ -682,16 +682,17 @@
             let hash = md5(socket.handshake.address).slice(0, 8);
             username = users['_' + hash] && users['_' + hash].username || 'Guest #?'
           }
-          io.emit("chat message", username + ": " + msg)
+          io.emit("chat message", username, msg)
           ChatMessages.create({
             username: username,
             message: msg
           }, _=>0)
-        }
-        )
+        })
+        ;
         // Logged in users only API
         if(!username)
-          return;
+          return
+        ;
         // Its a guest, dont allow entry.
         socket.on("work log", callback => {
           sharesFound.find({
@@ -701,10 +702,10 @@
               callback(false, "No work log history.");
             else
               callback(shares, null)
-          }
-          )
-        }
-        )
+          })
+          ;
+        })
+        ;
         socket.on("transfer log", callback => {
           Transactions.find({
             from: new RegExp('^' + username + '$','i')
@@ -713,70 +714,73 @@
               callback(false, "No transfer history.");
             else
               callback(trans, null)
-          }
-          )
-        }
-        )
+          })
+          ;
+        })
+        ;
         socket.on("mine for user", (user, callback) => {
           if(user) {
             Users.findOneAndUpdate({
               username: new RegExp('^' + username + '$','i')
             }, {
-              $set: {
-                'isMiningFor': user
-              }
+              $set: { 'isMiningFor': user }
             }, (err, user0) => {
               if(user0)
-                users[username].isMiningFor = user;
+                users[username].isMiningFor = user
+              ;
               callback(!!user0, err || !user0 && "User not found")
-            }
-            )
+            })
+            ;
           } else {
-            delete users[username].isMiningFor;
+            delete users[username].isMiningFor
+            ;
             Users.findOneAndUpdate({
               username: new RegExp('^' + username + '$','i')
             }, {
-              $unset: {
-                'isMiningFor': 1
-              }
-            }, (err, user) => callback(!!user, err))
-          }
-        }
-        )
+              $unset: { 'isMiningFor': 1 }
+            }, (err, user) =>
+              callback(!!user, err)
+            ;
+          })
+          ;
+        })
+        ;
         socket.on("update mining configuration", (config, callback) => {
           if(config) {
             Users.findOneAndUpdate({
               username: new RegExp('^' + username + '$','i')
             }, {
-              $set: {
-                'miningConfig': config
-              }
+              $set: { 'miningConfig': config }
             }, (err, user) => {
               if(user)
-                users[username].miningConfig = config;
+                users[username].miningConfig = config
+              ;
               callback(!!user, err)
-            }
-            )
+              ;
+            };
+            ;
           } else {
             Users.findOneAndUpdate({
               username: new RegExp('^' + username + '$','i')
             }, {
-              $unset: {
-                'miningConfig': 1
-              }
+              $unset: { 'miningConfig': 1 }
             }, (err, user) => {
               if(user)
-                delete users[username].miningConfig;
+                delete users[username].miningConfig
+              ;
               callback(!!user, err)
-            }
-            )
+              ;
+            })
+            ;
           }
-        }
-        );
-        socket.on("transfer", transferShares.bind(username));
-        socket.on("log out", ()=>logout(username, socket, cookie));
+        })
+        ;
+        socket.on("transfer", transferShares.bind(username))
+        ;
+        socket.on("log out", ()=>logout(username, socket, cookie))
+        ;
         // debuging
-        global.sock = socket;
+        global.self.sock = socket;
         // debuging end
         socket.on("enable tfa", (_, callback) => {
           // debuging
@@ -803,20 +807,20 @@
 
             }) ? setUser2fa(username, callback)
                : callback(false, "Incorrect code")
- 
-         } else {
+            ;
+          } else {
 
             getUser2fa(username, tfa => callback(
-              TFA.totp.verify({     
+              TFA.totp.verify({
                 secret: tfa,
                 encoding: 'base32',
                 token: tfa_token
               })
-            )
-            )
+            ))
+            ;
           }
-        }
-        )
+        })
+        ;
         function setUser2fa(username, callback) {
           Users.findOneAndUpdate(
           { username },
@@ -840,17 +844,12 @@
       )
       socket.on('server stats', (_, callback) => {
         Users.find({
-          username: {
-            $exists: true
-          },
-          shares: {
-            $gt: 0
-          }
+          username: { $exists: true },
+          shares: { $gt: 0 }
         }, {
-          username: 1,
-          shares: 1,
-          _id: 0
-        }, (err, users) => {
+          username: 1, shares: 1, _id: 0
+        }
+        , (err, users) => {
           SharesFound.count({}, (err, count) => {
             var stats = leatProxy.getStats();
             var statsR = {};
@@ -859,12 +858,12 @@
             statsR.clients = stats.connections[0].miners;
             statsR.total_hashes = count;
             callback(users, statsR)
-          }
-          )
-        }
-        )
-      }
-      );
+          })
+          ;
+        })
+        ;
+      })
+      ;
       socket.on("check username", (username, callback) => {
         Users.findOne({
           username: RegExp('^' + username + '$','i')
@@ -872,10 +871,10 @@
           if(err)
             return next(err);
           callback(Boolean(!user));
-        }
-        )
-      }
-      )
+        })
+        ;
+      })
+      ;
       socket.on("log in", (logindata, callback) => {
         Users.findOne({
           'username': RegExp('^' + logindata.username + '$','i')
@@ -885,7 +884,7 @@
             return callback(false, "No such user.")
           ;
           argonp.verify(
-            decode(decrypt(user.password)),
+            decrypt(decode(user.password)),
             ssalt(logindata.password),
             ARGON_PCONF
           ).then(correct => {
@@ -931,23 +930,20 @@
               ;
               delete users[u].password
               ;
-            }
-            )
-          }
-          )
-        }
-        )
-      
-      }
-      )
+            })
+            ;
+          })
+          ;
+        })
+        ;
+      })
+      ;
       socket.on("create account", (acntdata, callback) => {
 
         if(/^_|[^a-zA-Z0-9_]/.test(acntdata.username)) {
 
-          return callback({
-            error: 'Illegal name, try again.'
-          })
-        ;}
+          return callback({ error: 'Illegal name, try again.' })
+        }
 
         acntdata.date = new Date
         ;
@@ -956,9 +952,7 @@
         }, (err, user) => {
 
           if(user)
-            callback({
-              error: 'Username already exists.'
-            })
+            callback({ error: 'Username already exists.' })
           ;
           else
 
@@ -1199,7 +1193,7 @@
     ;
     ++myuser.sharesFound
     ;
-    usernameToSockets[username].emit('share accepted')
+    emitToUserSockets(username, 'share accepted')
     ;
     needs_to_pay = false
     ;
@@ -1219,13 +1213,13 @@
           'shares': 1,
           'refPaymentsReceived': 1
         }
-      }, (err, userBeingPaid) => {
-        if(err || !userBeingPaid)
+      }, (err, beingPaid) => {
+        if(err || !beingPaid)
           return
         ;
         Transactions.create({
           from: username,
-          to: userBeingPaid.username,
+          to: beingPaid.username,
           type: 'ref',
           amount: 1
         }, _=>0)
@@ -1241,13 +1235,13 @@
         ;
         ++myuser.refPayments
         ;
-        if(users[userBeingPaid.username]) {
+        if(users[beingPaid.username]) {
 
-          ++users[userBeingPaid.username].shares
+          ++users[beingPaid.username].shares
           ;
-          ++users[userBeingPaid.username].refPaymentsReceived
+          ++users[beingPaid.username].refPaymentsReceived
           ;
-          usernameToSockets[userBeingPaid.username].emit("ref payment", username)
+          emitToUserSockets(beingPaid.username, 'ref payment', username)
         }
       }
       )
@@ -1271,24 +1265,24 @@
             'shares': 1,
             'minedPaymentsReceived': 1
           }
-        }, (err, userBeingPaid) => {
-          if(err || !userBeingPaid)
+        }, (err, beingPaid) => {
+          if(err || !beingPaid)
             return
           ;
           Transactions.create({
             from: username,
-            to: userBeingPaid.username,
+            to: beingPaid.username,
             type: 'mined_for',
             amount: 1
           }, _=>0)
           ;
-          if(users[userBeingPaid.username]) {
+          if(users[beingPaid.username]) {
 
-            ++users[userBeingPaid.username].shares
+            ++users[beingPaid.username].shares
             ;
-            ++users[userBeingPaid.username].minedPaymentsReceived
+            ++users[beingPaid.username].minedPaymentsReceived
             ;
-            usernameToSockets[userBeingPaid.username].emit("mined for payment", username)
+            emitToUserSockets(beingPaid, "mined for payment", username)
           }
           ++myuser.minedPayments
         }
