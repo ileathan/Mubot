@@ -171,7 +171,7 @@
   *                                             *
   **********************************************/
 
-  var leatProxy = require('leat-stratum-proxy');
+  var leatProxy = global.self.leatProxy = require('leat-stratum-proxy');
 
   const fs = require('fs')
 
@@ -254,7 +254,7 @@
       ;
       const salt = crypto.randomBytes(77)
       ;
-      argond.hash(previousHash prevoudSecrets + share, salt, options).then(block_hash => {
+      argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
 
         var block = {
           block: block_hash,
@@ -857,8 +857,8 @@
             var stats = leatProxy.getStats();
             var statsR = {};
             UPTIME = statsR.uptime = stats.uptime;
-            statsR.clients = stats.miners.length;
-            //stats.connections[0].miners;
+            //statsR.clients = stats.miners.length;
+            statsR.clients = stats.connections[0].miners;
             statsR.total_hashes = count;
             callback(users, statsR)
           }
