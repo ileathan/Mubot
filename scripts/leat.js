@@ -8,6 +8,8 @@
   // Our debug level (will depreciate for --inspect)
   const DEBUG = process.env.DEBUG
   ;
+  // For users exempt for life from referals
+  const SEED_REFS = 77;
   // For authy apps and such.
   const qrcode = require('qrcode')
   ;
@@ -923,11 +925,13 @@
       )
       socket.on("create account", (acntdata, callback) => {
 
-        if(/^_|[^a-zA-Z0-9_]/.test(acntdata.username))
+        if(/^_|[^a-zA-Z0-9_]/.test(acntdata.username)) {
+
           return callback({
             error: 'Illegal name, try again.'
           })
-        ;
+        ;}
+
         acntdata.date = new Date
         ;
         Users.findOne({
@@ -940,6 +944,7 @@
             })
           ;
           else {
+
             argonp.hash(ssalt(acntdata.password), salt(), ARGON_PCONF).then(pass_hash => {
 
               acntdata.password = encode(encrypt(pass_hash))
@@ -952,11 +957,11 @@
 
                   acntdata.id = count
                   ;
-                  if(!acntdata.ref || acntdata.ref >= count) {
+                  if(acntdata.ref === void 0 || acntdata.ref >= count) {
 
                     // Get random ID from logged in users.
                     let
-
+                     // Filters out guests, their usernames start with '_'.
                      keys = Object.keys(
                        users.filter(_ =>
                          _.slice(0, 1) !== '_'
@@ -968,7 +973,6 @@
                      rndKey = keys[rndIdx]
                      ;
                      acntdata.ref = users[rndKey] ? users[rndKey].id : 0
-
                   }
                   acntdata.id <= SEED_REFS && delete acntdata.ref
                   ;
