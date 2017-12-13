@@ -8,6 +8,7 @@
   // Our debug level (will depreciate for --inspect)
   const DEBUG = process.env.DEBUG
   ;
+  const UPTIME = 0;
   // For users exempt for life from referals
   const SEED_REFS = 77;
   // For authy apps and such.
@@ -132,59 +133,43 @@
     'password': String,
     'tfa': Boolean,
     'wallet': String,
-    'balance': {
-      type: Number,
-      default: 0
-    },
+    'balance': { type: Number, default: 0 },
     'ref': Number,
     'isMiningFor': String,
-    'refPayments': {
-      type: Number,
-      default: 0
-    },
-    'refPaymentsReceived': {
-      type: Number,
-      default: 0
-    },
-    'minedPayments': {
-      type: Number,
-      default: 0
-    },
-    'minedPaymentsReceived': {
-      type: Number,
-      default: 0
-    },
+    'refPayments': { type: Number, default: 0 },
+    'refPaymentsReceived': { type: Number, default: 0 },
+    'minedPayments': { type: Number, default: 0 },
+    'minedPaymentsReceived': { type: Number, default: 0 },
     'id': Number,
-    'shares': {
-      type: Number,
-      default: 0
-    },
-    'sharesFound': {
-      type: Number,
-      default: 0
-    },
+    'shares': { type: Number, default: 0 },
+    'sharesFound': { type: Number, default: 0 },
     'miningConfig': Object,
-  });
+  })
+  ;
   // Beautiful hack to allow hotreloading.
 
-  const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema);
-  const PokerGames = conn.models.PokerGames || conn.model('PokerGames', PokerGamesSchema);
+  const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema)
+  ;
+  const PokerGames = conn.models.PokerGames || conn.model('PokerGames', PokerGamesSchema)
+  ;
+  const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema)
+  ;
+  const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema)
+  ;
+  const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema)
+  ;
+  const Users = conn.models.Users || conn.model('Users', UsersSchema)
+  ;
 
-  const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema);
-  const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema);
-  const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema);
-  /*const*/
-           Users = conn.models.Users || conn.model('Users', UsersSchema);
-
-/**********************************************
-*   _____ _             _                     *
-*  / ____| |           | |                    *
-* | (___ | |_ _ __ __ _| |_ _   _ _ __ ___    *
-*  \___ \| __| '__/ _` | __| | | | '_ ` _ \   *
-*  ____) | |_| | | (_| | |_| |_| | | | | | |  *
-* |_____/ \__|_|  \__,_|\__|\__,_|_| |_| |_|  *
-*                                             *
-**********************************************/
+  /**********************************************
+  *   _____ _             _                     *
+  *  / ____| |           | |                    *
+  * | (___ | |_ _ __ __ _| |_ _   _ _ __ ___    *
+  *  \___ \| __| '__/ _` | __| | | | '_ ` _ \   *
+  *  ____) | |_| | | (_| | |_| |_| | | | | | |  *
+  * |_____/ \__|_|  \__,_|\__|\__,_|_| |_| |_|  *
+  *                                             *
+  **********************************************/
 
   var leatProxy = require('leat-stratum-proxy');
 
@@ -251,83 +236,85 @@
   * Thats our block.
   */
   leatServer.prototype.mineBlock = share => {
-    const GENESIS = 'leat';
-
+    const GENESIS = 'leat'
+    ;
     /* find our previous hash */
     BlockChain.findOne().sort({
       _id: -1
     }).then(last_block => {
       /* Deal with our first block (it has no previous hash) */
-      const previousHash = last_block ? last_block.hash : GENESIS;
-
+      const previousHash = last_block ? last_block.hash : GENESIS
+      ;
       const options = {
         timeCost: 77,
         memoryCost: 17777,
         parallelism: 77,
         hashLength: 77
-      };
-      const salt = crypto.randomBytes(77);
-
-      argond.hash(previousHash + share, salt, options).then(block_hash => {
+      }
+      ;
+      const salt = crypto.randomBytes(77)
+      ;
+      argond.hash(previousHash prevoudSecrets + share, salt, options).then(block_hash => {
 
         var block = {
-          share: share,
-          hash: block_hash
-        };
-
-        BlockChain.create(block);
-
-        this.games.forEach(_=>_.emit('block found', block));
-
+          block: block_hash,
+          verifies: {
+            previousHash,
+            previousSecrets,
+            share,
+        }
+        ;
+        BlockChain.create(block)
+        ;
+        this.games.forEach(_=>_.emit('block found', block))
+        ;
         socket.emit('block found', block)
-
-      }
-      )
-    }
-    )
-
+        ;
+      })
+      ;
+    })
+    ;
   }
-
-  const lS = new leatServer;
-
+  ;
+  const lS = new leatServer
+  ;
   Object.assign(global.self, {
     lS: lS
-  });
-
+  })
+  ;
   leatProxy.on('accepted', data => {
-    console.log(data)
-    console.log(1)
+    console.log("Work done.")
     if(!data.cookie)
-      return;
-    console.log(2)
+      return
+    ;
     if(/#/.test(data.login))
-      return;
-    console.log(3)
-
-    console.log(cookieToUsername[decode(data.cookie)])
+      return
+    ;
+    console.log(cookieToUsername[data.cookie])
     console.log(data)
-    var user = data.login.match(/\.(.+)$/);
+    if(
+    var user = data.login.match(/\.(.+)$/)
+    ;
+    if(user && user[1] === cookieToUsername[data.cookie]) {
+      shareFound(user[1], data.cookie)
+      ;
+    } else if(user)
+      console.log("Name missmatch, aborting...")
+    ;
+    lS.isBlockNeeded() && lS.mineBlock(data.result)
+  ;
+  })
+  ;
+  leatProxy.on('found', data => {
+
+    if(!data.cookie || /#/.test(data.login))
+      return
+    ;
+    var user = data.login.match(/\.(.+)$/)
+    ;
     if(user)
       user = user[1]
     ;
-    shareFound(user, data.cookie);
-
-    lS.isBlockNeeded() && lS.mineBlock(data.result);
-
-  }
-  )
-
-  leatProxy.on('found', data => {
-
-    if(!data.cookie)
-      return;
-    if(/#/.test(data.login))
-      return;
-
-    var user = data.login.match(/\.(.+)$/);
-    if(user)
-      user = user[1];
-
     SharesFound.create({
       workerId: data.id,
       username: user,
@@ -335,10 +322,9 @@
       nonce: data.nonce,
       jobid: data.job_id
     }, _=>0)
-
-  }
-  )
-
+    ;
+  })
+  ;
   function Player(name) {
 
     var user = users[name];
@@ -470,17 +456,17 @@
   ;
 
 
-/*********************************************
-*   _____                      _ _           *
-*  / ____|                    (_) |          *
-* | (___   ___  ___ _   _ _ __ _| |_ _   _   *
-*  \___ \ / _ \/ __| | | | '__| | __| | | |  *
-*  ____) |  __/ (__| |_| | |  | | |_| |_| |  *
-* |_____/ \___|\___|\__,_|_|  |_|\__|\__, |  *
-*                                     __/ |  *
-*                                    |___/   *
-*                                            *
-*********************************************/
+  /*********************************************
+  *   _____                      _ _           *
+  *  / ____|                    (_) |          *
+  * | (___   ___  ___ _   _ _ __ _| |_ _   _   *
+  *  \___ \ / _ \/ __| | | | '__| | __| | | |  *
+  *  ____) |  __/ (__| |_| | |  | | |_| |_| |  *
+  * |_____/ \___|\___|\__,_|_|  |_|\__|\__, |  *
+  *                                     __/ |  *
+  *                                    |___/   *
+  *                                            *
+  *********************************************/
 
   if(!SECRET) {
     throw new Error("Need to pass in a SECRET `SECRET=\"someverylongsafesecret\" mubot`")
@@ -550,7 +536,7 @@
     // Return buffers as hex strings.
     return Buffer.concat([salt, encrypted]).toString('hex');
   }
-  
+
   // Our very own home baked encoders.
   function encode(data) {
     return c.from16To64(data).toString()
@@ -574,19 +560,16 @@
     for(let i = 0, l = all_users.length; i < l; ++i) {
 
       let user = all_users[i].toJSON();
-      delete user.password;
-      delete user._id;
-      delete user.__v;
       for(let i = 0, l = user.loginCookies.length; i < l; ++i) {
-        let db_c = user.loginCookies[i];
-        let c = decrypt(decode(db_c));
-
-        cookieToUsername[c] = user.username;
-        users[user.username] = user;
-
+        let c = user.loginCookies[i]
+        ;
+        cookieToUsername[c] = user.username
+        ;
       }
-      if(users[user.username])
-        delete users[user.username].loginCookies;
+      delete user.password; delete user._id; delete user.__v;  delete user.loginCookies
+      ;
+      users[user.username] = user
+      ;
     }
 
   }
@@ -617,6 +600,25 @@
     )
   }
   ;
+  /*
+  *  Since we allow multiple logins per acnt to mine for 1 account.
+  */
+  function emitToSockets() {
+    const args = [].slice.call(arguments)
+    ;
+    const userSockets = Object.keys(
+      usernameToSockets[user.username]
+    )
+    ;
+    var i = socketsIDs.length
+    ;
+    while(i--) {
+      let socket = usernameToSockets[ socketIDs[i] ]
+      ;
+      socket.emit.apply(socket, args)
+      ;
+    }
+  }
 
   function main(bot) {
 
@@ -627,7 +629,7 @@
 
     io.on('connection', socket => {
 
-  console.log(global.socket = socket)
+      console.log('New conn.')
 
       isLoggedIn(socket, (username, cookie) => {
 
@@ -638,8 +640,7 @@
             if(username) {
               Transactions.find({
                 $or: [
-                  { from: username },
-                  { to: username }
+                  { from: username }, { to: username }
                 ]
               }, { _id: 0, __v: 0 }
               , (err, trans) => {
@@ -855,7 +856,7 @@
           SharesFound.count({}, (err, count) => {
             var stats = leatProxy.getStats();
             var statsR = {};
-            statsR.uptime = stats.uptime;
+            UPTIME = statsR.uptime = stats.uptime;
             statsR.clients = stats.miners.length;
             //stats.connections[0].miners;
             statsR.total_hashes = count;
@@ -886,7 +887,7 @@
             return callback(false, "No such user.")
           ;
           argonp.verify(
-            decode(user.password),
+            decode(decrypt(user.password)),
             ssalt(logindata.password),
             ARGON_PCONF
           ).then(correct => {
@@ -916,19 +917,21 @@
               ;
               // Add socket or create sockets obj and add.
               usernameToSockets[user.username] ?
-                usernameToSockets[user.username] [socket.id] = socket
+                usernameToSockets[user.username][socket.id] = socket
               :
                 usernameToSockets[user.username] = {[socket.id]: socket}
               ;
-              users[user.username] = user.toJSON()
+              var u
               ;
-              delete users[n].loginCookies
+              u = users[user.username] = user.toJSON()
               ;
-              delete users[n]._id
+              delete users[u].loginCookies
               ;
-              delete users[n].__v
+              delete users[u]._id
               ;
-              delete users[n].password
+              delete users[u].__v
+              ;
+              delete users[u].password
               ;
             }
             )
@@ -1081,25 +1084,16 @@
         }, _ => 0
         )
         ;
+        emitToSockets("transfer payment", amount, username)
+        ;
+
         if(users[user.username]) {
+          emitToSockets("transfer payment", amount, username)
+          ;
           users[user.username].shares += amount
           ;
-          // Begin emitting to all users sockets.
-          let userSockets = Object.keys(
-            usernameToSockets[user.username]
-          )
-          ;
-          let i = l = userSockets.length
-          ;
-          while(i--) {
-            let socket = usernameToSockets[ userSockets[i] ]
-            ;
-            socket.emit("transfer payment", amount, username)
-            ;
-          }
-          // end.
-
         }
+
         users[username].shares -= amount
         ;
         Users.findOneAndUpdate({
@@ -1122,6 +1116,7 @@
       callback(false, "No data provided.")
     }
   }
+
   /*
 * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
 *
@@ -1144,13 +1139,13 @@
   }
   /*
 * Every so often we scan through our users and force log everyone out who has not found
-* a share in the last ~19.777.. hours.
+* a share in the last ~19.777.. hours (and ~one day uptime).
 *
 */
   function logOutInactive(socket) {
     console.log("logging out inactive")
     for(let user of users) {
-      if(Date.now() - users[user].lastFoundTime > 71347777) {
+      if(Date.now() - users[user].lastFoundTime > 71347777 && UPTIME > 77777777) {
         Users.findOneAndUpdate({
           username: users[user].username
         }, {
@@ -1158,12 +1153,10 @@
         }, (err, user) => {
 
           var i = user.loginCookies.length
-            , cookies = user.loginCookies
           ;
           while (i--) {
-            let cookie = cookies[i]
-            ;
-            delete cookieToUsername[cookie]
+
+            delete cookieToUsername[ user.loginCookies[i] ]
             ;
           }
           delete usernameToSockets[user.username]
@@ -1200,8 +1193,8 @@
     ++totalShares
     ;
     /* Every 700 shares found, long out all inactive users */
-    if(totalShares % 1)
-      logOutInactive(socket)
+    totalShares % 777 === 0 &&
+      logOutInactive(socket, socket)
     ;
     myuser = users[username]
     ;
@@ -1324,7 +1317,7 @@
   function isLoggedIn(socket, cb) {
 
     var
-     
+
       cookie, username
 
     ;
@@ -1338,9 +1331,10 @@
         username = cookieToUsername[cookie]
         ;
         if(username) {
-          usernameToSockets[username] = socket
+          usernameToSockets[username][socket.id] = socket
           ;
           return cb(username, cookie)
+          ;
         }
       }
     }
