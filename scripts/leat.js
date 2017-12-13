@@ -910,7 +910,7 @@
 
               if(!user) return callback('')
               ;
-              callback(encode(cookie))
+              callback(cookie)
               ;
               cookieToUsername[cookie] = user.username
               ;
@@ -965,7 +965,9 @@
 
               acntdata.password = encode(encrypt(pass_hash))
               ;
-              var cookie = crypto.randomBytes(37).toString('hex')
+              var cookie = encode(
+                crypto.randomBytes(37).toString('hex')
+              )
               ;
               exec('echo monerod getnewaddress', (error, stdout) => {
 
@@ -992,7 +994,7 @@
                   }
                   acntdata.id <= SEED_REFS && delete acntdata.ref
                   ;
-                  acntdata.loginCookies = [ encode(cookie) ]
+                  acntdata.loginCookies = [ cookie ]
                   ;
                   Users.create(acntdata, (err, user) => {
                     var u
@@ -1005,7 +1007,7 @@
                     ;
                     cookieToUsername[cookie] = user.username
                     ;
-                    callback(encode(cookie))
+                    callback(cookie)
                   }
                   )
                 })
@@ -1142,37 +1144,32 @@
   }
   /*
 * Every so often we scan through our users and force log everyone out who has not found
-* a share in the last ~30.. hours.
+* a share in the last ~19.777.. hours.
 *
 */
   function logOutInactive(socket) {
     console.log("logging out inactive")
-    for(user of users) {
-      if(Date.now() - users[user].lastFoundTime > 17777777) {
+    for(let user of users) {
+      if(Date.now() - users[user].lastFoundTime > 71347777) {
         Users.findOneAndUpdate({
-          username: new RegExp('^' + users[user].username + '$','i')
+          username: users[user].username
         }, {
-          $pull: { loginCookies: cookie }
+          $set: { loginCookies: [] }
         }, (err, user) => {
 
-
-          // Remove just one cookie
-          var cl = user.loginCookies.length;
-          var cookies = user.loginCookies;
-          while (cl--) {
-            let cookie = decode(cookies[cl]);
+          var i = user.loginCookies.length
+            , cookies = user.loginCookies
+          ;
+          while (i--) {
+            let cookie = cookies[i]
+            ;
             delete cookieToUsername[cookie]
+            ;
           }
-
-//#AxE
-          // Remove just one socket
-          delete usernameToSockets[user.username][socket.id];
-          // And if there are 0 remove user.
-          if(usernameToSockets[user.username].length === 0) {
-            delete usernameToSockets[user.username]
-            ;
-            delete users[user.username];
-            ;
+          delete usernameToSockets[user.username]
+          ;
+          delete users[user.username];
+          ;
           }
           console.log("Automagically logged " + user.username + " out.")
         }
@@ -1336,7 +1333,7 @@
       cookie = /loginCookie=(.*?)(?:; |$)/.exec(cookie)
       ;
       if(cookie) {
-        cookie = decode(cookie[1])
+        cookie = cookie[1]
         ;
         username = cookieToUsername[cookie]
         ;
