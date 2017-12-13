@@ -5,10 +5,11 @@
 //   leathan
 //
 (function() {
+  var UPTIME = 0
+  ;
   // Our debug level (will depreciate for --inspect)
   const DEBUG = process.env.DEBUG
   ;
-  const UPTIME = 0;
   // For users exempt for life from referals
   const SEED_REFS = 77;
   // For authy apps and such.
@@ -285,15 +286,11 @@
   ;
   leatProxy.on('accepted', data => {
     console.log("Work done.")
-    if(!data.cookie)
-      return
-    ;
-    if(/#/.test(data.login))
+    if(!data.cookie || /#/.test(data.login))
       return
     ;
     console.log(cookieToUsername[data.cookie])
     console.log(data)
-    if(
     var user = data.login.match(/\.(.+)$/)
     ;
     if(user && user[1] === cookieToUsername[data.cookie]) {
@@ -303,7 +300,7 @@
       console.log("Name missmatch, aborting...")
     ;
     lS.isBlockNeeded() && lS.mineBlock(data.result)
-  ;
+    ;
   })
   ;
   leatProxy.on('found', data => {
@@ -963,7 +960,7 @@
               error: 'Username already exists.'
             })
           ;
-          else {
+          else
 
             argonp.hash(ssalt(acntdata.password), salt(), ARGON_PCONF).then(pass_hash => {
 
@@ -1015,17 +1012,17 @@
                   }
                   )
                 })
-              }
-              )
-            }
-            )
-          }
-        }
-        )
-      }
-      )
-    }
-    )
+                ;
+              })
+              ;
+            })
+          ;
+        })
+        ;
+      })
+      ;
+    })
+    ;
   }
   ;
   global.self.setUserPass = (user, pass) => {
@@ -1038,10 +1035,9 @@
         }
       }, () => {
         console.log("Old hash was: " + encode(encrypt(pass_hash)))
-      }
-      )
-    }
-    )
+      })
+      ;
+    })
   }
   ;
   function transferShares(data, callback) {
@@ -1061,10 +1057,10 @@
       if(!Number.isInteger(amount) && /^_|[^a-zA-Z0-9_]/.test(toUser))
 
         return callback(false, "Bad amount/user.")
-      ;  
- 
+      ;
+
       if(users[username].shares < amount)
-      
+
         return callback(false, "Not enough funds.")
       ;
       Users.findOneAndUpdate({
@@ -1139,10 +1135,10 @@
     ;
   }
   /*
-* Every so often we scan through our users and force log everyone out who has not found
-* a share in the last ~19.777.. hours (and ~one day uptime).
-*
-*/
+  * Every so often we scan through our users and force log everyone out who has not found
+  * a share in the last ~19.777.. hours (and ~one day uptime).
+  *
+  */
   function logOutInactive(socket) {
     console.log("logging out inactive")
     for(let user of users) {
@@ -1162,21 +1158,20 @@
           }
           delete usernameToSockets[user.username]
           ;
-          delete users[user.username];
+          delete users[user.username]
           ;
-          }
           console.log("Automagically logged " + user.username + " out.")
-        }
-        );
+        })
+        ;
       }
       console.log("logging out inactive finished")
     }
   }
 
   /*
-* A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
-*
-*/
+  * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
+  *
+  */
   function shareFound(username, cookie, socket) {
 
     var
