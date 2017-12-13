@@ -34,17 +34,18 @@
 
   const users = {}
     , cookieToUsername = {}
-    , usernameToSocket = {}
+    , usernameToSockets = {}
     , usernameTo2fa = {}
   ;
 
   global.self = {
     users,
     cookieToUsername,
-    usernameToSocket,
+    usernameToSockets,
     usernameTo2fa
   }
   ;
+  global.self.argon = {};
 
   // Easy http requests.
   const request = require('request')
@@ -75,10 +76,13 @@
   Object.assign(self, {c})
   ;
 
+
+  global.self.argonp = argonp;
+
   // $argon2i$v=19$m=7777,t=77,p=77$user.date + crypto.randomBytes + $ + hash
   // Memory cost 7777 KiB (1024*7777), relative time cost, and the number 
   // of threads sustained and concurrent threads needed.
-  const ARGON_PCONF = {
+  const ARGON_PCONF = self.argon.conf = {
     parallelism: 77,
     memoryCost: 7777,
     timeCost: 77
@@ -169,7 +173,8 @@
   const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema);
   const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema);
   const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema);
-  const Users = conn.models.Users || conn.model('Users', UsersSchema);
+  /*const*/
+           Users = conn.models.Users || conn.model('Users', UsersSchema);
 
 /**********************************************
 *   _____ _             _                     *
@@ -548,15 +553,19 @@
   
   // Our very own home baked encoders.
   function encode(data) {
-    return c.from16To64(data)
+    return c.from16To64(data).toString()
   }
   function decode(data) {
-    return c.from64To16(data)
+    return c.from64To16(data).toString()
   }
+
+  global.self.decode = decode;
+  global.self.encode = encode;
   // Static salts
   function ssalt(data) {
     return '7' + data + SECRET
   }
+  global.self.ssalt = ssalt;
 
   var totalShares = 0;
   // #Load logged in users into memory.
@@ -618,7 +627,9 @@
 
     io.on('connection', socket => {
 
-      isLoggedIn(socket, username => {
+  console.log(global.socket = socket)
+
+      isLoggedIn(socket, (username, cookie) => {
 
         socket.on('whoami', (_, callback) => {
           ChatMessages.find({}, { _id: 0, __v: 0 }).sort({
@@ -626,11 +637,10 @@
           }).limit(20).exec((err, chatMsgs) => {
             if(username) {
               Transactions.find({
-                $or: [{
-                  from: username
-                }, {
-                  to: username
-                }]
+                $or: [
+                  { from: username },
+                  { to: username }
+                ]
               }, { _id: 0, __v: 0 }
               , (err, trans) => {
                   callback(Object.assign({}, users[username], {
@@ -765,7 +775,7 @@
         }
         );
         socket.on("transfer", transferShares.bind(username));
-        socket.on("log out", ()=>logout(username));
+        socket.on("log out", ()=>logout(username, socket, cookie));
         // debuging
         global.sock = socket;
         // debuging end
@@ -871,30 +881,31 @@
         Users.findOne({
           'username': RegExp('^' + logindata.username + '$','i')
         }, (err, user) => {
+
           if(!user)
             return callback(false, "No such user.")
           ;
           argonp.verify(
-            decrypt(decode(user.password)),
+            decode(user.password),
             ssalt(logindata.password),
             ARGON_PCONF
           ).then(correct => {
+
             if(!correct)
               return callback(false, "Bad password.")
             ;
             delete logindata.password
             ;
             // Create new login cookie.
-            var cookie = crypto.randomBytes(32).toString('hex')
             ;
-            var enc_cookie = encode(encrypt(cookie))
+            var cookie = encode(
+              crypto.randomBytes(37).toString('hex')
+            )
             ;
             Users.findOneAndUpdate({
               'username': user.username
             }, {
-              $push: {
-                loginCookies: enc_cookie
-              }
+              $push: { loginCookies: cookie }
             }, (err, user) => {
 
               if(!user) return callback('')
@@ -903,7 +914,11 @@
               ;
               cookieToUsername[cookie] = user.username
               ;
-              usernameToSocket[user.username] = socket
+              // Add socket or create sockets obj and add.
+              usernameToSockets[user.username] ?
+                usernameToSockets[user.username] [socket.id] = socket
+              :
+                usernameToSockets[user.username] = {[socket.id]: socket}
               ;
               users[user.username] = user.toJSON()
               ;
@@ -921,6 +936,7 @@
           )
         }
         )
+      
       }
       )
       socket.on("create account", (acntdata, callback) => {
@@ -949,7 +965,7 @@
 
               acntdata.password = encode(encrypt(pass_hash))
               ;
-              var cookie = crypto.randomBytes(32).toString('hex')
+              var cookie = crypto.randomBytes(37).toString('hex')
               ;
               exec('echo monerod getnewaddress', (error, stdout) => {
 
@@ -976,21 +992,16 @@
                   }
                   acntdata.id <= SEED_REFS && delete acntdata.ref
                   ;
-                  acntdata.loginCookies = [ encode(encrypt(cookie)) ]
+                  acntdata.loginCookies = [ encode(cookie) ]
                   ;
                   Users.create(acntdata, (err, user) => {
-
-                    users[user.username] = user.toJSON()
+                    var u
                     ;
-                    delete user.password
+                    u = users[user.username] = user.toJSON()
                     ;
-                    delete user._id
+                    delete u.password; delete u.loginCookies; delete u.id; delete u._id;
                     ;
-                    delete user.__v
-                    ;
-                    delete user.loginCookies
-                    ;
-                    usernameToSocket[user.username] = socket
+                    usernameToSockets[user.username] = {[socket.id]: socket}
                     ;
                     cookieToUsername[cookie] = user.username
                     ;
@@ -1020,7 +1031,7 @@
           password: encode(encrypt(pass_hash))
         }
       }, () => {
-        console.log("Success.")
+        console.log("Old hash was: " + encode(encrypt(pass_hash)))
       }
       )
     }
@@ -1071,7 +1082,20 @@
         if(users[user.username]) {
           users[user.username].shares += amount
           ;
-          usernameToSocket[user.username].emit("transfer payment", amount, username)
+          // Begin emitting to all users sockets.
+          let userSockets = Object.keys(
+            usernameToSockets[user.username]
+          )
+          ;
+          let i = l = userSockets.length
+          ;
+          while(i--) {
+            let socket = usernameToSockets[ userSockets[i] ]
+            ;
+            socket.emit("transfer payment", amount, username)
+            ;
+          }
+          // end.
 
         }
         users[username].shares -= amount
@@ -1100,27 +1124,17 @@
 * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
 *
 */
-  function logout(user) {
+  function logout(user, socket, cookie) {
 
     Users.findOneAndUpdate({
       username: user
     }, {
-      $set: {
-        loginCookies: []
-      }
+      $pull: { loginCookies: cookie }
     }, (err, user) => {
-
-      delete users[user.username];
-
-      var cl = user.loginCookies.length;
-      var cookies = user.loginCookies;
-      while (cl--) {
-        let cookie = decrypt(decode(cookies[cl]))
-        ;
-        delete cookieToUsername[cookie]
-      }
-
-      delete usernameToSocket[user.username];
+      delete cookieToUsername[cookie]
+      ;
+      delete usernameToSockets[user.username][socket.id]
+      ;
       console.log("At user request, Logging " + user.username + " out.")
     }
     )
@@ -1128,31 +1142,38 @@
   }
   /*
 * Every so often we scan through our users and force log everyone out who has not found
-* a share in the last ~16.666666... hours.
+* a share in the last ~30.. hours.
 *
 */
-  function logOutInactive() {
+  function logOutInactive(socket) {
     console.log("logging out inactive")
     for(user of users) {
-      if(Date.now() - users[user].lastFoundTime > 6000000) {
+      if(Date.now() - users[user].lastFoundTime > 17777777) {
         Users.findOneAndUpdate({
           username: new RegExp('^' + users[user].username + '$','i')
         }, {
-          $set: {
-            loginCookies: []
-          }
+          $pull: { loginCookies: cookie }
         }, (err, user) => {
 
-          delete users[user.username];
 
+          // Remove just one cookie
           var cl = user.loginCookies.length;
           var cookies = user.loginCookies;
           while (cl--) {
-            let cookie = decrypt(decode(cookies[cl]));
+            let cookie = decode(cookies[cl]);
             delete cookieToUsername[cookie]
           }
 
-          delete usernameToSocket[user.username];
+//#AxE
+          // Remove just one socket
+          delete usernameToSockets[user.username][socket.id];
+          // And if there are 0 remove user.
+          if(usernameToSockets[user.username].length === 0) {
+            delete usernameToSockets[user.username]
+            ;
+            delete users[user.username];
+            ;
+          }
           console.log("Automagically logged " + user.username + " out.")
         }
         );
@@ -1165,16 +1186,14 @@
 * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
 *
 */
-  function shareFound(username, cookie) {
+  function shareFound(username, cookie, socket) {
 
     var
 
-     needs_to_pay, myuser
+      needs_to_pay, myuser
 
     ;
 
-    cookie = decode(cookie)
-    ;
     if(cookieToUsername[cookie] !== username) {
       console.log("Cookie did not match username!")
       ;
@@ -1185,7 +1204,7 @@
     ;
     /* Every 700 shares found, long out all inactive users */
     if(totalShares % 1)
-      logOutInactive()
+      logOutInactive(socket)
     ;
     myuser = users[username]
     ;
@@ -1194,7 +1213,7 @@
     ;
     ++myuser.sharesFound
     ;
-    usernameToSocket[username].emit('share accepted')
+    usernameToSockets[username].emit('share accepted')
     ;
     needs_to_pay = false
     ;
@@ -1242,7 +1261,7 @@
           ;
           ++users[userBeingPaid.username].refPaymentsReceived
           ;
-          usernameToSocket[userBeingPaid.username].emit("ref payment", username)
+          usernameToSockets[userBeingPaid.username].emit("ref payment", username)
         }
       }
       )
@@ -1283,7 +1302,7 @@
             ;
             ++users[userBeingPaid.username].minedPaymentsReceived
             ;
-            usernameToSocket[userBeingPaid.username].emit("mined for payment", username)
+            usernameToSockets[userBeingPaid.username].emit("mined for payment", username)
           }
           ++myuser.minedPayments
         }
@@ -1322,9 +1341,9 @@
         username = cookieToUsername[cookie]
         ;
         if(username) {
-          usernameToSocket[username] = socket
+          usernameToSockets[username] = socket
           ;
-          return cb(username)
+          return cb(username, cookie)
         }
       }
     }
