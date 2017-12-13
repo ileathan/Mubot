@@ -261,7 +261,8 @@
           verifies: {
             previousHash,
             previousSecrets,
-            share,
+            share
+          }
         }
         ;
         BlockChain.create(block)
