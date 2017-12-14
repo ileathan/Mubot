@@ -601,17 +601,19 @@
   /*
   *  Since we allow multiple logins per acnt to mine for 1 account.
   */
-  function emitToSockets() {
+  function emitToUserSockets() {
+    const username = [].splice.call(arguments, 0, 1)
+    ;
     const args = [].slice.call(arguments)
     ;
-    const userSockets = Object.keys(
-      usernameToSockets[user.username]
+    const socketIDs = Object.keys(
+      usernameToSockets[username] || {}
     )
     ;
-    var i = socketsIDs.length
+    var i = socketIDs.length
     ;
     while(i--) {
-      let socket = usernameToSockets[ socketIDs[i] ]
+      let socket = usernameToSockets[username][ socketIDs[i] ]
       ;
       socket.emit.apply(socket, args)
       ;
@@ -740,8 +742,9 @@
               $unset: { 'isMiningFor': 1 }
             }, (err, user) =>
               callback(!!user, err)
+            )
             ;
-          })
+          }
           ;
         })
         ;
@@ -757,7 +760,7 @@
               ;
               callback(!!user, err)
               ;
-            };
+            })
             ;
           } else {
             Users.findOneAndUpdate({
@@ -1321,7 +1324,10 @@
         username = cookieToUsername[cookie]
         ;
         if(username) {
-          usernameToSockets[username][socket.id] = socket
+          usernameToSockets[username] ?
+            usernameToSockets[username][socket.id] = socket
+          :
+            usernameToSockets[username] = {[socket.id]: socket}
           ;
           return cb(username, cookie)
           ;
