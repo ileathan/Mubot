@@ -1,6 +1,8 @@
 
+// notdumb.js
+
 module.exports = bot => {
-  bot.respond(/(is|so)? ?dumb/i, msg => {
+  bot.hear(/^mubot\s+(is |so )[\S\s]*dumb/i, msg => {
      msg.send("FUCK YOU!")
   });
 
