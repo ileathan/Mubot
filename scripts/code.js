@@ -20,7 +20,7 @@
   const path = require('path');
   module.exports = bot => {
 
-    bot.respond(/create(?: me)? (\w )?(.+?)(?:[\s]+)```([\s\S]+)```$/i, { id: 'create.file' }, msg => {
+    bot.respond(/create(?: me)? (\w )?(.+)(?:\s+)```([\s\S]+)```$/i, { id: 'create.file' }, msg => {
       if(msg.match[1] === 'a ') {
         fs.appendFile(path.resolve(__dirname + "/" + msg.match[2])
         , "\n" + msg.match[3]

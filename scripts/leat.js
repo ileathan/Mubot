@@ -118,16 +118,55 @@
     'username': String,
     'jobid': String,
     'nonce': String,
+  }, {
+    toJSON: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    }
   })
   , TransactionsSchema = new mongoose.Schema({
     'from': String,
     'to': String,
     'amount': Number,
     'type': String,
+  }, {
+    toJSON: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    }
   })
   , ChatMessagesSchema = new mongoose.Schema({
     'username': String,
     'message': String,
+  }, {
+    toJSON: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    },
+    toObject: {
+      transform: function (doc, ret) {
+        ret.date = ret._id.getTimestamp()
+        ;
+      }
+    }
   })
   , UsersSchema = new mongoose.Schema({
     'username': String,
@@ -289,19 +328,22 @@
     if(!data.cookie || /#/.test(data.login))
       return
     ;
-    console.log(cookieToUsername[data.cookie])
-    console.log(data)
-    var user = data.login.match(/\.(.+)$/)
+
+    var user
     ;
-    if(user && user[1] === cookieToUsername[data.cookie]) {
+    if(user = data.login.match(/\.(.+)$/)) {
+      console.log(user[1] + ' === ' + cookieToUsername[data.cookie] + " hashes " + data.hashes || 'Err')
+      ;
       if(!user[1])
-        return console.log('Invalid cookie, and no user. ' + data.cookie)
+        return emitToUserSockets(user[1], 'lS.shareRejected', 'No username.')
       ;
-      shareFound(user[1], data.cookie)
+      if(user[1] === cookieToUsername[data.cookie])
+        return shareFound(user[1], data.cookie)
       ;
-    } else if(user)
-      return console.log("Name missmatch, aborting.")
-    ;
+      else
+        emitToUserSockets(user, 'lS.shareRejected', 'Invalid cookie.')
+      ;
+    }
     lS.isBlockNeeded() && lS.mineBlock(data.result)
     ;
   })
@@ -604,11 +646,11 @@
   /*
   *  Since we allow multiple logins per acnt to mine for 1 account.
   */
-  function emitToUserSockets(event, data) {
+  function emitToUserSockets(username, event, data) {
     //const event = [].splice.call(arguments, 0, 1);
     //const data = [].splice.call(arguments, 0, 1);
-    if(arguments.length !== 2)
-      throw 'Invalid arguments length'
+    if(username === void 0 || event === void 0)
+      throw 'Missing username or event.'
     ;
     const socketIDs = Object.keys(
       usernameToSockets[username] || {}
@@ -619,14 +661,8 @@
     while(i--) {
       let socket = usernameToSockets[username][ socketIDs[i] ]
       ;
-      socket.emit.call(socket, username, data)
+      socket.emit(event, data)
       ;
-
-
-socket.emit('eventname', username )
-
-
-
     }
   }
 
@@ -644,7 +680,7 @@ socket.emit('eventname', username )
       isLoggedIn(socket, (username, cookie) => {
 
         socket.on('lC.load', (_, callback) => {
-          ChatMessages.find({}, { _id: 0, __v: 0 }).sort({
+          ChatMessages.find({}, { __v: 0 }).sort({
             _id: -1
           }).limit(20).exec((err, chatMsgs) => {
             if(username) {
@@ -652,7 +688,7 @@ socket.emit('eventname', username )
                 $or: [
                   { from: username }, { to: username }
                 ]
-              }, { _id: 0, __v: 0 }
+              }, { __v: 0 }
               , (err, trans) => {
                   callback(Object.assign({}, users[username], {
                     chatMsgs: chatMsgs.reverse(),
@@ -674,7 +710,7 @@ socket.emit('eventname', username )
                 };
               }
               callback(Object.assign({}, users['_' + user], {
-                chatMsgs: chatMsgs.reverse(),
+                chatMsgs: chatMsgs.map(_=>_.date = _.getTimeStamp()).reverse(),
                 transactions: [],
                 users: users
               }))
@@ -685,8 +721,10 @@ socket.emit('eventname', username )
         }
         )
         ;
-
-        socket.on("lC.chatMessage", msg => {
+        socket.on("lC.newChatMessage", data => {
+          var message = data.message,
+              date = new Date
+          ;
           if(!msg.trim())
             return
           ;
@@ -694,7 +732,7 @@ socket.emit('eventname', username )
             let hash = md5(socket.handshake.address).slice(0, 8);
             username = users['_' + hash] && users['_' + hash].username || 'Guest #?'
           }
-          io.emit("lS.newChatMessage", username, msg)
+          io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
             username: username,
             message: msg
@@ -713,7 +751,7 @@ socket.emit('eventname', username )
             if(!shares)
               callback(false, "No work log history.");
             else
-              callback(shares, null)
+              callback(shares.map(_=>_.date = _.getTimeStamp()), null)
           })
           ;
         })
@@ -744,7 +782,7 @@ socket.emit('eventname', username )
                   delete users[username].isMiningFor
                 ;
               }
-              callback(!!user0, err || !user0 && "User not found")
+              callback(!!user, err || !user && "User not found")
             })
             ;
           } else {
@@ -759,6 +797,11 @@ socket.emit('eventname', username )
             )
             ;
           }
+          ;
+        })
+        ;
+        socket.on('disconect', ()=>{
+          delete usernameToSockets[username][socket.id]
           ;
         })
         ;
@@ -1048,7 +1091,7 @@ socket.emit('eventname', username )
   }
   ;
   function transferShares(data, callback) {
-    username = this;
+    username = this + '';
     if(users[username].tfa) {
       if(!users[username]._verified)
         return callback(false, "Enter 2FA code.");
@@ -1079,23 +1122,22 @@ socket.emit('eventname', username )
         if(!user)
           return callback(false, "Username not found.")
         ;
-        toUser = user.username;
         Transactions.create({
           from: username,
-          to: toUser.username,
+          to: toUser,
           type: 'transfer',
           amount: amount
         }, _ => 0
         )
         ;
         if(users[toUser]) {
-  
-          emitToUserSockets(username, "lS.transferPayment", {amount, toUser})
+          user = toUser
+          ;
+          emitToUserSockets(username, "lS.transfer", {amount, user})
           ;
           users[toUser].shares += amount
           ;
         }
-
         users[username].shares -= amount
         ;
         Users.findOneAndUpdate({
@@ -1293,7 +1335,7 @@ socket.emit('eventname', username )
             ;
             ++users[beingPaid.username].minedPaymentsReceived
             ;
-            emitToUserSockets(beingPaid, "lS.minedForPayment", username)
+            emitToUserSockets(beingPaid.username, "lS.minedPayment", username)
           }
           ++myuser.minedPayments
         }
