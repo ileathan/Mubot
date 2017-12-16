@@ -698,7 +698,7 @@
               }
               )
             } else {
-              callback(Object.assign({}, users['_' + md5(SECRET + socket.handshake.address)], {
+              callback(Object.assign({}, '_' + md5(SECRET + socket.handshake.address).slice(0, 8), {
                 chatMsgs: chatMsgs.reverse(),
                 transactions: [],
                 users: users
@@ -709,6 +709,10 @@
           ;
         })
         ;
+        function toGuest() {
+          return md5(SECRET + socket.handshake.address)
+          ;
+        }
         socket.on("lC.newChatMessage", data => {
           var message = data.message,
               date = new Date
@@ -716,13 +720,10 @@
           if(!msg.trim())
             return
           ;
-          if(!username) {
-            let hash = md5(socket.handshake.address).slice(0, 8);
-            username = users['_' + hash] && users['_' + hash].username || 'Guest #?'
-          }
+          
           io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
-            username: username,
+            username: username || toGuest(),
             message: msg
           }, _=>0)
         })
@@ -731,7 +732,7 @@
           username ?
             delete usernameToSockets[username][socket.id]
           :
-            delete users['_' + md5(SECRET + socket.handshake.address)]
+            delete users['_' + toGuest()]
           ;
         })
         ;
@@ -1347,7 +1348,6 @@
       )
     }
   }
-
   function isLoggedIn(socket, cb) {
 
     var
@@ -1374,13 +1374,12 @@
           ;
         }
       }
-    }
-    // Right now what a 'guest' is IS this md5. Thats it.
-    let guest = md5(SECRET + socket.handshake.address)
-    ;
-    else {
+    } else {
+      // Right now what a 'guest' is IS this md5. Thats it.
+      let guest = md5(SECRET + socket.handshake.address)
+      ;
       users['_' + guest] = {
-        username: guest
+        username: guest,
         shares: 0,
         balance: 0
       }
