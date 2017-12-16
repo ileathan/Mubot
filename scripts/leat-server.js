@@ -189,11 +189,14 @@
   *                                             *
   **********************************************/
 
-  var leatProxy = global.self.leatProxy = require('leat-stratum-proxy');
+/*  var leatProxy = global.self.leatProxy = require('leat-stratum-proxy');
 
   const fs = require('fs')
 
+
+
   leatProxy = new leatProxy({
+    server = 
     host: 'pool.supportxmr.com',
     port: 3333,
     key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
@@ -201,7 +204,7 @@
   })
   leatProxy.listen(3000);
   console.log("Stratum launched on port 3000.")
-
+*/
   /*    -- Events -- 
   leatProxy.on('job', console.log)
   leatProxy.on('error', console.log)
@@ -300,11 +303,23 @@
   Object.assign(global.self, {
     lS: lS
   })
-  ;
+  ;/*
   leatProxy.on('accepted', data => {
-    var user = data.login.match(/\.(.+)$/)
+    shareFound(data.login.split(".")[1])
     ;
-    if(!user) {
+    console.log(
+      "Work done by ("+data.login.split(".")[1]+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
+    )
+console.log(data.cookie)*/
+    //lS.isBlockNeeded() && lS.mineBlock(data.result)
+    //;
+
+
+    //var user = data.login.split(".")[1]
+    //;
+    //shareFound(users[user] ? users[user].username : HOSTNAME) //, data.cookie)
+    //;
+    /*(if(!user) {
       if(DEBUG) console.log("Work done for server ("+data.cookie+") (No username)")
       ;
     }
@@ -327,32 +342,32 @@
         ;
       }
     }
-    shareFound(user || HOSTNAME, data.cookie || null)
+    shareFound(users[user].username || HOSTNAME, data.cookie || null)
     ;
     lS.isBlockNeeded() && lS.mineBlock(data.result)
-    ;
-  })
+    ;*/
+  //})
   ;
-  leatProxy.on('found', data => {
+/*  leatProxy.on('found', data => {
 
-    if(!data.cookie || /#/.test(data.login))
+    /*if(!data.cookie || /#/.test(data.login))
       return
     ;
     var user = data.login.match(/\.(.+)$/)
     ;
     if(user)
       user = user[1]
-    ;
+    ;*//*
     SharesFound.create({
       workerId: data.id,
-      username: user,
+      username: data.login.split('.')[1] || '_anon',
       result: data.result,
       nonce: data.nonce,
       jobid: data.job_id
     }, _=>0)
     ;
   })
-  ;
+  ;*/
   function Player(name) {
 
     var user = users[name];
@@ -573,8 +588,50 @@
     totalShares = count;
   }
   )
-
+  var leatProxy;
   module.exports = bot => {
+
+
+    leatProxy = require('leat-stratum-proxy');
+
+    const fs = require('fs')
+
+
+
+    leatProxy = new leatProxy({
+      server: bot.server,
+      host: 'pool.supportxmr.com',
+       port: 3333,
+       key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
+      cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
+    })
+    leatProxy.listen();
+    console.log("Stratum launched on port 3000.")
+
+
+    leatProxy.on('accepted', data => {
+      shareFound(data.login.split(".")[1])
+      ;
+      console.log(
+        "Work done by ("+data.login.split(".")[1]+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
+      )
+     console.log(data.cookie)
+    })
+    leatProxy.on('found', data => {
+      SharesFound.create({
+        workerId: data.id,
+        username: data.login.split('.')[1] || '_anon',
+        result: data.result,
+        nonce: data.nonce,
+        jobid: data.job_id
+      }, _=>0)
+      ;
+    })
+    ;
+
+
+
+
     // One time time out to let the server load all the data into memory
     setTimeout(main.bind(this, bot), 7777);
 
@@ -671,10 +728,10 @@
           if(!message.trim())
             return
           ;
-          io.emit("lS.newChatMessage", {username, message, date})
+          io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
           ChatMessages.create({
-            username: username || "#" + toGuest(),
-            message: message
+            username: username || toGuest(),
+            message
           }, _=>0)
         })
         ;
@@ -1128,7 +1185,7 @@
   * a share in the last ~19.777.. hours (and ~one day uptime).
   *
   */
-  function logOutInactive(socket) {
+  function logOutInactive() {
     console.log("logging out inactive")
     for(let user in users) {
       if(Date.now() - users[user].lastFoundTime > 71347777 && UPTIME > 77777777) {
@@ -1161,7 +1218,7 @@
   * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
   *
   */
-  function shareFound(username, cookie, socket) {
+  function shareFound(username) {
 
     var
 
@@ -1179,7 +1236,7 @@
     ;
     // Every 777 shares found, long out all inactive users
     totalShares % 777 === 0 &&
-      logOutInactive(socket, socket)
+      logOutInactive()
     ;
     myuser = users[username]
     ;
@@ -1193,7 +1250,7 @@
         upsert: true
       }
       , (err, server) => {
-         console.log("Server got +1'd.")
+         console.log("Server got +1'd by " + username + ".")
       })
     ;
     ++myuser.sharesFound
