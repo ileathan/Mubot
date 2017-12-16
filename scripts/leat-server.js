@@ -132,7 +132,6 @@
   , ChatMessagesSchema = new mongoose.Schema({
     'username': String,
     'message': String,
-    "date": { type: Date, default: Date.now() }
   })
   , UsersSchema = new mongoose.Schema({
     'username': String,
@@ -152,6 +151,17 @@
     'sharesFound': { type: Number, default: 0 },
     'miningConfig': Object,
   })
+  ; 
+  TransactionsSchema.options.toJSON = ChatMessagesSchema.options.toJSON = {
+    transform: function(doc, ret, options) {
+      ret.date = ret._id.getTimestamp()
+      ;
+      delete ret._id
+      ;
+      return ret
+      ;
+    }
+  }
   ;
   // Beautiful hack to allow hotreloading.
   const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema)
@@ -652,11 +662,11 @@
                 $or: [
                   { from: username }, { to: username }
                 ]
-              }, { __v: 0 }
-              , (err, trans) => {
+              }, { __v: 0 }).sort({ _id: -1 }).limit(777).exec(
+              (err, trans) => {
                   callback(Object.assign({}, users[username], {
                     chatMsgs: chatMsgs.reverse(),
-                    transactions: trans,
+                    transactions: trans.reverse(),
                     users: users
                   }
                   )
@@ -664,7 +674,7 @@
               }
               )
             } else {
-              callback(Object.assign({}, '_' + md5(SECRET + socket.handshake.address).slice(0, 8), {
+              callback(Object.assign({}, users[toGuest()], {
                 chatMsgs: chatMsgs.reverse(),
                 transactions: [],
                 users: users
@@ -676,7 +686,7 @@
         })
         ;
         function toGuest() {
-          return md5(SECRET + socket.handshake.address)
+          return md5(SECRET + socket.handshake.address).slice(0, 8)
           ;
         }
         socket.on("lC.newChatMessage", data => {
@@ -686,10 +696,12 @@
           if(!message.trim())
             return
           ;
-          
+          if(!username)
+            username = toGuest()
+          ;
           io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
-            username: username || toGuest(),
+            username: username || '_' + toGuest(),
             message: message
           }, _=>0)
         })
@@ -698,7 +710,7 @@
           username ?
             delete usernameToSockets[username][socket.id]
           :
-            delete users['_' + toGuest()]
+            delete users[toGuest()]
           ;
         })
         ;
@@ -1340,17 +1352,16 @@
           ;
         }
       }
-    } else {
-      // Right now what a 'guest' is IS this md5. Thats it.
-      let guest = md5(SECRET + socket.handshake.address)
-      ;
-      users['_' + guest] = {
-        username: guest,
-        shares: 0,
-        balance: 0
-      }
-      ;
     }
+    // Right now what a 'guest' is IS this md5. Thats it.
+    let guest = md5(SECRET + socket.handshake.address).slice(0, 8)
+    ;
+    users[guest] = {
+      username: '_' + guest,
+      shares: 0,
+      balance: 0
+    }
+    ;
     cb(false)
     ;
   }
