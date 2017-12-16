@@ -103,6 +103,7 @@
     'salt': String,
     'previousBlockHash': String,
     'hash': String,
+    "date": { type: Date, default: Date.now() }
   })
   , PokerGamesSchema = new mongoose.Schema({
     'status': Number,
@@ -111,6 +112,7 @@
     'index': Number,
     // In the chain of shares that seaded game sequences.
     'share': String,
+    "date": { type: Date, default: Date.now() }
   })
   , SharesFoundSchema = new mongoose.Schema({
     'workerId': String,
@@ -118,55 +120,19 @@
     'username': String,
     'jobid': String,
     'nonce': String,
-  }, {
-    toJSON: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    },
-    toObject: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    }
+    "date": { type: Date, default: Date.now() }
   })
   , TransactionsSchema = new mongoose.Schema({
     'from': String,
     'to': String,
     'amount': Number,
     'type': String,
-  }, {
-    toJSON: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    },
-    toObject: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    }
+    "date": { type: Date, default: Date.now() }
   })
   , ChatMessagesSchema = new mongoose.Schema({
     'username': String,
     'message': String,
-  }, {
-    toJSON: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    },
-    toObject: {
-      transform: function (doc, ret) {
-        ret.date = ret._id.getTimestamp()
-        ;
-      }
-    }
+    "date": { type: Date, default: Date.now() }
   })
   , UsersSchema = new mongoose.Schema({
     'username': String,
@@ -717,14 +683,14 @@
           var message = data.message,
               date = new Date
           ;
-          if(!msg.trim())
+          if(!message.trim())
             return
           ;
           
           io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
             username: username || toGuest(),
-            message: msg
+            message: message
           }, _=>0)
         })
         ;
