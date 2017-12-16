@@ -675,8 +675,6 @@
 
     io.on('connection', socket => {
 
-      console.log('New conn.')
-
       isLoggedIn(socket, (username, cookie) => {
 
         socket.on('lC.load', (_, callback) => {
@@ -700,26 +698,16 @@
               }
               )
             } else {
-              let user = md5(socket.handshake.address).slice(0, 8);
-
-              if(!users['_' + user]) {
-                users['_' + user] = {
-                  username: 'Guest #' + ++guests,
-                  shares: 0,
-                  balance: 0
-                };
-              }
-              callback(Object.assign({}, users['_' + user], {
-                chatMsgs: chatMsgs.map(_=>_.date = _.getTimeStamp()).reverse(),
+              callback(Object.assign({}, users['_' + md5(SECRET + socket.handshake.address)], {
+                chatMsgs: chatMsgs.reverse(),
                 transactions: [],
                 users: users
               }))
               ;
             }
-          }
-          )
-        }
-        )
+          })
+          ;
+        })
         ;
         socket.on("lC.newChatMessage", data => {
           var message = data.message,
@@ -737,6 +725,14 @@
             username: username,
             message: msg
           }, _=>0)
+        })
+        ;
+        socket.on('disconnect', () => {
+          username ?
+            delete usernameToSockets[username][socket.id]
+          :
+            delete users['_' + md5(SECRET + socket.handshake.address)]
+          ;
         })
         ;
         // Logged in users only API
@@ -797,11 +793,6 @@
             )
             ;
           }
-          ;
-        })
-        ;
-        socket.on('disconect', ()=>{
-          delete usernameToSockets[username][socket.id]
           ;
         })
         ;
@@ -1384,8 +1375,19 @@
         }
       }
     }
-    // Guest logged in/out.
+    // Right now what a 'guest' is IS this md5. Thats it.
+    let guest = md5(SECRET + socket.handshake.address)
+    ;
+    else {
+      users['_' + guest] = {
+        username: guest
+        shares: 0,
+        balance: 0
+      }
+      ;
+    }
     cb(false)
+    ;
   }
 
 // End of file.
