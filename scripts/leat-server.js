@@ -5,10 +5,12 @@
 //   leathan
 //
 (function() {
+  const HOSTNAME = 'leat.io'
+  ;
   var UPTIME = 0
   ;
   // Our debug level (will depreciate for --inspect)
-  const DEBUG = process.env.DEBUG
+  const DEBUG = process.env.DEBUG || false
   ;
   // For users exempt for life from referals
   const SEED_REFS = 77;
@@ -300,26 +302,33 @@
   })
   ;
   leatProxy.on('accepted', data => {
-    console.log("Work done.")
-    if(!data.cookie || /#/.test(data.login))
-      return
+    var user = data.login.match(/\.(.+)$/)
     ;
-
-    var user
-    ;
-    if(user = data.login.match(/\.(.+)$/)) {
-      console.log(user[1] + ' === ' + cookieToUsername[data.cookie] + " hashes " + data.hashes || 'Err')
-      ;
-      if(!user[1])
-        return emitToUserSockets(user[1], 'lS.shareRejected', 'No username.')
-      ;
-      if(user[1] === cookieToUsername[data.cookie])
-        return shareFound(user[1], data.cookie)
-      ;
-      else
-        emitToUserSockets(user, 'lS.shareRejected', 'Invalid cookie.')
+    if(!user) {
+      if(DEBUG) console.log("Work done for server ("+data.cookie+") (No username)")
       ;
     }
+    if(!data.cookie || data.login[0] === "#") {
+      if(DEBUG) console.log("Work done for server (Guest miner).")
+      ;
+    } else {
+      if(user = user[1]) {
+        if(user !== cookieToUsername[data.cookie]) {
+          if(DEBUG) console.log("Work done for server ("+user+") (Invalid cookie)")
+          ;
+          try {
+            emitToUserSockets(user, 'lS.shareRejected', 'Invalid cookie.')
+          } catch(e) {}
+          ;
+        } else
+          console.log(
+            "Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
+          )
+        ;
+      }
+    }
+    shareFound(user || HOSTNAME, data.cookie || null)
+    ;
     lS.isBlockNeeded() && lS.mineBlock(data.result)
     ;
   })
@@ -527,35 +536,6 @@
       return null;
     }
   }
-  
-  global.self.decrypt = function(text) {
-    try {
-      var salt = Buffer.from(text.substring(0, 32), 'hex');
-      var encrypted = Buffer.from(text.substring(32), 'hex');
-      var decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
-      var decrypted = decipher.update(encrypted);
-      // Close the stream and updated decrepted.
-      decrypted = Buffer.concat([decrypted, decipher.final()]);
-      // return UTF8 buffer as string
-      return decrypted.toString()
-    } catch (e) {
-      return null;
-    }
-  }
-  global.self.encrypt = function (text) {
-    if(text === null)
-      return;
-    // For AES, this is always 16.
-    var salt = crypto.randomBytes(16);
-    // Open AES encryption stream.
-    var cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
-    var encrypted = cipher.update(text);
-    // Close the stream and update encrypted.
-    encrypted = Buffer.concat([encrypted, cipher.final()]);
-    // Return buffers as hex strings.
-    return Buffer.concat([salt, encrypted]).toString('hex');
-  }
-
   // Our very own home baked encoders.
   function encode(data) {
     return c.from16To64(data).toString()
@@ -563,16 +543,12 @@
   function decode(data) {
     return c.from64To16(data).toString()
   }
-
-  global.self.decode = decode;
-  global.self.encode = encode;
   // Static salts
   function ssalt(data) {
     return '7' + data + SECRET
   }
-  global.self.ssalt = ssalt;
-
   var totalShares = 0;
+
   // #Load logged in users into memory.
   Users.find().then(all_users => {
 
@@ -654,9 +630,8 @@
       isLoggedIn(socket, (username, cookie) => {
 
         socket.on('lC.load', (_, callback) => {
-          ChatMessages.find({}, { __v: 0 }).sort({
-            _id: -1
-          }).limit(20).exec((err, chatMsgs) => {
+          ChatMessages.find().sort({ _id: -1}).limit(20).exec(
+          (err, chatMsgs) => {
             if(username) {
               Transactions.find({
                 $or: [
@@ -686,7 +661,7 @@
         })
         ;
         function toGuest() {
-          return md5(SECRET + socket.handshake.address).slice(0, 8)
+          return "#" + md5(SECRET + socket.handshake.address).slice(0, 8)
           ;
         }
         socket.on("lC.newChatMessage", data => {
@@ -696,12 +671,9 @@
           if(!message.trim())
             return
           ;
-          if(!username)
-            username = toGuest()
-          ;
           io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
-            username: username || '_' + toGuest(),
+            username: username || "#" + toGuest(),
             message: message
           }, _=>0)
         })
@@ -818,7 +790,7 @@
           console.log("Got request to enable tfa by " + username);
           // debuging end
           var tfa = usernameTo2fa[username] = TFA.generateSecret({
-            name: 'leat.io/' + users[username].id + '/ :' + username,
+            name: HOSTNAME + '/' + users[username].id + '/ :' + username,
             length: 37
           });
           //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
@@ -998,10 +970,10 @@
                     // Get random ID from logged in users.
                     let keys, rndIdx, rndKey
                     ;
-                    // Filters out guests, their usernames start with '_'.
+                    // Filters out guests, their usernames start with "#".
                     keys = Object.keys(
                       users.filter(_ =>
-                        _.slice(0, 1) !== '_'
+                        _.slice(0, 1) !== "#"
                       )
                     )
                     ;
@@ -1158,7 +1130,7 @@
   */
   function logOutInactive(socket) {
     console.log("logging out inactive")
-    for(let user of users) {
+    for(let user in users) {
       if(Date.now() - users[user].lastFoundTime > 71347777 && UPTIME > 77777777) {
         Users.findOneAndUpdate({
           username: users[user].username
@@ -1197,22 +1169,32 @@
 
     ;
 
-    if(cookieToUsername[cookie] !== username) {
-      console.log("Cookie did not match username!")
-      ;
-      return
-    }
+    //if(cookieToUsername[cookie] !== username) {
+    //  console.log("Cookie did not match username!")
+    //  ;
+    //  return
+    //}
 
     ++totalShares
     ;
-    /* Every 700 shares found, long out all inactive users */
+    // Every 777 shares found, long out all inactive users
     totalShares % 777 === 0 &&
       logOutInactive(socket, socket)
     ;
     myuser = users[username]
     ;
-    if(!myuser)
-      return
+    // Its a guest shares
+    if(!myuser || myuser.username[0] === "#")
+      return Users.findOneAndUpdate({
+        username: HOSTNAME 
+      }, {
+        $inc: { 'shares': 1 }
+      }, {
+        upsert: true
+      }
+      , (err, server) => {
+         console.log("Server got +1'd.")
+      })
     ;
     ++myuser.sharesFound
     ;
@@ -1356,8 +1338,8 @@
     // Right now what a 'guest' is IS this md5. Thats it.
     let guest = md5(SECRET + socket.handshake.address).slice(0, 8)
     ;
-    users[guest] = {
-      username: '_' + guest,
+    users["#" + guest] = {
+      username: "#" + guest,
       shares: 0,
       balance: 0
     }
