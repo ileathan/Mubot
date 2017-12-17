@@ -606,7 +606,7 @@ console.log(data.cookie)*/
       cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
     })
     leatProxy.listen();
-    console.log("Stratum launched on port 3000.")
+    console.log("Stratum launched.")
 
 
     leatProxy.on('accepted', data => {
@@ -728,10 +728,10 @@ console.log(data.cookie)*/
           if(!message.trim())
             return
           ;
-          io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
+          io.emit("lS.newChatMessage", {username, message, date})
           ChatMessages.create({
-            username: username || toGuest(),
-            message
+            username: username || "#" + toGuest(),
+            message: message
           }, _=>0)
         })
         ;
@@ -837,7 +837,6 @@ console.log(data.cookie)*/
         ;*/
         socket.on("lC.transfer", transferShares.bind(username))
         ;
-        // Passes an aditional parameter allSessions specifying whether or not to log out all cookies.
         socket.on("lC.logout", logout.bind(null, username, socket, cookie))
         ;
         // debuging
@@ -1165,20 +1164,18 @@ console.log(data.cookie)*/
 * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
 *
 */
-  function logout(user, socket, cookie, allSessions) {
+  function logout(user, socket, cookie) {
 
-    var query = { username: user }
-    allSessions ?
-      query.$pull = { loginCookies: cookie }
-    :
-      query.$set = { loginCookies: [] }
-    ;
-    Users.findOneAndUpdate(query, (err, user) => {
+    Users.findOneAndUpdate({
+      username: user
+    }, {
+      $pull: { loginCookies: cookie }
+    }, (err, user) => {
       delete cookieToUsername[cookie]
       ;
       delete usernameToSockets[user.username][socket.id]
       ;
-      console.log(user.username + " loggin out. (allSessions: "+allSessions+")")
+      console.log("At user request, Logging " + user.username + " out.")
     }
     )
     ;
