@@ -591,13 +591,8 @@ console.log(data.cookie)*/
   var leatProxy;
   module.exports = bot => {
 
-
     leatProxy = require('leat-stratum-proxy');
-
     const fs = require('fs')
-
-
-
     leatProxy = new leatProxy({
       server: bot.server,
       host: 'pool.supportxmr.com',
@@ -606,8 +601,7 @@ console.log(data.cookie)*/
       cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
     })
     leatProxy.listen();
-    console.log("Stratum launched.")
-
+    console.log("Stratum launched on port 3000.")
 
     leatProxy.on('accepted', data => {
       shareFound(data.login.split(".")[1])
@@ -628,12 +622,8 @@ console.log(data.cookie)*/
       ;
     })
     ;
-
-
-
-
     // One time time out to let the server load all the data into memory
-    setTimeout(main.bind(this, bot), 7777);
+    setTimeout(main.bind(this, bot), 7);
 
     bot.router.get(LEGACY_ENDPOINTS.concat(['/', '/:number/']), (req, res, next) => {
       if(req.path === '/') {
@@ -728,10 +718,10 @@ console.log(data.cookie)*/
           if(!message.trim())
             return
           ;
-          io.emit("lS.newChatMessage", {username, message, date})
+          io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
           ChatMessages.create({
-            username: username || "#" + toGuest(),
-            message: message
+            username: username || toGuest(),
+            message
           }, _=>0)
         })
         ;
@@ -837,6 +827,7 @@ console.log(data.cookie)*/
         ;*/
         socket.on("lC.transfer", transferShares.bind(username))
         ;
+        // Passes an aditional parameter allSessions specifying whether or not to log out all cookies.
         socket.on("lC.logout", logout.bind(null, username, socket, cookie))
         ;
         // debuging
@@ -1164,18 +1155,20 @@ console.log(data.cookie)*/
 * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
 *
 */
-  function logout(user, socket, cookie) {
+  function logout(user, socket, cookie, allSessions) {
 
-    Users.findOneAndUpdate({
-      username: user
-    }, {
-      $pull: { loginCookies: cookie }
-    }, (err, user) => {
+    var query = { username: user }
+    allSessions ?
+      query.$pull = { loginCookies: cookie }
+    :
+      query.$set = { loginCookies: [] }
+    ;
+    Users.findOneAndUpdate(query, (err, user) => {
       delete cookieToUsername[cookie]
       ;
       delete usernameToSockets[user.username][socket.id]
       ;
-      console.log("At user request, Logging " + user.username + " out.")
+      console.log(user.username + " loggin out. (allSessions: "+allSessions+")")
     }
     )
     ;
