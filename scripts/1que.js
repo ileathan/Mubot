@@ -25,13 +25,13 @@
         var chunk;
         // only proceed if we need to break msg down to chunks.
         if(context.strings[i] && context.strings[i].length > 2000) {
-          if(context.response.match[0].indexOf('view') === 0) {
+          if(context.response.match[0].split(' ')[1] === 'view') {
             // The command is a view code command
             fpad = '```javascript\n';
             // so pad it with code markdown.
             epad = '```'
           }
-          if(context.response.match[0].indexOf('search') === 0) {
+          if(context.response.match[0].split(' ')[1] === 'search') {
             // The command is a search web command
             fpad = '```\n';
             // so pad it with code markdown.

@@ -14,9 +14,12 @@
       quit = true;
     })
     bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, res => {
-      var time;
-      if(quit) return;
-      time = res.match[1] || 60
+      if(allRequests.length)
+        return res.send("No alerts created.")
+      ;
+      var time = res.match[1] || 30;
+      //if(!quit) return;
+      quit = false;
       res.send("Starting alert scanner every " + time + " seconds.")
       alertMe(parseFloat(time * 1000))
     })
