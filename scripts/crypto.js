@@ -21,7 +21,7 @@
     robot.on('CryptoReply', function(req, mode, msg) {
       var key;
       if(key = Object.keys(req)[0]) {
-        cR[key] = req[key]
+        mode !== 'swap' ? cR[key] = req[key] : cR = req;
       }
       if(mode === "all" && Object.keys(cR).length === 3) {
         msg.send(msg.header ? cR : Object.keys(cR.bids)[0] + " price is " + cR.price + ".\n" + "People are buying " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0]
@@ -38,6 +38,7 @@
       cR = {}
     });
     robot.on('CryptoRequest', (req, msg) => {
+
       if(!req.market) req.market = 'p';
       req.mode = "all";
       if(req.depth) req.mode = "depth";
@@ -47,6 +48,7 @@
       if(req.ticker2 && req.ticker2 !== 'false') req.ticker2 = req.ticker2.toUpperCase();
       req.amount = req.amount;
       req.depth = req.depth;
+
       // If no depth is specified, use max.
       if(req.amount || !req.depth) req.depth = 999999;
       Get(req.ticker, req.depth, req.market, msg, robot, orderBook => {
@@ -120,6 +122,7 @@
   };
 
   Loop = (orderBook, req, msg, robot) => {
+
     var amountInBtc, cur, key, keys, reply, totalBtc, totalTicker;
     keys = Object.keys(orderBook);
     for(let i = 0, len = keys.length; i < len; ++i) {
@@ -148,12 +151,14 @@
                 totalTicker2 = parseFloat(+totalTicker2 + cur[1]).toFixed(8);
                 totalBtc = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
                 if(totalBtc >= amountInBtc) {
-                  robot.emit('CryptoReply', {
+                  let obj = {
                     base: req.ticker,
                     base_amount: req.amount,
                     target: req.ticker2,
                     amount: parseFloat(totalTicker2 - ((totalBtc - amountInBtc) / cur[0])).toFixed(8)
-                  }, req.mode, msg)
+                  }
+                  ;
+                  robot.emit('CryptoReply', obj, req.mode, msg)
                 }
               }
             })
