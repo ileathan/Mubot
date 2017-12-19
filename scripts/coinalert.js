@@ -4,7 +4,7 @@
 // Commands:
 //   hubot start|stop scanner alert - manually start/stops the scanners useful for custom delays.
 //   hubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
-
+// . hubot alerts [raw] - display the current alerts.
 (function(){
   const request = require('request');
   var quit = false, allRequests = [];

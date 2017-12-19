@@ -165,6 +165,17 @@
     }
   }
   ;
+  UsersSchema.options.toJSON = {
+    transform: function(doc, ret, options) {
+      ret.date = ret._id.getTimestamp()
+      ;
+      delete ret._id; delete ret.__v, delete ret.password; delete ret.loginCookies
+      ;
+      return ret
+      ;
+    }
+  }
+  ;
   // Beautiful hack to allow hotreloading.
   const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema)
   ;
@@ -745,7 +756,7 @@ console.log(data.cookie)*/
             if(!shares)
               callback(false, "No work log history.");
             else
-              callback(shares.map(_=>_.date = _.getTimeStamp()), null)
+              callback(shares, null)
           })
           ;
         })
@@ -763,68 +774,25 @@ console.log(data.cookie)*/
         })
         ;
         socket.on("lC.isMiningFor", (user, callback) => {
-          if(user) {
-            Users.findOneAndUpdate({
-              username: new RegExp('^' + username + '$','i')
-            }, {
-              $set: { 'isMiningFor': user }
-            }, (err, found) => {
-              if(found) {
-                user ?
-                  users[username].isMiningFor = user
-                :
-                  delete users[username].isMiningFor
-                ;
-              }
-              callback(!!user, err || !user && "User not found")
-            })
-            ;
-          } else {
-            delete users[username].isMiningFor
-            ;
-            Users.findOneAndUpdate({
-              username: new RegExp('^' + username + '$','i')
-            }, {
-              $unset: { 'isMiningFor': 1 }
-            }, (err, user) =>
-              callback(!!user, err)
-            )
-            ;
+          var query = {
+            username: new RegExp('^' + username + '$','i'),
+            [user ? '$set' : '$unset']: {
+              isMiningFor: user || 1
+            }
           }
           ;
-        })
+          Users.findOneAndUpdate(query, (err, found) => {
+            if(found) {
+              user ?
+                users[username].isMiningFor = user
+              :
+                delete users[username].isMiningFor
+              ;
+            }
+            callback(!!user, err || !user && "User not found")
+            ;
+          })
         ;
-        /* DEPRECIATED / can delete 
-        socket.on("update mining configuration", (config, callback) => {
-          if(config) {
-            Users.findOneAndUpdate({
-              username: new RegExp('^' + username + '$','i')
-            }, {
-              $set: { 'miningConfig': config }
-            }, (err, user) => {
-              if(user)
-                users[username].miningConfig = config
-              ;
-              callback(!!user, err)
-              ;
-            })
-            ;
-          } else {
-            Users.findOneAndUpdate({
-              username: new RegExp('^' + username + '$','i')
-            }, {
-              $unset: { 'miningConfig': 1 }
-            }, (err, user) => {
-              if(user)
-                delete users[username].miningConfig
-              ;
-              callback(!!user, err)
-              ;
-            })
-            ;
-          }
-        })
-        ;*/
         socket.on("lC.transfer", transferShares.bind(username))
         ;
         // Passes an aditional parameter allSessions specifying whether or not to log out all cookies.
