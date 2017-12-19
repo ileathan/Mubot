@@ -314,71 +314,7 @@
   Object.assign(global.self, {
     lS: lS
   })
-  ;/*
-  leatProxy.on('accepted', data => {
-    shareFound(data.login.split(".")[1])
-    ;
-    console.log(
-      "Work done by ("+data.login.split(".")[1]+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
-    )
-console.log(data.cookie)*/
-    //lS.isBlockNeeded() && lS.mineBlock(data.result)
-    //;
-
-
-    //var user = data.login.split(".")[1]
-    //;
-    //shareFound(users[user] ? users[user].username : HOSTNAME) //, data.cookie)
-    //;
-    /*(if(!user) {
-      if(DEBUG) console.log("Work done for server ("+data.cookie+") (No username)")
-      ;
-    }
-    if(!data.cookie || data.login[0] === "#") {
-      if(DEBUG) console.log("Work done for server (Guest miner).")
-      ;
-    } else {
-      if(user = user[1]) {
-        if(user !== cookieToUsername[data.cookie]) {
-          if(DEBUG) console.log("Work done for server ("+user+") (Invalid cookie)")
-          ;
-          try {
-            emitToUserSockets(user, 'lS.shareRejected', 'Invalid cookie.')
-          } catch(e) {}
-          ;
-        } else
-          console.log(
-            "Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
-          )
-        ;
-      }
-    }
-    shareFound(users[user].username || HOSTNAME, data.cookie || null)
-    ;
-    lS.isBlockNeeded() && lS.mineBlock(data.result)
-    ;*/
-  //})
   ;
-/*  leatProxy.on('found', data => {
-
-    /*if(!data.cookie || /#/.test(data.login))
-      return
-    ;
-    var user = data.login.match(/\.(.+)$/)
-    ;
-    if(user)
-      user = user[1]
-    ;*//*
-    SharesFound.create({
-      workerId: data.id,
-      username: data.login.split('.')[1] || '_anon',
-      result: data.result,
-      nonce: data.nonce,
-      jobid: data.job_id
-    }, _=>0)
-    ;
-  })
-  ;*/
   function Player(name) {
 
     var user = users[name];
@@ -602,7 +538,7 @@ console.log(data.cookie)*/
 
     leatProxy = require('leat-stratum-proxy');
     const fs = require('fs')
-    leatProxy = new leatProxy({
+    lP = leatProxy = new leatProxy({
       server: bot.server,
       host: 'pool.supportxmr.com',
        port: 3333,
