@@ -7,8 +7,6 @@
 (function() {
   const HOSTNAME = 'leat.io'
   ;
-  var UPTIME = 0
-  ;
   // Our debug level (will depreciate for --inspect)
   const DEBUG = process.env.DEBUG || false
   ;
@@ -837,9 +835,8 @@ console.log(data.cookie)*/
           SharesFound.count({}, (err, count) => {
             var stats = leatProxy.getStats();
             var statsR = {};
-            UPTIME = statsR.uptime = stats.uptime;
+            statsR.uptime = stats.uptime;
             statsR.clients = stats.miners.length;
-            //statsR.clients = stats.connections[0].miners;
             statsR.total_hashes = count;
             callback(users, statsR)
           })
@@ -1009,93 +1006,79 @@ console.log(data.cookie)*/
   }
   ;
   function transferShares(data, callback) {
-    username = this + '';
-    if(users[username].tfa) {
-      if(!users[username]._verified)
-        return callback(false, "Enter 2FA code.");
+    var from = this + '',
+        to = data.username,
+        amount = data.amount,
+        res = ""
+    ;
+
+    if(users[from].tfa) {
+      if(!users[from]._verified)
+        res = "Enter 2FA code.";
       else
-        delete users[username]._verified
+        delete users[from]._verified
+      ;
     }
-    if(data) {
-      let toUser = data.username,
-          amount = data.amount
-      ;
-
-      if(!Number.isInteger(amount) && /^_|[^a-zA-Z0-9_]/.test(toUser))
-
-        return callback(false, "Bad amount/user.")
-      ;
-
-      if(users[username].shares < amount)
-
-        return callback(false, "Not enough funds.")
-      ;
-      Users.findOneAndUpdate({
-        username: new RegExp('^' + toUser + '$','i')
-      }, {
-        $inc: {
-          'shares': amount
-        }
+    if(!Number.isInteger(amount) && /^_|[^a-zA-Z0-9_]/.test(to))
+      res =  "Bad amount/user."
+    ;
+    if(users[from].shares < amount)
+      res = "Not enough funds."
+    ;
+    if(res)
+      return callback(false, res)
+    ;
+    Users.findOneAndUpdate({
+      username: RegExp('^' + to + '$','i') }, {
+        $inc: { 'shares': amount  }
       }, (err, user) => {
         if(!user)
           return callback(false, "Username not found.")
         ;
-        Transactions.create({
-          from: username,
-          to: toUser,
-          type: 'transfer',
-          amount: amount
-        }, _ => 0
-        )
+        Transactions.create({ from, to, type: 'transfer', amount }, _=>0)
         ;
-        if(users[toUser]) {
-          user = toUser
+        if(users[to]) {
+          emitToUserSockets(to, "lS.transfer", {amount, user: from})
           ;
-          emitToUserSockets(username, "lS.transfer", {amount, user})
-          ;
-          users[toUser].shares += amount
+          users[to].shares += amount
           ;
         }
-        users[username].shares -= amount
+        users[from].shares -= amount
         ;
-        Users.findOneAndUpdate({
-          username
-        }, {
-          $inc: {
-            'shares': -amount
-          }
-        }, (err, user) => {
+        Users.findOneAndUpdate({ username }, { $inc: { shares: -amount } }, (err, user) => {
           if(!user) {
             callback(true, "Critical error, payment sent but not deducted.")
           } else {
             callback(true, null)
           }
-        }
-        )
-      }
-      )
-    } else {
-      callback(false, "No data provided.")
-    }
+        })
+        ;
+      })
+      ;
   }
 
   /*
-* a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
-*
-*/
+  * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
+  *
+  */
   function logout(user, socket, cookie, allSessions) {
 
-    var query = { username: user }
-    allSessions ?
-      query.$pull = { loginCookies: cookie }
+    var match = { username: user };
+    var query = allSessions ?
+      { $pull: { loginCookies: cookie } }
     :
-      query.$set = { loginCookies: [] }
+      { $set: { loginCookies: [] } }
     ;
-    Users.findOneAndUpdate(query, (err, user) => {
-      delete cookieToUsername[cookie]
-      ;
-      delete usernameToSockets[user.username][socket.id]
-      ;
+    delete usernameToSockets[user.username][socket.id]
+    ;
+    Users.findOneAndUpdate(match, query, (err, user) => {
+      if(allSessions) {
+        for(let cookie of user.loginCookies)
+          delete cookieToUsername[cookie]
+        ;
+      } else {
+        delete cookieToUsername[cookie]
+      }
       console.log(user.username + " loggin out. (allSessions: "+allSessions+")")
     }
     )
@@ -1109,7 +1092,7 @@ console.log(data.cookie)*/
   function logOutInactive() {
     console.log("logging out inactive")
     for(let user in users) {
-      if(Date.now() - users[user].lastFoundTime > 71347777 && UPTIME > 77777777) {
+      if(Date.now() - users[user].lastFoundTime > 71347777) {
         Users.findOneAndUpdate({
           username: users[user].username
         }, {
@@ -1134,6 +1117,8 @@ console.log(data.cookie)*/
       console.log("logging out inactive finished")
     }
   }
+  setInterval(logOutInactive, 77777777)
+  ;
 
   /*
   * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
