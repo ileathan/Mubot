@@ -752,9 +752,7 @@ console.log(data.cookie)*/
           ;
           user ? users[username].isMiningFor = user : delete users[username].isMiningFor
           ;
-          callback(!!users[user])
-          ;
-          users[user] && Users.findOneAndUpdate(match, query).exec()
+          Users.findOneAndUpdate(match, query, (err, user) => callback(!!user))
           ;
         })
         socket.on("lC.transfer", transferShares.bind(username))
