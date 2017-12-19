@@ -1069,7 +1069,7 @@ console.log(data.cookie)*/
     :
       { $set: { loginCookies: [] } }
     ;
-    delete usernameToSockets[user.username][socket.id]
+    delete usernameToSockets[user][socket.id]
     ;
     Users.findOneAndUpdate(match, query, (err, user) => {
       if(allSessions) {
