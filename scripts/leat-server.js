@@ -167,7 +167,9 @@
   ;
   UsersSchema.options.toJSON = {
     transform: function(doc, ret, options) {
-      ret.date = ret._id.getTimestamp()
+      ret._id && (
+        ret.date = ret._id.getTimestamp()
+      )
       ;
       delete ret._id; delete ret.__v, delete ret.password; delete ret.loginCookies
       ;
@@ -579,17 +581,15 @@ console.log(data.cookie)*/
   Users.find().then(all_users => {
 
     for(let i = 0, l = all_users.length; i < l; ++i) {
-
-      let user = all_users[i].toJSON();
+      let user = all_users[i]
+      ;
       for(let i = 0, l = user.loginCookies.length; i < l; ++i) {
         let cookie = user.loginCookies[i]
         ;
         cookieToUsername[cookie] = user.username
         ;
       }
-      delete user.password; delete user._id; delete user.__v;  delete user.loginCookies
-      ;
-      users[user.username] = user
+      users[user.username] = user.toJSON()
       ;
     }
 
@@ -748,51 +748,17 @@ console.log(data.cookie)*/
         if(!username)
           return
         ;
-        // Its a guest, dont allow entry.
-        socket.on("lC.work", callback => {
-          sharesFound.find({
-            miner: new RegExp('^' + username + '$','i')
-          }, (err, shares) => {
-            if(!shares)
-              callback(false, "No work log history.");
-            else
-              callback(shares, null)
-          })
-          ;
-        })
-        ;
-        socket.on("lC.trans", callback => {
-          Transactions.find({
-            from: new RegExp('^' + username + '$','i')
-          }, (err, trans) => {
-            if(!trans)
-              callback(false, "No transfer history.");
-            else
-              callback(trans, null)
-          })
-          ;
-        })
-        ;
         socket.on("lC.isMiningFor", (user, callback) => {
-          var query = {
-            username: new RegExp('^' + username + '$','i'),
-            [user ? '$set' : '$unset']: {
-              isMiningFor: user || 1
-            }
-          }
+          var match = { username: RegExp('^' + username + '$', 'i') }
+            , query = { [user ? '$set' : '$unset']: { isMiningFor: user || 1} }
           ;
-          Users.findOneAndUpdate(query, (err, found) => {
-            if(found) {
-              user ?
-                users[username].isMiningFor = user
-              :
-                delete users[username].isMiningFor
-              ;
-            }
-            callback(!!user, err || !user && "User not found")
-            ;
-          })
-        ;
+          user ? users[username].isMiningFor = user : delete users[username].isMiningFor
+          ;
+          callback(!!users[user])
+          ;
+          users[user] && Users.findOneAndUpdate(match, query).exec()
+          ;
+        })
         socket.on("lC.transfer", transferShares.bind(username))
         ;
         // Passes an aditional parameter allSessions specifying whether or not to log out all cookies.
@@ -936,11 +902,7 @@ console.log(data.cookie)*/
               :
                 usernameToSockets[user.username] = {[socket.id]: socket}
               ;
-              var u
-              ;
-              u = users[user.username] = user.toJSON()
-              ;
-              delete u.loginCookies; delete u._id; delete u.__v; delete u.password
+              users[user.username] = user.toJSON()
               ;
             })
             ;
@@ -1006,9 +968,7 @@ console.log(data.cookie)*/
                   ;
                   Users.create(acntdata, (err, user) => {
 
-                    var u = users[user.username] = user.toJSON()
-                    ;
-                    delete u.password; delete u.loginCookies; delete u.id; delete u._id
+                    users[user.username] = user.toJSON()
                     ;
                     usernameToSockets[user.username] = {[socket.id]: socket}
                     ;
