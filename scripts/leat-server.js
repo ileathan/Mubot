@@ -7,6 +7,7 @@
 (function() {
   const HOSTNAME = 'leat.io'
   ;
+  const LEAT_IO_ADDR = "44sHctzZQoZPyavKM5JyLGFgwZ36FXTD8LS6nwyMgdbvhj1yXnhSQokErvFKh4aNmsAGzMyDLXSBS5vGxz3G3T46KukLmyc";
   // Our debug level (will depreciate for --inspect)
   const DEBUG = process.env.DEBUG || false
   ;
@@ -505,6 +506,9 @@
 
   }
   )
+  function idToUser(id, callback) {
+    Users.findOne({id}).then(callback)
+  }
   SharesFound.count({}, (err, count) => {
     totalShares = count;
   }
@@ -525,12 +529,20 @@
     console.log("Stratum launched")
 
     leatProxy.on('accepted', data => {
-      shareFound(data.login.split(".")[1])
-      ;
+      var [addr, user] = data.login.split('.');
+      if(addr !== LEAT_IO_ADDR) {
+        console.log("Unique addr miner - " + addr)
+        return
+        ;
+      }
+      if(user && user.substr(0, 2) === '_#') {
+        idToUser(user.substr(2), shareFound);
+      } else {
+        shareFound(user);
+      }
       console.log(
-        "Work done by ("+data.login.split(".")[1]+"/"+cookieToUsername[data.cookie]+"). Total: "+data.hashes||0
+        "Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+ (data.hashes||0) + " Cookie: " + data.cookie
       )
-     console.log(data.cookie)
     })
     leatProxy.on('found', data => {
       SharesFound.create({
@@ -676,7 +688,6 @@
             Users.findOneAndUpdate(match, query).exec();
             callback(!user || !!found)
           })
-          
           ;
         })
         socket.on("lC.transfer", transferShares.bind(username))
@@ -1049,16 +1060,8 @@
   function shareFound(username) {
 
     var
-
       needs_to_pay, myuser
-
     ;
-
-    //if(cookieToUsername[cookie] !== username) {
-    //  console.log("Cookie did not match username!")
-    //  ;
-    //  return
-    //}
 
     ++totalShares
     ;
@@ -1068,6 +1071,7 @@
     ;
     myuser = users[username]
     ;
+
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#")
       return Users.findOneAndUpdate({
