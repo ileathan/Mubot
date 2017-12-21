@@ -21,7 +21,7 @@
   // Quick guest hash ip-auth
   const md5 = require('md5')
   ;
-  const SERVER_ROOT = '/../node_modules/hubot-server/public/leat.html'
+  const SERVER_ROOT = '/../node_modules/hubot-server/public/'
   ;
   const DATABASE_ENDPOINT = 'mongodb://localhost/gambler-api'
   ;
@@ -97,7 +97,7 @@
   mongoose.Promise = global.Promise
   ;
   const conn = mongoose.createConnection(DATABASE_ENDPOINT)
-  
+
   , BlockChainSchema = new mongoose.Schema({
     'share': String,
     'salt': String,
@@ -199,30 +199,6 @@
   * |_____/ \__|_|  \__,_|\__|\__,_|_| |_| |_|  *
   *                                             *
   **********************************************/
-
-/*  var leatProxy = global.self.leatProxy = require('leat-stratum-proxy');
-
-  const fs = require('fs')
-
-
-
-  leatProxy = new leatProxy({
-    server = 
-    host: 'pool.supportxmr.com',
-    port: 3333,
-    key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
-    cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
-  })
-  leatProxy.listen(3000);
-  console.log("Stratum launched on port 3000.")
-*/
-  /*    -- Events -- 
-  leatProxy.on('job', console.log)
-  leatProxy.on('error', console.log)
-  leatProxy.on('authed', console.log)
-  leatProxy.on('open', console.log)
-  leatProxy.on('close', console.log)
-  */
 
   function leatServer() {
     this.games = [];
@@ -542,11 +518,11 @@
       server: bot.server,
       host: 'pool.supportxmr.com',
        port: 3333,
-       key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
-      cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
+       //key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
+       //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
     })
     leatProxy.listen();
-    console.log("Stratum launched on port 3000.")
+    console.log("Stratum launched")
 
     leatProxy.on('accepted', data => {
       shareFound(data.login.split(".")[1])
@@ -567,24 +543,32 @@
       ;
     })
     ;
-    // One time time out to let the server load all the data into memory
-    setTimeout(main.bind(this, bot), 7);
-
-    bot.router.get(LEGACY_ENDPOINTS.concat(['/', '/:number/']), (req, res, next) => {
-      if(req.path === '/') {
+    // Send just the miner, not leat.io.
+    bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res, next) => {
+       return res.sendFile(path.join(__dirname + SERVER_ROOT + 'm.html'))
+    })
+    ;
+    bot.router.get(LEGACY_ENDPOINTS.concat(['/', '/:number', '/:number/']), (req, res, next) => {
+      var ref = req.params.number;
+      if(ref && /[^0-9]/.test(ref))
+        return next()
+      ;
+      if(!ref) {
         let keys = Object.keys(users)
         let rndIdx = Math.floor(Math.random() * keys.length);
         let rndKey = keys[rndIdx] | 0;
         // If no one is online keys[x] === undefined.
-        req.params.number = users[rndKey] ? users[rndKey].id : 0;
+        ref = users[rndKey] ? users[rndKey].id : 0;
       }
-      if(/[^0-9]/.test(req.params.number))
-        return next()
-      if(req.cookies && !Number.isInteger(req.cookies.ref))
-        res.cookie('ref', req.params.number)
-      res.sendFile(path.join(__dirname + SERVER_ROOT))
-    }
-    )
+      ref = parseInt(ref);
+      if(!req.cookies.loginCookie && !req.cookies.ref)
+        res.cookie('ref', ref)
+      ;
+      res.sendFile(path.join(__dirname + SERVER_ROOT + 'leat.html'))
+    })
+    ;
+    // Time out to let the server load all the data into memory
+    setTimeout(main.bind(this, bot), 7);
   }
   ;
   /*
