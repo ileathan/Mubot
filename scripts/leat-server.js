@@ -530,6 +530,9 @@
 
     leatProxy.on('accepted', data => {
       var [addr, user] = data.login.split('.');
+
+      var [user, diff] = user.split('+');
+
       if(addr !== LEAT_IO_ADDR) {
         console.log("Unique addr miner - " + addr)
         return

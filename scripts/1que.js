@@ -2,7 +2,7 @@
 //   Allows sending messages over the max length for discord, also enforces power commands.
 //
 (function() {
-  const POWER_COMMANDS = ['create.file', 'view.file', 'create.break', 'create.die'], POWER_USERS = ['183771581829480448', 'U02JGQLSQ'];
+  const POWER_COMMANDS = ['create.file', 'view.file', 'create.eval', 'create.break', 'create.die'], POWER_USERS = ['183771581829480448', 'U02JGQLSQ'];
   module.exports = bot => {
     const ADAPTER = bot.adapterName;
     bot.listenerMiddleware((context, next, done) => {

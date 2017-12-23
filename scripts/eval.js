@@ -1,158 +1,96 @@
 // Description:
-//   evaluate code
-//
-// Dependencies:
-//   None
-//
-// Configuration:
-//   None
-//
-// Commands:
-//   hubot eval me <lang> <code> - evaluate <code> and show the result
-//   hubot eval on <lang> - start recording
-//   hubot eval off|finish|done - evaluate recorded <code> and show the result
-//   hubot eval cancel - cancel recording
-//   hubot eval list - list available languages
-//
-// Author:
-//   aanoaa
+//   eval
 
-(function() {
-  var ready, util,
-    hasProp = {}.hasOwnProperty;
+const inspect = require('util').inspect;
+const { curry, always, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test } = require('ramda');
+const S = require('sanctuary');
+const R = require('ramda');
+const RF = require('ramda-fantasy');
+const vm = require('vm');
+const treisInit = require('treis').__init;
 
-  util = require('util');
 
-  ready = false;
+const wrap = curry((x, s) => x + s + x);
+const mdLink = curry((text, url) => `[${text}](${url})`);
+const mdBold = wrap('**');
+const mdStrike = wrap('~~');
+const mdPre = wrap('`');
+const mdCode = curry((lang, str) => '```' + lang + '\n' + str + '\n```');
+const mdHeader = (n, text) => [ repeatStr('#', n), text ].join(' ');
 
-  module.exports = function(robot) {
-    var get_languages, lang_valid, run_eval;
-    get_languages = function(robot, callback) {
-      var url;
-      callback || (callback = function() {});
-      if (!ready) {
-        callback({});
-        return;
-      }
-      url = "http://api.dan.co.jp/lleval.cgi";
-      //robot.logger.info("Loading language data from " + url);
-      return robot.http(url).query({
-        q: "1"
-      }).get()(function(err, res, body) {
-        var langs;
-        langs = JSON.parse(body);
-        callback(langs);
-        //return robot.logger.info("Brain received eval language list.") // + (util.inspect(langs)));
-      });
-    };
-    lang_valid = function(robot, lang, callback) {
-      callback || (callback = function() {});
-      return get_languages(robot, function(languages) {
-        var desc, id;
-        for (id in languages) {
-          if (!hasProp.call(languages, id)) continue;
-          desc = languages[id];
-          if (lang === id) {
-            callback(true);
-            return;
-          }
-        }
-        return callback(false);
-      });
-    };
-    run_eval = function(lang, code, msg) {
-      return msg.http("http://api.dan.co.jp/lleval.cgi").query({
-        s: "" + code,
-        l: "" + lang
-      }).get()(function(err, res, body) {
-        var out, ret;
-        out = JSON.parse(body);
-        ret = out.stdout || out.stderr;
-        return msg.send(ret);
-      });
-    };
-    robot.brain.on('loaded', function() {
-      ready = true;
-      return get_languages(robot);
-    });
-    robot.respond(/eval[,:]?\s+list$/i, function(msg) {
-      return get_languages(robot, function(languages) {
-        var desc, id, lang_msg;
-        lang_msg = 'Known Languages\n\n';
-        for (id in languages) {
-          if (!hasProp.call(languages, id)) continue;
-          desc = languages[id];
-          lang_msg += id + ": " + desc + "\n";
-        }
-        return msg.send(lang_msg);
-      });
-    });
-    robot.respond(/eval[,:]? +on +([a-z]+) *$/i, function(msg) {
-      var base, is_valid, lang;
-      (base = robot.brain.data)["eval"] || (base["eval"] = {});
-      lang = msg.match[1];
-      is_valid = function(valid) {
-        if (!valid) {
-          msg.send("Unknown language " + lang + " - use eval list command for languages");
-          return;
-        }
-        robot.brain.data["eval"][msg.message.user.name] = {
-          recording: true,
-          lang: msg.match[1]
-        };
-        return msg.send("OK, recording " + msg.message.user.name + "'s codes for evaluate.");
-      };
-      return lang_valid(robot, lang, is_valid);
-    });
-    robot.respond(/eval[,:]? +(?:off|finish|done) *$/i, function(msg) {
-      var code, is_valid, lang, ref, ref1, ref2;
-      if (!((ref = robot.brain.data["eval"]) != null ? (ref1 = ref[msg.message.user.name]) != null ? ref1.recording : void 0 : void 0)) {
-        return;
-      }
-      code = (ref2 = robot.brain.data["eval"][msg.message.user.name].code) != null ? ref2.join("\n") : void 0;
-      lang = robot.brain.data["eval"][msg.message.user.name].lang;
-      is_valid = function(valid) {
-        if (!valid) {
-          msg.send("Unknown language " + lang + " - use eval list command for languages");
-          return;
-        }
-        run_eval(lang, code, msg);
-        return delete robot.brain.data["eval"][msg.message.user.name];
-      };
-      return lang_valid(robot, lang, is_valid);
-    });
-    robot.respond(/eval[,:]? +cancel *$/i, function(msg) {
-      var ref;
-      delete (((ref = robot.brain.data["eval"]) != null ? ref[msg.message.user.name] : void 0) != null);
-      return msg.send("canceled " + msg.message.user.name + "'s evaluation recording");
-    });
-    robot.respond(/eval( me)? ([^ ]+) (.+)/i, function(msg) {
-      var is_valid, lang;
-      lang = msg.match[2];
-      if (lang === 'on' || lang === 'off' || lang === 'finish' || lang === 'done' || lang === 'cancel') {
-        return;
-      }
-      is_valid = function(valid) {
-        if (!valid) {
-          msg.send("Unknown language " + lang + " - use eval list command for languages");
-          return;
-        }
-        return run_eval(lang, msg.match[3], msg);
-      };
-      return lang_valid(robot, lang, is_valid);
-    });
-    return robot.catchAll(function(msg) {
-      var base, ref, ref1;
-      if (!((ref = robot.brain.data["eval"]) != null ? ref[msg.message.user.name] : void 0)) {
-        return;
-      }
-      if (robot.brain.data["eval"][msg.message.user.name].recording) {
-        (base = robot.brain.data["eval"][msg.message.user.name]).code || (base.code = []);
-        if (!((ref1 = msg.message.text) != null ? ref1.match(/eval[,:]? +on +([a-z]+) *$/i) : void 0)) {
-          return robot.brain.data["eval"][msg.message.user.name].code.push(msg.message.text);
-        }
-      }
-    });
-  };
+const evalCode = (str) => {
+  const output = [];
+  const fakeConsole = {
+    log: (...arg) => {
+      output.push(join(' ', map(inspect, arg)));
+      return void 0;
+    }
+  }
 
-}).call(this);
+  const timeouts = [];
+  const fakeSetTimeout = (fn, ms) => {
+    let timeout;
+    timeouts.push(new Promise((res, rej) => {
+      timeout = setTimeout(() => {
+        try {
+          fn();
+          res();
+        } catch (e) {
+          rej(e);
+        }
+      }, ms);
+    }));
+    return timeout;
+  }
+
+  const treis = treisInit(fakeConsole.log, false);
+  const sandbox = mergeAll([
+    { R, S, console: fakeConsole, treis, trace: treis, setTimeout: fakeSetTimeout },
+    R,
+    RF
+  ]);
+
+  let value
+  try {
+    value = vm.runInNewContext(str, sandbox, {
+      timeout: 10000
+    });
+  } catch (e) {
+    return Promise.reject(e);
+  }
+
+  return Promise.all(append(Promise.resolve(value), timeouts))
+    .then(always({ value, output }));
+  }
+
+  const nlMdCode = lang => pipe(mdCode(lang), concat('\n'));
+  const isMultiline = test(/\n/);
+  const inspectInfinite = (val) => inspect(val, { depth: Infinity });
+  const getErrorMessage = (e) => e.message || String(e);
+  const formatValueToReply = pipe(inspectInfinite, nlMdCode('js'));
+  const formatErrorToReply = pipe(getErrorMessage, ifElse(isMultiline, nlMdCode('text'), mdPre));
+
+const formatOutput = (arr) =>
+  join('\n', [
+    mdHeader(4, 'output'),
+    mdCode('', join('\n', arr))
+  ])
+;
+const formatReply = (res) =>
+  join('\n', reject(isEmpty, [
+    formatValueToReply(res.value),
+    isEmpty(res.output) ? '' : formatOutput(res.output)
+  ]))
+;
+// TODO: res.reply mentions user which is kind of useless
+const readEvaluateAndPrint = (res) => {
+res.send("sanity");
+  evalCode(res.match[1])
+    .then(o => res.reply(formatReply(o)))
+    .catch(e => res.reply(formatErrorToReply(e)))
+;
+}
+module.exports = (bot) => {
+  bot.respond(/`([^`]+)`/i, readEvaluateAndPrint)
+  bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, readEvaluateAndPrint)
+}

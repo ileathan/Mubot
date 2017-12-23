@@ -27,7 +27,7 @@
     bot.respond(/withdraw\s+(\w{34})\s+(.*)\s*$/i, res => withdraw_marks(res, res.match[1], res.match[2]))
     bot.respond(/marks\s*$/i, res => {
       try { var bal = keys[res.message.user.id].bitmark.balance } catch(e) { var bal = 0 }
-      res.send('You have ' + balance + symbol + '.');
+      res.send('You have ' + bal + symbol + '.');
     });
     if(adapter === 'discord') {
       bot.hear(/marks\s+@? (.*)#(\d{4})/i, res => {

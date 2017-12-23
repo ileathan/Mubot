@@ -65,8 +65,11 @@
     "optparse": "^1.0.5",
     "opusscript": "0.0.3",
     "qrcode": "^1.0.0",
+    "ramda": "^0.25.0",
+    "ramda-fantasy": "^0.8.0",
     "randomstring": "^1.1.5",
     "request": "^2.81.0",
+    "sanctuary": "^0.14.1",
     "scoped-http-client": "^0.11.0",
     "secp256k1": "^3.3.0",
     "serve-favicon": "^2.4.3",
@@ -77,6 +80,7 @@
     "soupselect": "^0.2.0",
     "speakeasy": "^2.0.0",
     "tiny-emitter": "^2.0.1",
+    "treis": "^2.5.0",
     "type-is": "^1.6.15",
     "typed-function": "^0.10.5",
     "underscore": "^1.8.3",
@@ -84,7 +88,8 @@
     "unpipe": "^1.0.0",
     "utils": "^0.3.1",
     "uws": "^0.14.1",
-    "verror": "^1.10.0"
+    "verror": "^1.10.0",
+    "vm": "^0.1.0"
   },
   "engines": {
     "node": "0.10.x"

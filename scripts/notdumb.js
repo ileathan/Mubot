@@ -1,3 +1,4 @@
+
 // Description:
 //   calling mubot dumb makes mubot mad.
 //
@@ -11,7 +12,7 @@
 //   None
 //
 module.exports = bot => {
-  bot.hear(RegExp('^' + (bot.alias || bot.name) + '\\s+(very|is|so).*(stupid|moron|idiot|dumb)', 'i'), msg => {
+  bot.hear(RegExp('@?' + (bot.alias || bot.name) + '[@:,]?\\s+(very|is|so|you(?:r)?).*(stupid|moron|idiot|dumb)', 'i'), msg => {
      msg.send("FUCK YOU!")
   });
 };
