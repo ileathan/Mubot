@@ -83,13 +83,11 @@ const formatReply = (res) =>
   ]))
 ;
 // TODO: res.reply mentions user which is kind of useless
-const readEvaluateAndPrint = (res) => {
-res.send("sanity");
+const readEvaluateAndPrint = (res) =>
   evalCode(res.match[1])
     .then(o => res.reply(formatReply(o)))
     .catch(e => res.reply(formatErrorToReply(e)))
 ;
-}
 module.exports = (bot) => {
   bot.respond(/`([^`]+)`/i, readEvaluateAndPrint)
   bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, readEvaluateAndPrint)

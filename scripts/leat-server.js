@@ -506,8 +506,8 @@
 
   }
   )
-  function idToUser(id, callback) {
-    Users.findOne({id}).then(callback)
+  function idToUsername(id, callback) {
+    Users.findOne({id}).then(user=>callback(user.username))
   }
   SharesFound.count({}, (err, count) => {
     totalShares = count;
@@ -539,7 +539,7 @@
         ;
       }
       if(user && user.substr(0, 2) === '_#') {
-        idToUser(user.substr(2), shareFound);
+        idToUsername(user.substr(2), shareFound);
       } else {
         shareFound(user);
       }
@@ -1061,7 +1061,6 @@
   *
   */
   function shareFound(username) {
-
     var
       needs_to_pay, myuser
     ;
@@ -1078,7 +1077,7 @@
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#")
       return Users.findOneAndUpdate({
-        username: HOSTNAME 
+        username: HOSTNAME
       }, {
         $inc: { 'shares': 1 }
       }, {
