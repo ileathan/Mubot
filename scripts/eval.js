@@ -1,10 +1,6 @@
 // Description:
 //   eval
 
-var log, saved;
-
-const allowed = ['183771581829480448', 'U02JGQLSQ']
-const commands = ['length', 'amount', 'clear', 'delete', 'del']
 const _eval = require('eval');
 const inspect = require('util').inspect;
 const { curry, always, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test, repeat } = require('ramda');
@@ -113,38 +109,43 @@ const realEval = msg => {
   log[cmd] ? delete log[cmd] && (log[cmd] = res) : log[cmd] = res;
 }
 ;
+
+var log, saved;
+const allowed = ['183771581829480448', 'U02JGQLSQ']
+const commands = ['length', 'amount', 'clear', 'delete', 'del', 'search', 'last']
+
 module.exports = bot => {
   //var log;
   bot.brain.on('loaded', () => {
-    log = bot.brain.data.evals || (bot.brain.data.evals = {})
+    eval = bot.brain.data.evals || (bot.brain.data.evals = {})
     saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
   });
   bot.respond(/(?:-f |fake )`([^`]+)`/i, fakeEval);
   bot.respond(/(?:-f |fake )```[a-z]*\n?((?:.|\n)+)\n?```/i, fakeEval);
   var last_mode;
   // Delete commands
-  bot.hear(/^[!](?:clear|delete)(?: (log|saved|all))? all/i, msg => {
+  bot.hear(/^[!](?:clear|delete)(?: (eval|saved|all))? all/i, msg => {
     let mode = msg.match[1];
     if(mode === 'all') {
-      let amntDel = Object.keys(log).length + Object.keys(saved).length;
-      for(let key in log) delete obj[key];
+      let amntDel = Object.keys(eval).length + Object.keys(saved).length;
+      for(let key in eval) delete obj[key];
       for(let key in saved) delete obj[key];
       return msg.send("Deleted " + amntDel + " evals.");
     }
-    let obj = mode === 'saved' ? saved : log;
+    let obj = mode === 'saved' ? saved : eval;
     let amntDel = Object.keys(obj).length;
     for(let key in obj) delete obj[key];
 
     msg.send("Deleted " + amntDel + " evals.");
   })
   // Commands length
-  bot.hear(/^[!](?:length|amount)(?: (log|saved))?/i, msg => {
+  bot.hear(/^[!](?:length|amount)(?: (eval|saved))?/i, msg => {
     var mode = msg.match[1];
     const formatLengthReply = mode => {
-      let obj = mode === 'saved' ? saved : log
-      let values = mode === 'saved' ? Object.values(obj) : Object.keys(obj);
-      let amnt = values.length;
-      let last = values.pop();
+      let obj = mode === 'saved' ? saved : eval
+      let cmds = mode === 'saved' ? Object.values(obj) : Object.keys(obj);
+      let amnt = cmds.length;
+      let last = cmds.pop();
       return "There's "+amnt+" "+mode+" evals." + (amnt ? " Last: " + formatCmd(last) : "");
     }
     if(mode) {
@@ -154,14 +155,24 @@ module.exports = bot => {
       msg.send(formatLengthReply('saved') + '\n' + formatLengthReply('log'))
     }
   })
+  // Run last command
+  bot.hear(/[!]([!]|last)( (.*))/i, msg => {
+    var mode = msg.match[3];
+    mode && (last_mode = mode);
+
+    var last = last_mode === 'saved' ? Object.values(obj).pop() : Object.keys(obj).pop();
+
+    if(!last)
+      return msg.send("There is no last "+last_mode+" command.")
+    ;
+    realEval(last);
+  })
   // Create/Run commands
-  bot.hear(/^(?:[!]|eval |run )(last|[!]|.+)/i, msg => {
-    var cmd;
-    var index = msg.match[1];
-    if(commands.includes(index.toLowerCase()))
+  bot.hear(/^[!](.+)/i, msg => {
+    var tag = msg.match[1];
+    if(commands.includes(tag.toLowerCase()))
       return
     ;
-    var index = ['!','last'].includes(msg.match[1].toLowerCase()) ? Object.keys(log).length - 1 : msg.match[1];
     saved[index] ?
       cmd = saved[index] && (last_mode = 'saved')
     :
@@ -173,16 +184,20 @@ module.exports = bot => {
     msg.match[1] = cmd;
     realEval(msg)
   });
-  bot.respond(/[!](!|last|\d+) (.+)/i, msg => {
-    var tagname = msg.match[2];
-    var index = ['!','last'].includes(msg.match[1].toLowerCase()) ? Object.keys(log).length - 1 : msg.match[1];
-    var cmd = Object.keys(log)[index]
+  bot.hear(/[!](?:save) (.+)(?: (.+))?/i, msg => {
+    var [, cmdIndx, tag ] = msg.match;
+    if(!tag) {
+      tag = cmdIndx;
+      cmdIndx = Object.keys(log).length - 1;
+    }
+    var cmd = Object.keys(log)[cmdIndex];
+    ;
     if(!cmd)
       return msg.send("No command found.")
     ;
-    saved[saveAs] = cmd;
+    saved[tag] = cmd;
     bot.brain.save();
-    msg.send("Saved " + formatCmd(cmd) + ' as ' + tagname + '.')
+    msg.send("Saved " + formatCmd(cmd) + ' as ' + tag + '.');
   });
 
   const formatCmd = cmd => {
@@ -191,7 +206,7 @@ module.exports = bot => {
     return '`' + cmd + (cmd.length > 20 ? '..' : '') + '`'
   };
   // Delete commands
-  bot.respond(/del(?:ete)? (saved )?(?: -?(i(?:gnore)?))?(.+)?$/i, msg => {
+  bot.respond(/[!]del(?:ete)? (saved )?(?: -?(i(?:gnore)?))?(.+)?$/i, msg => {
     var [, mode, ignore, delCmd ] = msg.match;
     var obj = mode ? saved : log;
     var startAt, endAt, res;
@@ -204,7 +219,12 @@ module.exports = bot => {
       delete log[delCmd];
     }
     else if(['!!','!last'].includes(delCmd.toLowerCase())) {
-      delCmd = Object.keys(obj).pop();
+      let obj;
+      last_mode === 'saved' ?
+        delCmd = Object.values(saved).pop()
+      :
+        delCmd = Object.keys(log).pop()
+      ;
       res = "Deleted " + formatCmd(obj[delCmd]) + ".";
       delete obj[delCmd];
     } else {
@@ -240,7 +260,7 @@ module.exports = bot => {
   bot.respond(/`([^`]+)`/i, realEval);
   bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, realEval);
   // View commands
-  bot.respond(/(saved|evals)(?: logs?)?( res(?:ponses?)?| val(?:ues?)?)?(?: -?(i(?:gnore)?))?(?: (-?\d+))?(?:(?: |-| - )(\d+))?/i, msg => {
+  bot.respond(/(saved|evals)(?: evals?)?( res(?:ponses?)?| val(?:ues?)?)?(?: -?(i(?:gnore)?))?(?: (-?\d+))?(?:(?: |-| - )(\d+))?/i, msg => {
     let [, mode, res, ignore, startAt, endAt ] = msg.match
     ;
     let commands = res ? Object.values(mode==='saved'?saved:log) : Object.keys(mode==='saved'?saved:log);
