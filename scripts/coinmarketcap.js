@@ -13,7 +13,7 @@
       request(API_URL, function (err, req, data)  {
         var total = 0;
         data = JSON.parse(data);
-        startAt = startAt ? (startAt -= 1): startAt;
+        startAt = startAt ? (startAt -= 1): 0;
         endAt = endAt ? endAt : data.length;
         if(startAt > data.length || endAt > data.length || startAt > endAt || startAt === -1)
           return res.send("Your startAt and endAt parameters are invalid!")

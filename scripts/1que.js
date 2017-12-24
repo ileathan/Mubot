@@ -20,7 +20,8 @@
       // i is our iterator representing que position of msg chunk.
       (function chunkAndQue(i) {
         // Pad the start of the message, and the end of the message.
-        var epad = fpad = ADAPTER === 'discord' ? "**" : "*";
+        var fpad, epad;
+        epad = fpad = ADAPTER === 'discord' ? "**" : "*";
         // our msg chunk
         var chunk;
         // only proceed if we need to break msg down to chunks.

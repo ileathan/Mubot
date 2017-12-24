@@ -30,6 +30,7 @@
     "eccrypto": "^1.0.3",
     "encode-x": "^2.0.2",
     "erlpack": "^0.1.2",
+    "eval": "^0.1.2",
     "express": "^4.15.3",
     "express-session": "^1.15.4",
     "express-subdomain": "^1.0.5",

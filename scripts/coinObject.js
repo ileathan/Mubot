@@ -97,7 +97,7 @@
     msg && msg.send(CoinsArray.length + " processed.")
     ;
     for(let coin of CoinsArray) {
-      keys = Object.keys(coin)
+      let keys = Object.keys(coin)
       ;
       for(let key of keys)
         Coins[key] ? Coins[key].push(coin) : Coins[key] = [coin]
@@ -105,7 +105,6 @@
     }
     ;
     // For debugging.
-    global.Coins = Coins;
   })
   ;
   const buildRegex = cmd => {
