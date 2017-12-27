@@ -32,11 +32,12 @@
             // so pad it with code markdown.
             epad = '```'
           }
-          if(context.response.match[0].split(' ')[1] === 'search') {
+          else if(context.response.match[0].split(' ')[1] === 'search') {
             // The command is a search web command
             fpad = '```\n';
             // so pad it with code markdown.
             epad = '```'
+          } else {
             ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
           }
           // Try to get biggest chunk possible until newline char.

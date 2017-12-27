@@ -102,7 +102,7 @@ const allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'
 module.exports = bot => {
   var last_mode = 'evals';
   // Load commands from brain.
-  bot.brain.on('loaded', () => {
+  bot.brain.on('connected', () => {
     evals = bot.brain.data.evals || (bot.brain.data.evals = {})
     saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
   });

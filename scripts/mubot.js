@@ -23,7 +23,7 @@
   symbol = '₥';
   module.exports = bot => {
     adapter = bot.adapterName;
-    bot.brain.on('loaded', () => keys = bot.brain.data.keys || (bot.brain.data.keys = {}));
+    bot.brain.on('connected', () => keys = bot.brain.data.keys || (bot.brain.data.keys = {}));
     bot.respond(/withdraw\s+(\w{34})\s+(.*)\s*$/i, res => withdraw_marks(res, res.match[1], res.match[2]))
     bot.respond(/marks\s*$/i, res => {
       try { var bal = keys[res.message.user.id].bitmark.balance } catch(e) { var bal = 0 }

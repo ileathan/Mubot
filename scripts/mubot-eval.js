@@ -3,7 +3,7 @@
 
 const _eval = require('eval');
 const inspect = require('util').inspect;
-const { curry, always, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test, repeat } = require('ramda');
+const { curry, alwaysF, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test, repeat } = require('ramda');
 
 const repeatStr = pipe(repeat, join(''))
 
@@ -61,7 +61,7 @@ const evalCode = str => {
   }
 
   return Promise.all(append(Promise.resolve(value), timeouts))
-    .then(always({ value, output }))
+    .then(alwaysF({ value, output }))
   ;
 }
 
@@ -95,7 +95,7 @@ const fakeEval = msg => {
 }
 ;
 var evals, saved, last_mode;
-
+const always = {};
 const allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
 
 const e = {};
@@ -337,6 +337,26 @@ e.viewCmds = function(msg) {
     i++ + ': ' + e.formatCmd(_)
   ).join(', '))
 }
+;
+
+e.setAlways = function(msg) {
+  let isAlways = !msg.match[1].match(/off|false|0|no|x/i);
+  let id = e.msgToUserId(msg);
+  isAlways ?
+    always[id] ?
+      msg.send("Eval mode already set to always.")
+    :
+      (always[i] = 1) && msg.send("Eval mode set to always.")
+    //
+  :
+    always[id] ?
+      delete always[id] && msg.send("Eval mode set to trigger only.")
+    :
+      msg.send("Eval mode already set to trigger only.")
+    //
+  ;
+}
+;
 
 module.exports = bot => {
   // Load commands from brain.
@@ -347,10 +367,23 @@ module.exports = bot => {
   // Process command.
   bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), processMessage)
 
+  bot.hear(/`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```/i, msg => {
+    msg.match[1] = msg.match[1] || msg.match[2];
+    always.includes(e.msgToUserId(msg)) &&
+      e.realEval(msg)
+    ;
+  });
+
   function processMessage(msg, dontRun) {
     let cmd = msg.match ? msg.match[1] : msg;
     let match = void 0, res = "";
-    if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
+    if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
+      res = 'realEval';
+    }
+    else if(match = cmd.match(/`((?:\\.|[^`])+)`/i)) {
+      res = 'realEval';
+    }
+    else if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
       res = 'runLastCmd';
     }
     else if(match = cmd.match(/^(?:list|view|l|saved|evals?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
@@ -374,11 +407,8 @@ module.exports = bot => {
     else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
       res = 'saveCmd';
     }
-    else if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
-      res = 'realEval';
-    }
-    else if(match = cmd.match(/`((?:\\.|[^`])+)`/i)) {
-      res = 'realEval';
+    else if(match = cmd.match(/^(?:set )?always(?: (.*))/i)) {
+      res = 'setAlways';
     }
     if(!res) return;
     if(!dontRun) {
