@@ -54,11 +54,22 @@
         }
       })
       bot.hear(/\+(\d+)\s+<@?!?(\d+)>\s*(.*)?$/i, res => {
-        if(res.match[2] === bot.client.user)  return res.send("Sorry but I am currently unmarkable.");
-        if(res.match[2] === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
-        if(res.match[1] <= 100) transfer_marks(res, res.match[2], res.match[1], res.match[3]);
-        else res.send('Max is +100')
-      })
+        let recipient = res.match[2],
+            amount = res.match[1],
+            context = res.match[3]
+        ;
+        if(recipient === bot.client.user)
+          return res.send("Sorry but I am currently unmarkable.")
+        ;
+        if(recipient === res.message.user.id)
+          return res.send("Sorry but you cannot mark yourself.")
+        ;
+        if(amount > 100)
+          return res.send('Max is +100')
+        ;
+        transfer_marks(res, recipient, amount, context)
+        ;
+      });
       bot.hear(/\+(\d+)\s+@ (.*)#(\d{4}) ?(.*)/i, res => {
         var rec, arr = bot.brain.usersForFuzzyName(res.match[2]);
         if(arr.length === 1) rec = arr[0].id;
@@ -70,13 +81,13 @@
         if(rec === res.message.user.id) return res.send("Sorry but you cannot mark yourself.");
         if(res.match[1] <= 100) transfer_marks(res, rec, res.match[1], res.match[4]);
         else res.send('Max is +100')
-      })
+      });
     } else if(adapter == 'slack') {
       bot.react(res => {
         if(res.message.type === 'added' && res.message.reaction === 'mh') {
           transfer_marks(res, res.message.item_user.id, 1, "reaction")
         }
-      })
+      });
       bot.hear(/marks\s*@? ?(\w+)$/i, res => {
         var user = bot.brain.userForName(res.match[1]);
         if(!user) return res.send("Sorry but I cant find that user.");

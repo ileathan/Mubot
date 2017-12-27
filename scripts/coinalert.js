@@ -6,28 +6,30 @@
 //   hubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
 // . hubot alerts [raw] - display the current alerts.
 (function(){
-  const request = require('request');
-  var quit = false, allRequests = [];
+  const http = require("request");
+  const delay = 120000; // 2 mins.
+  var allRequests = [];
+  var interval;
   module.exports = bot => {
     bot.respond(/stop scanner(?:s| alerts)/i, res => {
       res.send("Stopping alert scanner.")
-      quit = true;
     })
     bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, res => {
       if(allRequests.length)
         return res.send("No alerts created.")
       ;
-      var time = res.match[1] || 30;
-      //if(!quit) return;
-      quit = false;
+      var time = res.match[1] || 120;
       res.send("Starting alert scanner every " + time + " seconds.")
-      alertMe(parseFloat(time * 1000))
+      delay = parseInt(time * 1000);
+      startInterval();
     })
     bot.respond(/alert (?:me )?(.*)/i, res => {
-      if(res.match[1].toLowerCase() === 'me') return res.send("Specify a price.")
-      allRequests.push(new Request(res, res.match[1]))
-      alertMe(30000);
-      quit = false;
+      var request = res.match[1];
+      if(/me /i.test(request))
+        return res.send("Specify a price.")
+      ;
+      allRequests.push(new Request(res, request))
+      interval || startInterval(); // Every 2 mins.
       res.send("Alert(s) created.")
     })
     bot.respond(/alerts$/i, res => {
@@ -38,27 +40,39 @@
       res.send(allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
     })
   }
-  function alertMe(delay, coinObj) {
-    var scanTimer;
-    if(quit) return quit = false;
-    if(coinObj) {
-      for(let i = 0, l = allRequests.length; i < l; ++i) {
-        if(allRequests[i].alerts.length === 0) {
-          allRequests.splice(i, 1);
-          continue
-        }
-        let areTrue = allRequests[i].areTrue(coinObj);
-        if(areTrue.length > 0) allRequests[i].res.reply("Alert(s) triggered -> [" + areTrue.join("][ ") + "].")
-      }
+  function alertMe(coinsObj) {
+    // store allRequests that arnt undef.
+    var result = [], resIndex = 0;
+    for(let i = 0, l = allRequests.length; i < l; ++i) {
+      if(allRequests[i].alerts.length === 0)
+        continue
+      ;
+      result.push(allRequest[i]);
+      let areTrue = allRequests[i].areTrue(coinsObj);
+      if(areTrue.length > 0) allRequests[i].res.reply("Alert(s) triggered -> [" + areTrue.join("][ ") + "].")
     }
-    scanTimer = setTimeout(()=> {
-      if(allRequests.length < 1) {
-        clearInterval(scanTimer);
-        quit = true
-      }
-      request('https://poloniex.com/public?command=returnTicker', (err, ress, body) => alertMe(delay, JSON.parse(body)) )
-    }, delay)
+    allRequests = result;
   }
+  function startInterval() {
+    clearInterval(interval);
+    interval = setInterval(()=> {
+      if(allRequests.length === 0) {
+        return clearInterval(interval);
+      }
+      // API Endpoint, comment out to switch.
+      http('https://api.coinmarketcap.com/v1/ticker?limit=0', (err, res, body) => {
+        const coinsObj = {};
+        const coinsArray = JSON.parse(body);
+        for(let coin of coinsArray) {
+          coinsObj[coin.symbol] = coin;
+        }
+        alertMe(coinsObj);
+      });
+      // old API endpoint. (Poloniex).
+      //http('https://poloniex.com/public?command=returnTicker', (err, ress, body) => alertMe(delay, JSON.parse(body)) )
+    }, delay);
+  }
+
   function Request(res, alerts) {
     this.alerts = alerts.split(/,\s*/);
     this.res = res
@@ -66,27 +80,33 @@
   Request.prototype.compact = function() {
     var index = 0, result = [];
     for(let value of this.alerts) if(value) result[index++] = value;
-    this.alerts = result
+    this.alerts = result;
   }
   Request.prototype.areTrue = function(compareObj) {
-    var results = [], base = 'BTC_';
+    const results = [];
+    var type = 'price_';
     for(let i = 0, l = this.alerts.length; i < l; ++i) {
       let [match, coin, condition, price] = this.alerts[i].match(/([^ ]*) (<|>) ([^ ]*)/);
-      if(coin.toUpperCase() === 'BTC') base = 'USDT_';
+      coin = coin.toUpperCase();
+      coin === 'BTC' ?
+        type += 'usd'
+      :
+        type += price.slice(-1) === '$' ? 'usd' : 'btc'
+      ;
       if(condition === '>') {
-        if(parseFloat(compareObj[base + coin.toUpperCase()].last) > parseFloat(price)) {
+        if(parseFloat(compareObj[coin][type]) > parseFloat(price)) {
           results.push(match);
-          delete this.alerts[i]
+          delete this.alerts[i];
         }
       }
       if(condition === '<') {
-        if(parseFloat(compareObj[base + coin.toUpperCase()].last) < parseFloat(price)) {
+        if(parseFloat(compareObj[coin][type]) < parseFloat(price)) {
           results.push(match);
-          delete this.alerts[i]
+          delete this.alerts[i];
         }
       }
     }
     this.compact();
-    return results
+    return results;
   }
 }).call(this);

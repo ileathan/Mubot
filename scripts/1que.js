@@ -37,9 +37,9 @@
             fpad = '```\n';
             // so pad it with code markdown.
             epad = '```'
+            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
           }
           // Try to get biggest chunk possible until newline char.
-          chunk = context.strings[i].match(/^[\s\S]{0,1940}\n/);
           if(!chunk) {
             // There was no newline, fallback to biggest chunk.
             chunk = context.strings[i].match(/^[\s\S]{0,1940}/)
@@ -50,10 +50,11 @@
           context.strings[i] = context.strings[i].slice(0, chunk[0].length) + epad;
           chunkAndQue(++i)
         } else {
+          ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
           context.strings[0] = fpad + context.strings[0] + epad
         }
       })(0);
-      next()
-    })
+      next();
+    });
   }
 }).call(this);

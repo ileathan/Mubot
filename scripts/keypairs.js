@@ -22,7 +22,7 @@
     bot.brain.on('loaded', () => {
       keys = bot.brain.data.keys || (bot.brain.data.keys = {});
     })
-    bot.respond(/crypto me ?(.+)?$/i, res => {
+    bot.respond(/(?:priv(?:ate)? )?key me ?(.+)?$/i, res => {
       const userID = res.message.user.id;
       if(!res.match[1] && keys[userID]) return res.send("You already have a keypair.");
       if(!res.match[1]) return res.send(createMe(userID, res));
@@ -39,7 +39,7 @@
       cryptoMe(userID, coin, res, balance);
     })
   }
-  cryptoMe = (userID, version, res, balance) => {
+  cryptoMe = (userID, version, balance, res) => {
     var vByte, ck, importKey;
     if(!(vByte = versionMe(version))) return "Sorry but thats not a valid coin."
     importKey = cs.encode(Buffer.concat([new Buffer(keys[userID].private), new Buffer('01', 'hex')]), vByte);
