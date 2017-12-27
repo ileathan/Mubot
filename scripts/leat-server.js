@@ -534,9 +534,8 @@
       var [user, diff] = user.split('+');
 
       if(addr !== LEAT_IO_ADDR) {
-        console.log("Unique addr miner - " + addr)
-        return
-        ;
+        console.log("Unique addr miner - " + addr);
+        return;
       }
       if(user && user.substr(0, 2) === '_#') {
         idToUsername(user.substr(2), shareFound);
@@ -544,7 +543,8 @@
         shareFound(user);
       }
       console.log(
-        "Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+ (data.hashes||0) + " Cookie: " + data.cookie
+        '-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n' +
+        data.login + "  Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+ (data.hashes||0) + " Cookie: " + data.cookie
       )
     })
     leatProxy.on('found', data => {
@@ -788,7 +788,7 @@
           if(err)
             return next(err)
           ;
-          callback(!!user)
+          callback(!user)
           ;
         })
         ;
