@@ -609,6 +609,60 @@
     }
   }
 
+  function verifyPassword(username, password, callback) {
+    Users.findOne({
+      'username': RegExp('^' + logindata.username + '$','i')
+    }, (err, user) => {
+      if(!user)
+       return callback(false, "No such user.")
+      ;
+      argonp.verify(
+        decrypt(decode(user.password)),
+        ssalt(logindata.password),
+        ARGON_PCONF
+      ).then(_=>_&&callback(username));
+    });
+  }
+
+  // Commands are just verify for now.
+  function runCommand(username, command, bot) {
+    if(/^(verify)/i.test(command)) {
+      let [server, id, password ] = command.split(' ')
+      verifyPassword(username, password, username => {
+        var user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
+        Object.assign(user, users[username]);
+        user.id || (user.id = {});
+        Object.assign(user.id, {ids: {[id]: server}});
+        bot.brain.save();
+        let message = "Successfully verified " + server + " as " + username + "@leat.io.";
+
+        emitToUserSockets(username, "lS.newChatMessage", { username: 'leat.io', message, date: new Date() });
+
+        try {
+          bot.adapter.send({room: id}, res)
+        } catch(e){}
+      });
+    }
+    if(/^(unverify)/i.test(command)) {
+      let [server, id, password ] = command.split(' ')
+      verifyPassword(username, password, username => {
+        var user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
+        Object.assign(user, users[username]);
+        
+        if(user[id]) {
+          delete user[id]
+        }
+       
+        user[id] || (user[id] = {});
+        Object.assign(user[id], {ids: {[id]: server}});
+        bot.brain.save();
+        try {
+          bot.adapter.send({room: id}, "Successfully unverified " + server + " as " + username + "@leat.io.")
+        } catch(e){}
+      });
+    }
+  }
+
   function main(bot) {
 
     const io = global.self.io = bot.io.of('/0');
@@ -662,6 +716,15 @@
           if(!message.trim())
             return
           ;
+          if(username && message[0] === '/') {
+            emitToUserSockets(username, "lS.newChatMessage", {
+              username: 'leat.io',
+              message: 'Processing... ',
+              date
+            })
+            runCommand(username, message.slice(1), bot);
+            return;
+          }
           io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
           ChatMessages.create({
             username: username || toGuest(),

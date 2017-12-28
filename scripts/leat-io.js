@@ -6,46 +6,26 @@
 //
 
 // this module. export it if needed outside of hubot. `module.exports = l`
-const l = {}
-;
 module.exports = bot => {
-  bot.brain.on('connected', ()=> l.loadVerified(bot));
+  bot.on("leat.io loaded", l.load);
   bot.respond(/mine(?: me)?(?: (.*))?/i, l.mine);
 }
 ;
 // API
-l.loadVerified = bot => {
-  l.verified = bot.brain.data.verified || (bot.brain.data.verified = {});
-}
+const l = {}
 ;
-l.loadVerifiedById = () => {
-  l.verifiedById = {};
-  for(let name in l.verified) {
-    Object.assign(l.verifiedById, l.verified[name].ids);
-  }
+l.load = bot => {
+  Object.assign(l, bot.keat);
 }
 ;
 l.mine = res => {
-  global.bot = res.robot;
-  let bot = res.robot,
-      id  = l.msgToUserId(res),
-      verified = l.verifiedById[id],
-      server = res.robot.adapterName
+  let id  = res.message.user.id,
+      server = l.bot.adapterName
   ;
-  l.verified[id] ?
+  l.verifiedById[id] ?
     void 0 // start hashing...
   :
-    res.send("Can only mine for verified users, on leat.io type: ```/verify " + server + " " + id + "```")
-  ;
-}
-;
-l.msgToUserId = res => {
-  return res.username ?
-    // Discord.
-    res.username.id
-  :
-    // Slack.
-    res.message.user.id
+    res.send("Can only mine for verified users, on leat.io type: ```/" + server + " " + id + "```")
   ;
 }
 ;

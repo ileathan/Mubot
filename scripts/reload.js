@@ -23,7 +23,8 @@
       bot.listeners = [];
       bot._events = {};
       bot._eventsCount = 0;
-      bot.events._events = {}
+      bot.events._events = {};
+      bot.brain._events = {};
       bot.load(Path.resolve(".", "scripts"));
       bot.load(Path.resolve(".", "src", "scripts"));
       try {

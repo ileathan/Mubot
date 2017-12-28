@@ -100,13 +100,17 @@ const allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'
 
 const e = {};
 
-e.realEval = function(msg) {
+// Implicitly pass global this scope to eval.
+e.realEval = msg => {
   let cmd = evalCmd = msg.match[1];
   let id = e.msgToUserId(msg);
   if(allowed.includes(id)) {
     if(!/module[.]exports\s*=/.test(cmd)) {
       !/[;]|return(;|\s|\n|$)/.test(cmd) && (evalCmd = 'return ' + evalCmd);
-      evalCmd = 'module.exports=((bot,botS)=>{' + evalCmd + '})(typeof robot === "undefined" ? robot : null, robotSlack !== void 0 ? robotSlack : null)';
+      evalCmd = 'module.exports=((bot,botS)=>{' + evalCmd + '})(typeof robot !== "undefined" ? robot : null , typeof robotSlack !== "undefined" ? robotSlack : null)';
+    }
+    if(!global.robot) {
+       global.robot = msg.robot;
     }
     let result = _eval(evalCmd, true);
     result = JSON.stringify(result, null, 2) || result || 'true';
@@ -340,13 +344,13 @@ e.viewCmds = function(msg) {
 ;
 
 e.setAlways = function(msg) {
-  let isAlways = !msg.match[1].match(/off|false|0|no|x/i);
+  let isAlways = !(msg.match[1] || "").match(/off|false|0|no|x/i);
   let id = e.msgToUserId(msg);
   isAlways ?
     always[id] ?
       msg.send("Eval mode already set to always.")
     :
-      (always[i] = 1) && msg.send("Eval mode set to always.")
+      (always[id] = 1) && msg.send("Eval mode set to always.")
     //
   :
     always[id] ?
@@ -367,9 +371,11 @@ module.exports = bot => {
   // Process command.
   bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), processMessage)
 
-  bot.hear(/`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```/i, msg => {
+  bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, e.realEval)
+
+  bot.hear(/(?:[^!]|)(?:`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```)/i, msg => {
     msg.match[1] = msg.match[1] || msg.match[2];
-    always.includes(e.msgToUserId(msg)) &&
+    always[e.msgToUserId(msg)] &&
       e.realEval(msg)
     ;
   });
@@ -386,11 +392,11 @@ module.exports = bot => {
     else if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
       res = 'runLastCmd';
     }
-    else if(match = cmd.match(/^(?:list|view|l|saved|evals?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
-      res = 'viewCmds';
-    }
     else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
       res = 'getLengths';
+    }
+    else if(match = cmd.match(/^(?:list|view|l|saved|evals?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
+      res = 'viewCmds';
     }
     else if(match = cmd.match(/^(?:clear|del(?:ete)?) all ?(.*)?/i)) {
       res = 'deleteAllCmds';
@@ -407,7 +413,7 @@ module.exports = bot => {
     else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
       res = 'saveCmd';
     }
-    else if(match = cmd.match(/^(?:set )?always(?: (.*))/i)) {
+    else if(match = cmd.match(/^(?:set )?always(?: (.*))?/i)) {
       res = 'setAlways';
     }
     if(!res) return;

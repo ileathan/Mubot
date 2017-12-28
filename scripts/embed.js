@@ -13,6 +13,7 @@
 
 module.exports = function(robot) {
   robot.respond(/embed (http[^ ]+)? ?([^-]+)\s*-\s*([^-]+?)(?:\s*-\s*(.+))?$/i, function(msg) {
+debugger;
     color = "" + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1)   
     color = parseInt(color)
     var data = {
