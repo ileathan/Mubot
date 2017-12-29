@@ -65,6 +65,7 @@
     "numeral": "^2.0.6",
     "optparse": "^1.0.5",
     "opusscript": "0.0.3",
+    "parent-require": "^1.0.0",
     "qrcode": "^1.0.0",
     "ramda": "^0.25.0",
     "ramda-fantasy": "^0.8.0",
