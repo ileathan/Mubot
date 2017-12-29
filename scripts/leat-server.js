@@ -5,88 +5,54 @@
 //   leathan
 //
 (function() {
-  const HOSTNAME = 'leat.io'
+  // Export.
+  module.exports = bot => main(l.bot = bot)
   ;
-  const LEAT_IO_ADDR = "44sHctzZQoZPyavKM5JyLGFgwZ36FXTD8LS6nwyMgdbvhj1yXnhSQokErvFKh4aNmsAGzMyDLXSBS5vGxz3G3T46KukLmyc";
-  // Our debug level (will depreciate for --inspect)
-  const DEBUG = process.env.DEBUG || false
+  // Configuration.
+  const l = {}
   ;
-  // For users exempt for life from referals
-  const SEED_REFS = 77;
-  // For authy apps and such.
-  const qrcode = require('qrcode')
+  l.hostname = 'leat.io'
   ;
-  // 2fa
-  const TFA = require('speakeasy')
+  l.path = '/../node_modules/hubot-server/public/'
   ;
-  // Quick guest hash ip-auth
-  const md5 = require('md5')
+  l.address = '44sHctzZQoZPyavKM5JyLGFgwZ36FXTD8LS6nwyMgdbvhj1yXnhSQokErvFKh4aNmsAGzMyDLXSBS5vGxz3G3T46KukLmyc'
   ;
-  const SERVER_ROOT = '/../node_modules/hubot-server/public/'
+  l.debug = process.env.DEBUG
   ;
-  const DATABASE_ENDPOINT = 'mongodb://localhost/gambler-api'
-  ;
-  // Used for storing cookie data on db.
-  const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY.slice(0, 32)
-  ;
-  // Depreciated, but still used in static salts.
-  const SECRET = process.env.SECRET
-  ;
-  // These currently map to a random online user id.
-  const LEGACY_ENDPOINTS = ['/chat', '/miner', '/gamble']
-  ;
-  const users = {}
-    , cookieToUsername = {}
-    , usernameToSockets = {}
-    , usernameTo2fa = {}
-  ;
-  // Debugging
-  global.self = {
-    users,
-    cookieToUsername,
-    usernameToSockets,
-    usernameTo2fa
-  }
-  ;
-  global.self.argon = {}
-  ;
-  // Easy http requests.
-  const request = require('request')
-  ;
-  // Used to access monero daemon.
-  const exec = require('child_process').exec
-  ;
-  // Our db.
-  const mongoose = require('mongoose')
-  ;
-  // OS independant path resolves.
-  const path = require('path')
-  ;
-  // For encryption.
-  const crypto = require('crypto')
-  ;
-  // Our password / data hashers.
-  const argonp = require('argon2-ffi').argon2i
-  ;
-  const argond = require('argon2-ffi').argon2d
-  ;
-  // Our salter.
-  const salt = () => crypto.randomBytes(77)
-  ;
-  // Infinite base encoder I made and maintain.
-  const c = require('encode-x')()
-  ;
-  Object.assign(self, {c})
-  ;
-  // Debugging
-  global.self.argonp = argonp
-  ;
+  // first seed_refs users are except for life from ref fees.
+  l.seed_refs = 77;
+  // Store imports/requires here, dont export these.
+  l.includes = {};
+  l.includes.qrcode = require('qrcode');
+  l.includes.tfa = require('speakeasy');
+  l.includes.md5 = require('md5');
+  l.includes.request = require('request');
+  l.includes.exec = require('child_process').exec;
+  l.includes.mongoose = require('mongoose');
+  l.includes.path = require('path');
+  l.includes.crypto = require('crypto');
+  l.includes.argonp = require('argon2-ffi').argon2i;
+  l.includes.argond = require('argon2-ffi').argon2d;
+  l.includes.salt = () => crypto.randomBytes(77);
+  l.includes.c = require('encode-x')();
+  // secure info, dont export these.
+  l.secure = {};
+  l.secure.encryption_key = process.env.ENCRYPTION_KEY.slice(0, 32);
+  l.secure.secret = process.env.SECRET;
+  l.legacy_endpoints = ['/chat', '/miner', '/gamble'];
+  // User data.
+  Object.assign(l, {
+    users: {},
+    cookieToUsername: {},
+    usernameToSockets: {},
+    usernameTo2fa: {},
+  });
   /* 
   * $argon2i$v=19$m=7777,t=77,p=77$ 7+crypto.randomBytes+secret $ hash
   * Memory cost 7777 KiB (1024*7777), relative time cost, and the number 
   * of sustained concurrent threads needed.
   */
-  const ARGON_PCONF = self.argon.conf = {
+  l.argon_conf = {
     parallelism: 77,
     memoryCost: 7777,
     timeCost: 77
@@ -95,18 +61,22 @@
   /*
   * Begin mongoose schematic configuration.
   */
-  mongoose.Promise = global.Promise
+  l.db = {}
   ;
-  const conn = mongoose.createConnection(DATABASE_ENDPOINT)
-
-  , BlockChainSchema = new mongoose.Schema({
+  l.db.endpoint = 'mongodb://localhost/gambler-api'
+  ;
+  l.includes.mongoose.Promise = global.Promise
+  ;
+  l.db.conn = l.includes.mongoose.createConnection(l.db.endpoint)
+  ;
+  l.db.BlockChainSchema = new l.includes.mongoose.Schema({
     'share': String,
     'salt': String,
     'previousBlockHash': String,
     'hash': String,
     "date": { type: Date, default: Date.now() }
   })
-  , PokerGamesSchema = new mongoose.Schema({
+  l.db.PokerGamesSchema = new l.includes.mongoose.Schema({
     'status': Number,
     'players': Object,
     'config': Object,
@@ -115,7 +85,7 @@
     'share': String,
     "date": { type: Date, default: Date.now() }
   })
-  , SharesFoundSchema = new mongoose.Schema({
+  l.db.SharesFoundSchema = new l.includes.mongoose.Schema({
     'workerId': String,
     'result': String,
     'username': String,
@@ -123,18 +93,18 @@
     'nonce': String,
     "date": { type: Date, default: Date.now() }
   })
-  , TransactionsSchema = new mongoose.Schema({
+  l.db.TransactionsSchema = new l.includes.mongoose.Schema({
     'from': String,
     'to': String,
     'amount': Number,
     'type': String,
     "date": { type: Date, default: Date.now() }
   })
-  , ChatMessagesSchema = new mongoose.Schema({
+  l.db.ChatMessagesSchema = new l.includes.mongoose.Schema({
     'username': String,
     'message': String,
   })
-  , UsersSchema = new mongoose.Schema({
+  l.db.UsersSchema = new l.includes.mongoose.Schema({
     'username': String,
     'loginCookies': Array,
     'password': String,
@@ -153,7 +123,7 @@
     'miningConfig': Object,
   })
   ; 
-  TransactionsSchema.options.toJSON = ChatMessagesSchema.options.toJSON = {
+  l.db.TransactionsSchema.options.toJSON = l.db.ChatMessagesSchema.options.toJSON = {
     transform: function(doc, ret, options) {
       ret.date = ret._id.getTimestamp()
       ;
@@ -164,11 +134,12 @@
     }
   }
   ;
-  UsersSchema.options.toJSON = {
+  l.db.UsersSchema.options.toJSON = {
     transform: function(doc, ret, options) {
-      ret._id && (
-        ret.date = ret._id.getTimestamp()
-      )
+      //ret._id && (
+      //  ret.date = ret._id.getTimestamp()
+      //)
+      ret.date = ret._id.getTimestamp()
       ;
       delete ret._id; delete ret.__v, delete ret.password; delete ret.loginCookies
       ;
@@ -178,17 +149,17 @@
   }
   ;
   // Beautiful hack to allow hotreloading.
-  const BlockChain = conn.models.BlockChain || conn.model('BlockChain', BlockChainSchema)
+  l.db.BlockChain = l.db.conn.models.BlockChain || l.db.conn.model('BlockChain', l.db.BlockChainSchema)
   ;
-  const PokerGames = conn.models.PokerGames || conn.model('PokerGames', PokerGamesSchema)
+  l.db.PokerGames = l.db.conn.models.PokerGames || l.db.conn.model('PokerGames', l.db.PokerGamesSchema)
   ;
-  const SharesFound = conn.models.SharesFound || conn.model('SharesFound', SharesFoundSchema)
+  l.db.SharesFound = l.db.conn.models.SharesFound || l.db.conn.model('SharesFound', l.db.SharesFoundSchema)
   ;
-  const Transactions = conn.models.Transactions || conn.model('Transactions', TransactionsSchema)
+  l.db.Transactions = l.db.conn.models.Transactions || l.db.conn.model('Transactions', l.db.TransactionsSchema)
   ;
-  const ChatMessages = conn.models.ChatMessages || conn.model('ChatMessages', ChatMessagesSchema)
+  l.db.ChatMessages = l.db.conn.models.ChatMessages || l.db.conn.model('ChatMessages', l.db.ChatMessagesSchema)
   ;
-  const Users = conn.models.Users || conn.model('Users', UsersSchema)
+  l.db.Users = l.db.conn.models.Users || l.db.conn.model('Users', l.db.UsersSchema)
   ;
 
   /**********************************************
@@ -248,7 +219,7 @@
     const GENESIS = 'leat'
     ;
     /* find our previous hash */
-    BlockChain.findOne().sort({
+    l.db.BlockChain.findOne().sort({
       _id: -1
     }).then(last_block => {
       /* Deal with our first block (it has no previous hash) */
@@ -274,7 +245,7 @@
           }
         }
         ;
-        BlockChain.create(block)
+        l.db.BlockChain.create(block)
         ;
         this.games.forEach(_=>_.emit('block found', block))
         ;
@@ -288,13 +259,9 @@
   ;
   const lS = new leatServer
   ;
-  Object.assign(global.self, {
-    lS: lS
-  })
-  ;
   function Player(name) {
 
-    var user = users[name];
+    var user = l.users[name];
 
     if(!user)
       throw 'User not in memory.'
@@ -308,7 +275,7 @@
 
     Object.asign(this, {
       get luckyS() {
-        let user = users[this.username];
+        let user = l.users[this.username];
         return user ? user.luckyS.slice(0, 4) : void 0
       }
     });
@@ -370,9 +337,9 @@
 
   PokerGame.prototype.deal = function(block) {
 
-    this.deck = md5(this.getLuckyStrings() + block.hash);
+    this.deck = l.includes.md5(this.getLuckyStrings() + block.hash);
 
-    for(let i = 0, l = this.players.length; i < l; ++i) {
+    for(let i = 0, len = this.players.length; i < len; ++i) {
     }
 
   }
@@ -398,7 +365,7 @@
       throw 'Cant disconnect carded user.'
 
     delete this.players[username]
-    users[username] && emitToUserSockets(username, "lS.Poker.disconnect", reason);
+    l.users[username] && emitToUserSockets(username, "lS.Poker.disconnect", reason);
 
   }
   ;
@@ -435,16 +402,16 @@
   *                                            *
   *********************************************/
 
-  if(!SECRET) {
+  if(!l.secure.secret) {
     throw new Error("Need to pass in a SECRET `SECRET=\"someverylongsafesecret\" mubot`")
   }
-  if(!ENCRYPTION_KEY) {
+  if(!l.secure.encryption_key) {
     throw new Error("Need to pass in an ENCRYPTION_KEY `ENCRYPTION_KEY=\"someverylongsafekey\"`")
   }
-  if(ENCRYPTION_KEY.length < 32) {
+  if(l.secure.encryption_key.length < 32) {
     throw new Error("Need to make your ENCRYPTION_KEY longer. (Min: 32chars)")
   }
-  if(SECRET.length < 32) {
+  if(l.secure.secret.length < 32) {
     throw new Error("Need to make your SECRET longer. (Min: 32chars)")
   }
   // Current AES keys must be at most 256 bytes (32 characters)
@@ -484,108 +451,19 @@
   }
   // Static salts
   function ssalt(data) {
-    return '7' + data + SECRET
+    return '7' + data + l.secure.secret
   }
   var totalShares = 0;
 
-  // #Load logged in users into memory.
-  Users.find().then(all_users => {
-
-    for(let i = 0, l = all_users.length; i < l; ++i) {
-      let user = all_users[i]
-      ;
-      for(let i = 0, l = user.loginCookies.length; i < l; ++i) {
-        let cookie = user.loginCookies[i]
-        ;
-        cookieToUsername[cookie] = user.username
-        ;
-      }
-      user.loginCookies.length && (users[user.username] = user.toJSON())
-      ;
-    }
-
-  }
-  )
   function idToUsername(id, callback) {
-    Users.findOne({id}).then(user=>callback(user.username))
+    l.db.Users.findOne({id}).then(user=>callback(user.username))
   }
-  SharesFound.count({}, (err, count) => {
+  l.db.SharesFound.count({}, (err, count) => {
     totalShares = count;
   }
   )
   var leatProxy;
-  module.exports = bot => {
 
-    leatProxy = require('leat-stratum-proxy');
-    const fs = require('fs')
-    lP = leatProxy = new leatProxy({
-      server: bot.server,
-      host: 'pool.supportxmr.com',
-       port: 3333,
-       //key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
-       //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
-    })
-    leatProxy.listen();
-    console.log("Stratum launched")
-
-    leatProxy.on('accepted', data => {
-      var [addr, user] = data.login.split('.');
-
-      var [user, diff] = user.split('+');
-
-      if(addr !== LEAT_IO_ADDR) {
-        console.log("Unique addr miner - " + addr);
-        return;
-      }
-      if(user && user.substr(0, 2) === '_#') {
-        idToUsername(user.substr(2), shareFound);
-      } else {
-        shareFound(user);
-      }
-      console.log(
-        '-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n' +
-        data.login + "  Work done by ("+user+"/"+cookieToUsername[data.cookie]+"). Total: "+ (data.hashes||0) + " Cookie: " + data.cookie
-      )
-    })
-    leatProxy.on('found', data => {
-      SharesFound.create({
-        workerId: data.id,
-        username: data.login.split('.')[1] || '_anon',
-        result: data.result,
-        nonce: data.nonce,
-        jobid: data.job_id
-      }, _=>0)
-      ;
-    })
-    ;
-    // Send just the miner, not leat.io.
-    bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res, next) => {
-       return res.sendFile(path.join(__dirname + SERVER_ROOT + 'm.html'))
-    })
-    ;
-    bot.router.get(LEGACY_ENDPOINTS.concat(['/', '/:number', '/:number/']), (req, res, next) => {
-      var ref = req.params.number;
-      if(ref && /[^0-9]/.test(ref))
-        return next()
-      ;
-      if(!ref) {
-        let keys = Object.keys(users)
-        let rndIdx = Math.floor(Math.random() * keys.length);
-        let rndKey = keys[rndIdx] | 0;
-        // If no one is online keys[x] === undefined.
-        ref = users[rndKey] ? users[rndKey].id : 0;
-      }
-      ref = parseInt(ref);
-      if(!req.cookies.loginCookie && !req.cookies.ref)
-        res.cookie('ref', ref)
-      ;
-      res.sendFile(path.join(__dirname + SERVER_ROOT + 'leat.html'))
-    })
-    ;
-    // Time out to let the server load all the data into memory
-    setTimeout(main.bind(this, bot), 7);
-  }
-  ;
   /*
   *  Since we allow multiple logins per acnt to mine for 1 account.
   */
@@ -596,13 +474,13 @@
       throw 'Missing username or event.'
     ;
     const socketIDs = Object.keys(
-      usernameToSockets[username] || {}
+      l.usernameToSockets[username] || {}
     )
     ;
     var i = socketIDs.length
     ;
     while(i--) {
-      let socket = usernameToSockets[username][ socketIDs[i] ]
+      let socket = l.usernameToSockets[username][ socketIDs[i] ]
       ;
       socket.emit(event, data)
       ;
@@ -610,7 +488,7 @@
   }
 
   function verifyPassword(username, password, callback) {
-    Users.findOne({
+    l.db.Users.findOne({
       'username': RegExp('^' + logindata.username + '$','i')
     }, (err, user) => {
       if(!user)
@@ -630,7 +508,7 @@
       let [server, id, password ] = command.split(' ')
       verifyPassword(username, password, username => {
         var user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
-        Object.assign(user, users[username]);
+        Object.assign(user, l.users[username]);
         user.id || (user.id = {});
         Object.assign(user.id, {ids: {[id]: server}});
         bot.brain.save();
@@ -647,7 +525,7 @@
       let [server, id, password ] = command.split(' ')
       verifyPassword(username, password, username => {
         var user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
-        Object.assign(user, users[username]);
+        Object.assign(user, l.users[username]);
         
         if(user[id]) {
           delete user[id]
@@ -664,22 +542,101 @@
   }
 
   function main(bot) {
+    l.io = l.bot.io.of('/0');
+    l.bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res) =>
+       res.sendFile(l.includes.path.join(__dirname + l.path + 'm.html'))
+    )
+    ;
+    l.bot.router.get(l.legacy_endpoints.concat(['/', '/:number', '/:number/']), (req, res, next) => {
+      var ref = req.params.number;
+      if(ref && /[^0-9]/.test(ref))
+        return next()
+      ;
+      if(!ref) {
+        let keys = Object.keys(l.users)
+        let rndIdx = Math.floor(Math.random() * keys.length);
+        let rndKey = keys[rndIdx] || 0;
+        // If no one is online keys[x] === undefined.
+        ref = l.users[rndKey] ? l.users[rndKey].id : 0;
+      }
+      ref = parseInt(ref);
+      if(!req.cookies.loginCookie && !req.cookies.ref)
+        res.cookie('ref', ref)
+      ;
+      res.sendFile(l.includes.path.join(__dirname + l.path + 'leat.html'))
+    })
+    ;
+    // #Load logged in users into memory.
+    l.db.Users.find().then(all_users => {
+      for(let i = 0, len = all_users.length; i < len; ++i) {
+        let user = all_users[i]
+        ;
+        for(let i = 0, len = user.loginCookies.length; i < len; ++i) {
+          let cookie = user.loginCookies[i]
+          ;
+          l.cookieToUsername[cookie] = user.username
+          ;
+        }
+        user.loginCookies.length && (l.users[user.username] = user.toJSON())
+        ;
+      }
+      bot.leat = l; // export
+      bot.emit("leat.io loaded", bot);
+    });
+    leatProxy = require('leat-stratum-proxy');
+    const fs = require('fs')
+    lP = leatProxy = new leatProxy({
+      server: bot.server,
+      host: 'pool.supportxmr.com',
+       port: 3333,
+       //key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
+       //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
+    })
+    leatProxy.listen();
+    console.log("Stratum launched")
 
-    const io = global.self.io = bot.io.of('/0');
+    leatProxy.on('accepted', data => {
+      var [addr, user] = data.login.split('.');
+
+      var [user, diff] = user.split('+');
+
+      if(addr !== l.address) {
+        console.log("Unique addr miner - " + addr);
+        return;
+      }
+      if(user && user.substr(0, 2) === '_#') {
+        idToUsername(user.substr(2), shareFound);
+      } else {
+        shareFound(user);
+      }
+      console.log(
+        '-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n' +
+        data.login + "  Work done by ("+user+"/"+l.cookieToUsername[data.cookie]+"). Total: "+ (data.hashes||0) + " Cookie: " + data.cookie
+      )
+    })
+    leatProxy.on('found', data => {
+      l.db.SharesFound.create({
+        workerId: data.id,
+        username: data.login.split('.')[1] || '_anon',
+        result: data.result,
+        nonce: data.nonce,
+        jobid: data.job_id
+      }, _=>0)
+      ;
+    })
+
     var guests = 0;
 
-    global.self.Users = Users;
-
-    io.on('connection', socket => {
+    l.io.on('connection', socket => {
 
       isLoggedIn(socket, (username, cookie) => {
 
         socket.on('lC.load', (_, callback) => {
-          ChatMessages.find().sort({ _id: -1}).limit(20).exec((err, chatMsgs) => {
+          l.db.ChatMessages.find().sort({ _id: -1}).limit(20).exec((err, chatMsgs) => {
             if(username) {
-              Transactions.find({$or: [{ from: username }, { to: username }]}, { __v: 0 })
+              l.db.Transactions.find({$or: [{ from: username }, { to: username }]}, { __v: 0 })
                 .sort({ _id: -1 }).limit(777).exec((err, trans) => {
-                  callback(Object.assign({}, users[username], {
+                  callback(Object.assign({}, l.users[username], {
                     chatMsgs: chatMsgs.reverse(),
                     transactions: trans.reverse(),
                     users: {}
@@ -688,7 +645,7 @@
               })
               ;
             } else {
-              callback(Object.assign({}, users[toGuest()], {
+              callback(Object.assign({}, l.users[toGuest()], {
                 chatMsgs: chatMsgs.reverse(),
                 transactions: [],
                 users: {}
@@ -700,7 +657,7 @@
         })
         ;
         function toGuest() {
-          return "#" + md5(SECRET + socket.handshake.address).slice(0, 8)
+          return "#" + l.includes.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
           ;
         }
         socket.on("lC.newChatMessage", data => {
@@ -719,8 +676,8 @@
             runCommand(username, message.slice(1), bot);
             return;
           }
-          io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
-          ChatMessages.create({
+          l.io.emit("lS.newChatMessage", {username: username || toGuest(), message, date})
+          l.db.ChatMessages.create({
             username: username || toGuest(),
             message
           }, _=>0)
@@ -728,9 +685,9 @@
         ;
         socket.on('disconnect', () => {
           username ?
-            delete usernameToSockets[username][socket.id]
+            delete l.usernameToSockets[username][socket.id]
           :
-            delete users[toGuest()]
+            delete l.users[toGuest()]
           ;
         })
         ;
@@ -742,10 +699,10 @@
           var match = { username: RegExp('^' + username + '$', 'i') }
             , query = { [user ? '$set' : '$unset']: { isMiningFor: user || 1} }
           ;
-          user ? users[username].isMiningFor = user : delete users[username].isMiningFor
+          user ? l.users[username].isMiningFor = user : delete l.users[username].isMiningFor
           ;
-          Users.findOne({username: RegExp('^' + user + '$', 'i')}).then(found => {
-            Users.findOneAndUpdate(match, query).exec();
+          l.db.Users.findOne({username: RegExp('^' + user + '$', 'i')}).then(found => {
+            l.db.Users.findOneAndUpdate(match, query).exec();
             callback(!user || !!found)
           })
           ;
@@ -762,12 +719,12 @@
           // debuging
           console.log("Got request to enable tfa by " + username);
           // debuging end
-          var tfa = usernameTo2fa[username] = TFA.generateSecret({
-            name: HOSTNAME + '/' + users[username].id + '/ :' + username,
+          var tfa = l.usernameTo2fa[username] = l.includes.tfa.generateSecret({
+            name: l.hostname + '/' + l.users[username].id + '/ :' + username,
             length: 37
           });
           //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
-          qrcode.toDataURL(
+          l.includes.qrcode.toDataURL(
             tfa.otpauth_url,
             (err, tfa_url) => callback(tfa_url || err)
           )
@@ -775,9 +732,9 @@
         ;
         socket.on("lC.verify2fa", (tfa_token, callback) => {
 
-          if(usernameTo2fa[username]) {
-            TFA.totp.verify({
-              secret: usernameTo2fa[username].base32,
+          if(l.usernameTo2fa[username]) {
+            l.includes.tfa.totp.verify({
+              secret: l.usernameTo2fa[username].base32,
               encoding: 'base32',
               token: tfa_token
 
@@ -786,7 +743,7 @@
             ;
           } else {
             getUser2fa(username, tfa => callback(
-              TFA.totp.verify({
+              l.includes.tfa.totp.verify({
                 secret: tfa,
                 encoding: 'base32',
                 token: tfa_token
@@ -797,35 +754,35 @@
         })
         ;
         function setUser2fa(username, callback) {
-          Users.findOneAndUpdate(
+          l.db.Users.findOneAndUpdate(
           { username },
           {
             $set: {
-              tfa: encrypt(usernameTo2fa[username].base32)
+              tfa: encrypt(l.usernameTo2fa[username].base32)
             }
           }
           , (err, user) => {
             callback(!!user, !user && "User not updated")
-            delete usernameTo2fa[username];
+            delete l.usernameTo2fa[username];
           }
           )
         }
         function getUser2fa(username, callback) {
-          Users.findOne(
+          l.db.Users.findOne(
             { username }
           , (err, user) => callback(decrypt(user.tfa)))
         }
       }
       )
       socket.on('lC.refreshStats', (_, callback) => {
-        Users.find({
+        l.db.Users.find({
           username: { $exists: true },
           shares: { $gt: 0 }
         }, {
           username: 1, shares: 1, _id: 0
         }
         , (err, users) => {
-          SharesFound.count({}, (err, count) => {
+          l.db.SharesFound.count({}, (err, count) => {
             var stats = leatProxy.getStats();
             var statsR = {};
             statsR.uptime = stats.uptime;
@@ -839,7 +796,7 @@
       })
       ;
       socket.on("lC.checkUsername", (username, callback) => {
-        Users.findOne({
+        l.db.Users.findOne({
           username: RegExp('^' + username + '$','i')
         }, (err, user) => {
           if(err)
@@ -852,7 +809,7 @@
       })
       ;
       socket.on("lC.login", (logindata, callback) => {
-        Users.findOne({
+        l.db.Users.findOne({
           'username': RegExp('^' + logindata.username + '$','i')
         }, (err, user) => {
 
@@ -873,20 +830,20 @@
             ;
             var cookie = encode(crypto.randomBytes(37).toString('hex'))
             ;
-            Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
+            l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
               if(!user) {
                 return callback('');
               }
               user = user.toJSON();
               callback(cookie);
-              cookieToUsername[cookie] = user.username;
+              l.cookieToUsername[cookie] = user.username;
               // Add socket or create sockets obj and add.
-              usernameToSockets[user.username] ?
-                usernameToSockets[user.username][socket.id] = socket
+              l.usernameToSockets[user.username] ?
+                l.usernameToSockets[user.username][socket.id] = socket
               :
-                usernameToSockets[user.username] = {[socket.id]: socket}
+                l.usernameToSockets[user.username] = {[socket.id]: socket}
               ;
-              users[user.username] = user;
+              l.users[user.username] = user;
             })
             ;
           })
@@ -904,7 +861,7 @@
 
         acntdata.date = new Date
         ;
-        Users.findOne({
+        l.db.Users.findOne({
           username: new RegExp('^' + acntdata.username + '$','i')
         }, (err, user) => {
 
@@ -922,7 +879,7 @@
               ;
               exec('echo monerod getnewaddress', (error, stdout) => {
 
-                Users.count({}, function(err, count) {
+                l.db.Users.count({}, function(err, count) {
 
                   acntdata.id = count
                   ;
@@ -933,7 +890,7 @@
                     ;
                     // Filters out guests, their usernames start with "#".
                     keys = Object.keys(
-                      users.filter(_ =>
+                      l.users.filter(_ =>
                         _.slice(0, 1) !== "#"
                       )
                     )
@@ -942,20 +899,20 @@
                     ;
                     rndKey = keys[rndIdx]
                     ;
-                    acntdata.ref = users[rndKey] ? users[rndKey].id : 0
+                    acntdata.ref = l.users[rndKey] ? l.users[rndKey].id : 0
                     ;
                   }
-                  acntdata.id <= SEED_REFS && delete acntdata.ref
+                  acntdata.id <= l.seed_refs && delete acntdata.ref
                   ;
                   acntdata.loginCookies = [ cookie ]
                   ;
-                  Users.create(acntdata, (err, user) => {
+                  l.db.Users.create(acntdata, (err, user) => {
 
-                    users[user.username] = user.toJSON()
+                    l.users[user.username] = user.toJSON()
                     ;
-                    usernameToSockets[user.username] = {[socket.id]: socket}
+                    l.usernameToSockets[user.username] = {[socket.id]: socket}
                     ;
-                    cookieToUsername[cookie] = user.username
+                    l.cookieToUsername[cookie] = user.username
                     ;
                     callback(cookie)
                     ;
@@ -975,16 +932,18 @@
     ;
   }
   ;
-  global.self.setUserPass = (user, pass) => {
+  l.setUserPass = (user, pass, callback) => {
     argonp.hash(ssalt(pass), salt(), ARGON_PCONF).then(pass_hash => {
-      Users.findOneAndUpdate({
+      l.db.Users.findOneAndUpdate({
         username: new RegExp('^' + user + '$','i')
       }, {
         $set: {
           password: encode(encrypt(pass_hash))
         }
       }, () => {
-        console.log("Old hash was: " + encode(encrypt(pass_hash)))
+        let res = "Old hash was: " + encode(encrypt(pass_hash));
+        console.log(res)
+        callback && callback(res);
       })
       ;
     })
@@ -998,40 +957,40 @@
         res = ""
     ;
 
-    if(users[from].tfa) {
-      if(!users[from]._verified)
+    if(l.users[from].tfa) {
+      if(!l.users[from]._verified)
         res = "Enter 2FA code.";
       else
-        delete users[from]._verified
+        delete l.users[from]._verified
       ;
     }
     if(!Number.isInteger(amount) && /^_|[^a-zA-Z0-9_]/.test(to))
       res =  "Bad amount/user."
     ;
-    if(users[from].shares < amount)
+    if(l.users[from].shares < amount)
       res = "Not enough funds."
     ;
     if(res)
       return callback(false, res)
     ;
-    Users.findOneAndUpdate({
+    l.db.Users.findOneAndUpdate({
       username: RegExp('^' + to + '$','i') }, {
         $inc: { 'shares': amount  }
       }, (err, user) => {
         if(!user)
           return callback(false, "Username not found.")
         ;
-        Transactions.create({ from, to, type: 'transfer', amount }, _=>0)
+        l.db.Transactions.create({ from, to, type: 'transfer', amount }, _=>0)
         ;
-        if(users[to]) {
+        if(l.users[to]) {
           emitToUserSockets(to, "lS.transfer", {amount, user: from})
           ;
-          users[to].shares += amount
+          l.users[to].shares += amount
           ;
         }
-        users[from].shares -= amount
+        l.users[from].shares -= amount
         ;
-        Users.findOneAndUpdate({ username }, { $inc: { shares: -amount } }, (err, user) => {
+        l.db.Users.findOneAndUpdate({ username }, { $inc: { shares: -amount } }, (err, user) => {
           if(!user) {
             callback(true, "Critical error, payment sent but not deducted.")
           } else {
@@ -1055,15 +1014,15 @@
     :
       { $set: { loginCookies: [] } }
     ;
-    delete usernameToSockets[user][socket.id]
+    delete l.usernameToSockets[user][socket.id]
     ;
-    Users.findOneAndUpdate(match, query, (err, user) => {
+    l.db.Users.findOneAndUpdate(match, query, (err, user) => {
       if(allSessions) {
         for(let cookie of user.loginCookies)
-          delete cookieToUsername[cookie]
+          delete l.cookieToUsername[cookie]
         ;
       } else {
-        delete cookieToUsername[cookie]
+        delete l.cookieToUsername[cookie]
       }
       console.log(user.username + " loggin out. (allSessions: "+allSessions+")")
     }
@@ -1077,10 +1036,10 @@
   */
   function logOutInactive() {
     console.log("logging out inactive")
-    for(let user in users) {
-      if(Date.now() - users[user].lastFoundTime > 71347777) {
-        Users.findOneAndUpdate({
-          username: users[user].username
+    for(let user in l.users) {
+      if(Date.now() - l.users[user].lastFoundTime > 71347777) {
+        l.db.Users.findOneAndUpdate({
+          username: l.users[user].username
         }, {
           $set: { loginCookies: [] }
         }, (err, user) => {
@@ -1089,12 +1048,12 @@
           ;
           while (i--) {
 
-            delete cookieToUsername[ user.loginCookies[i] ]
+            delete l.cookieToUsername[ user.loginCookies[i] ]
             ;
           }
-          delete usernameToSockets[user.username]
+          delete l.usernameToSockets[user.username]
           ;
-          delete users[user.username]
+          delete l.users[user.username]
           ;
           console.log("Automagically logged " + user.username + " out.")
         })
@@ -1121,13 +1080,13 @@
     totalShares % 777 === 0 &&
       logOutInactive()
     ;
-    myuser = users[username]
+    myuser = l.users[username]
     ;
 
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#")
-      return Users.findOneAndUpdate({
-        username: HOSTNAME
+      return l.db.Users.findOneAndUpdate({
+        username: l.hostname
       }, {
         $inc: { 'shares': 1 }
       }, {
@@ -1152,7 +1111,7 @@
       needs_to_pay = true
     ;
     if(needs_to_pay) {
-      Users.findOneAndUpdate({
+      l.db.Users.findOneAndUpdate({
         'id': myuser.ref
       }, {
         $inc: {
@@ -1163,14 +1122,14 @@
         if(err || !beingPaid)
           return
         ;
-        Transactions.create({
+        l.db.Transactions.create({
           from: username,
           to: beingPaid.username,
           type: 'ref',
           amount: 1
         }, _=>0)
         ;
-        Users.findOneAndUpdate({
+        l.db.Users.findOneAndUpdate({
           username: new RegExp('^' + username + '$','i')
         }, {
           $inc: {
@@ -1181,11 +1140,11 @@
         ;
         ++myuser.refPayments
         ;
-        if(users[beingPaid.username]) {
+        if(l.users[beingPaid.username]) {
 
-          ++users[beingPaid.username].shares
+          ++l.users[beingPaid.username].shares
           ;
-          ++users[beingPaid.username].refPaymentsReceived
+          ++l.users[beingPaid.username].refPaymentsReceived
           ;
           emitToUserSockets(beingPaid.username, 'lS.refPayment', username)
         }
@@ -1193,7 +1152,7 @@
       )
     } else if(myuser.isMiningFor) {
 
-      Users.findOneAndUpdate({
+      l.db.Users.findOneAndUpdate({
         username: new RegExp('^' + username + '$','i')
       }, {
         $inc: {
@@ -1204,7 +1163,7 @@
         if(err || !user)
           return
         ;
-        Users.findOneAndUpdate({
+        l.db.Users.findOneAndUpdate({
           username: new RegExp('^' + myuser.isMiningFor + '$','i')
         }, {
           $inc: {
@@ -1215,18 +1174,18 @@
           if(err || !beingPaid)
             return
           ;
-          Transactions.create({
+          l.db.Transactions.create({
             from: username,
             to: beingPaid.username,
             type: 'mined_for',
             amount: 1
           }, _=>0)
           ;
-          if(users[beingPaid.username]) {
+          if(l.users[beingPaid.username]) {
 
-            ++users[beingPaid.username].shares
+            ++l.users[beingPaid.username].shares
             ;
-            ++users[beingPaid.username].minedPaymentsReceived
+            ++l.users[beingPaid.username].minedPaymentsReceived
             ;
             emitToUserSockets(beingPaid.username, "lS.minedPayment", username)
           }
@@ -1236,7 +1195,7 @@
       }
       )
     } else {
-      Users.findOneAndUpdate({
+      l.db.Users.findOneAndUpdate({
         username: new RegExp('^' + username + '$','i')
       }, {
         $inc: {
@@ -1263,13 +1222,13 @@
       if(cookie) {
         cookie = cookie[1]
         ;
-        username = cookieToUsername[cookie]
+        username = l.cookieToUsername[cookie]
         ;
         if(username) {
-          usernameToSockets[username] ?
-            usernameToSockets[username][socket.id] = socket
+          l.usernameToSockets[username] ?
+            l.usernameToSockets[username][socket.id] = socket
           :
-            usernameToSockets[username] = {[socket.id]: socket}
+            l.usernameToSockets[username] = {[socket.id]: socket}
           ;
           return cb(username, cookie)
           ;
@@ -1277,9 +1236,9 @@
       }
     }
     // Right now what a 'guest' is IS this md5. Thats it.
-    let guest = md5(SECRET + socket.handshake.address).slice(0, 8)
+    let guest = l.includes.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
     ;
-    users["#" + guest] = {
+    l.users["#" + guest] = {
       username: "#" + guest,
       shares: 0,
       balance: 0
@@ -1288,7 +1247,6 @@
     cb(false)
     ;
   }
-
-// End of file.
+  // End of file.
 })()
 ;

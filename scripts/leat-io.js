@@ -15,7 +15,7 @@ module.exports = bot => {
 const l = {}
 ;
 l.load = bot => {
-  Object.assign(l, bot.keat);
+  Object.assign(l, bot.leat);
 }
 ;
 l.mine = res => {

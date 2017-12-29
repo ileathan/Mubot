@@ -107,15 +107,15 @@ e.realEval = msg => {
   if(allowed.includes(id)) {
     if(!/module[.]exports\s*=/.test(cmd)) {
       !/[;]|return(;|\s|\n|$)/.test(cmd) && (evalCmd = 'return ' + evalCmd);
-      evalCmd = 'module.exports=((bot,botS)=>{' + evalCmd + '})(typeof robot !== "undefined" ? robot : null , typeof robotSlack !== "undefined" ? robotSlack : null)';
+      evalCmd = 'module.exports=((bot,botS)=>{' + evalCmd + '})(typeof bot !== "undefined" ? bot : null , typeof botSlack !== "undefined" ? botSlack : null)';
     }
-    if(!global.robot) {
-       global.robot = msg.robot;
+    if(!global.bot) {
+       global.bot = msg.bot;
     }
     let result = _eval(evalCmd, true);
     result = JSON.stringify(result, null, 2) || result || 'true';
     e.addToLog(cmd, result, id)
-    msg.robot.brain.save();
+    msg.bot.brain.save();
     msg.send('# Result: ```' + result + '```');
   } else {
     msg.send(e.fakeEval(msg));
@@ -124,7 +124,7 @@ e.realEval = msg => {
 ;
 
 e.addToLog = function(cmd, res, id) {
- evals[id] || (evals[id] = bot.brain.data.evals[id] = {});
+ evals[id] || (evals[id] = (res.bot.brain.data.evals[id] = {}));
  evals[id][cmd] ? delete evals[id][cmd] && (evals[id][cmd] = res) : evals[id][cmd] = res;
 }
 
@@ -223,7 +223,7 @@ e.deleteCmds = function(msg) {
     }
     else res = "Could not parse request."
   }
-  msg.robot.brain.save();
+  msg.bot.brain.save();
 
   return msg.send(res || "No Command(s) found.")
 }
@@ -285,7 +285,7 @@ e.saveCmd = function(msg) {
     return msg.send("No command found.")
   ;
   saved[id][tag] = cmd;
-  msg.robot.brain.save();
+  msg.bot.brain.save();
   msg.send("Saved " + e.formatCmd(cmd) + ' as ' + tag + '.');
 }
 ;
