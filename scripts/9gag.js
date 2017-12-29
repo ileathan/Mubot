@@ -6,7 +6,7 @@
 //   "soupselect": "0.2.0"
 //
 // Configuration:
-//   HUBOT_9GAG_NO_GIFS (optional, skips GIFs if defined; default is undefined)
+//   MUBOT_9GAG_NO_GIFS (optional, skips GIFs if defined; default is undefined)
 //
 // Commands:
 //   hubot meme - Returns a random meme image
@@ -49,7 +49,7 @@
         sendMeme(message, location, response_handler);
       }
       selectors = ["a img.badge-item-img"];
-      if(!process.env.HUBOT_9GAG_NO_GIFS) {
+      if(!process.env.MUBOT_9GAG_NO_GIFS) {
         selectors.unshift("div.badge-animated-container-animated img")
       }
       img_src = getMemeImage(body, selectors);

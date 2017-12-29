@@ -27,9 +27,9 @@
 
   HTMLParser = require("htmlparser");
 
-  module.exports = function(robot) {
-    return robot.respond(/(wiki)( me)? (.*)/i, function(msg) {
-      return wikiMe(robot, msg.match[3], function(text, url) {
+  module.exports = function(bot) {
+    return bot.respond(/(wiki)( me)? (.*)/i, function(msg) {
+      return wikiMe(bot, msg.match[3], function(text, url) {
         msg.send(text);
         if (url) {
           return msg.send(url);
@@ -38,10 +38,10 @@
     });
   };
 
-  wikiMe = function(robot, query, cb) {
+  wikiMe = function(bot, query, cb) {
     var articleURL;
     articleURL = makeArticleURL(makeTitleFromQuery(query));
-    return robot.http(articleURL).header('User-Agent', 'Hubot Wikipedia Script').get()(function(err, res, body) {
+    return bot.http(articleURL).header('User-Agent', 'Hubot Wikipedia Script').get()(function(err, res, body) {
       var bodyText, paragraphs;
       if (err) {
         return cb("Sorry, the tubes are broken.");

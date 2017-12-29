@@ -13,13 +13,13 @@
 //
 
 (function() {
-  module.exports = function(robot) {
-    robot.respond(/pug me/i, function(msg) {
+  module.exports = function(bot) {
+    bot.respond(/pug me/i, function(msg) {
       return msg.http("http://pugme.herokuapp.com/random").get()(function(err, res, body) {
         return msg.send(JSON.parse(body).pug);
       });
     });
-    robot.respond(/pug bomb( (\d+))?/i, function(msg) {
+    bot.respond(/pug bomb( (\d+))?/i, function(msg) {
       var count;
       count = msg.match[2] || 5;
       return msg.http("http://pugme.herokuapp.com/bomb?count=" + count).get()(function(err, res, body) {
@@ -33,7 +33,7 @@
         return results;
       });
     });
-    return robot.respond(/how many pugs are there/i, function(msg) {
+    return bot.respond(/how many pugs are there/i, function(msg) {
       return msg.http("http://pugme.herokuapp.com/count").get()(function(err, res, body) {
         return msg.send("There are " + (JSON.parse(body).pug_count) + " pugs.");
       });

@@ -16,8 +16,8 @@
 
   thecoin = ["heads", "tails"];
 
-  module.exports = function(robot) {
-    return robot.respond(/(throw|flip|toss) a coin/i, function(msg) {
+  module.exports = function(bot) {
+    return bot.respond(/(throw|flip|toss) a coin/i, function(msg) {
       return msg.reply(msg.random(thecoin));
     });
   };

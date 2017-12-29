@@ -11,9 +11,9 @@
 //   leathan
 //
 
-module.exports = function(robot) {
+module.exports = function(bot) {
   const crypto = require('crypto');
-  robot.respond(/embed (http[^ ]+)? ?([^-]+)\s*-\s*([^-]+?)(?:\s*-\s*(.+))?$/i, function(msg) {
+  bot.respond(/embed (http[^ ]+)? ?([^-]+)\s*-\s*([^-]+?)(?:\s*-\s*(.+))?$/i, function(msg) {
     //color = "" + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1)   
     color = '#' + crypto.randomBytes(3).toString('hex')
     //color = parseInt(color)

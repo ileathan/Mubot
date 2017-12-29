@@ -16,9 +16,9 @@
 (function() {
   var CompatibleBook, Get, Loop;
 
-  module.exports = robot => {
+  module.exports = bot => {
     var cR = {};
-    robot.on('CryptoReply', function(req, mode, msg) {
+    bot.on('CryptoReply', function(req, mode, msg) {
       var key;
       if(key = Object.keys(req)[0]) {
         mode !== 'swap' ? cR[key] = req[key] : cR = req;
@@ -37,7 +37,7 @@
       } else return;
       cR = {}
     });
-    robot.on('CryptoRequest', (req, msg) => {
+    bot.on('CryptoRequest', (req, msg) => {
 
       if(!req.market) req.market = 'p';
       req.mode = "all";
@@ -51,26 +51,26 @@
 
       // If no depth is specified, use max.
       if(req.amount || !req.depth) req.depth = 999999;
-      Get(req.ticker, req.depth, req.market, msg, robot, orderBook => {
+      Get(req.ticker, req.depth, req.market, msg, bot, orderBook => {
         var price;
         if(orderBook.error) return;
         price = parseFloat((+orderBook.asks[0][0] + +orderBook.bids[0][0]) / 2).toFixed(8);
         if(req.mode === "all") {
-          robot.emit('CryptoReply', {
+          bot.emit('CryptoReply', {
             price: price
           }, req.mode, msg)
         }
-        Loop(orderBook, req, msg, robot)
+        Loop(orderBook, req, msg, bot)
       })
     });
-    robot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
+    bot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
       var depth, ticker2;
       if(/^\d{1,6}$/.test(msg.match[4])) {
         depth = msg.match[4]
       } else {
         ticker2 = msg.match[4]
       }
-      robot.emit('CryptoRequest', {
+      bot.emit('CryptoRequest', {
         market: msg.match[1],
         ticker: msg.match[3],
         ticker2: ticker2,
@@ -80,11 +80,11 @@
     })
   };
 
-  Get = (ticker, depth, market, msg, robot, cb) => {
+  Get = (ticker, depth, market, msg, bot, cb) => {
     var marketLink;
     if(market === "b") marketLink = "https://bittrex.com/api/v1.1/public/getorderbook?market=BTC-" + ticker + "&type=both&depth=" + depth;
     else marketLink = "https://poloniex.com/public?command=returnOrderBook&currencyPair=BTC_" + ticker + "&depth=" + depth;
-    robot.http(marketLink).get()((err, resp, body) => {
+    bot.http(marketLink).get()((err, resp, body) => {
       var orderBook;
       if(err) return msg.send("Error with http call.");
       if(market === "b") {
@@ -121,7 +121,7 @@
     cb(compatibleBook)
   };
 
-  Loop = (orderBook, req, msg, robot) => {
+  Loop = (orderBook, req, msg, bot) => {
 
     var amountInBtc, cur, key, keys, reply, totalBtc, totalTicker;
     keys = Object.keys(orderBook);
@@ -140,7 +140,7 @@
         if(totalTicker >= req.amount) {
           amountInBtc = parseFloat(totalBtc - (totalTicker - req.amount) * cur[0]).toFixed(8);
           if(req.ticker2 && key === 'bids') {
-            Get(req.ticker2, req.depth, req.market, msg, robot, orderBook => {
+            Get(req.ticker2, req.depth, req.market, msg, bot, orderBook => {
               var amountTicker2, asks, totalTicker2, cur;
               if(orderBook.error) return;
               totalBtc = totalTicker2 = amountTicker2 = 0;
@@ -158,7 +158,7 @@
                     amount: parseFloat(totalTicker2 - ((totalBtc - amountInBtc) / cur[0])).toFixed(8)
                   }
                   ;
-                  robot.emit('CryptoReply', obj, req.mode, msg)
+                  bot.emit('CryptoReply', obj, req.mode, msg)
                 }
               }
             })
@@ -170,11 +170,11 @@
       if(req.amount && !req.ticker2) {
         reply[key][req.ticker] = req.amount;
         reply[key].BTC = amountInBtc;
-        robot.emit('CryptoReply', reply, req.mode, msg)
+        bot.emit('CryptoReply', reply, req.mode, msg)
       } else if(!req.ticker2) {
         reply[key][req.ticker] = totalTicker;
         reply[key].BTC = totalBtc;
-        robot.emit('CryptoReply', reply, req.mode, msg)
+        bot.emit('CryptoReply', reply, req.mode, msg)
       }
     }
   }

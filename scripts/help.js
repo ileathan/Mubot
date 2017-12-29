@@ -9,9 +9,9 @@
 //   /hubot/help
 //
 // Configuration:
-//   HUBOT_HELP_REPLY_IN_PRIVATE - if set to any avlue, all `mubot help` replies are sent in private
-//   HUBOT_HELP_DISABLE_HTTP - if set, no web entry point will be declared
-//   HUBOT_HELP_HIDDEN_COMMANDS - comma-separated list of commands that will not be displayed in help
+//   MUBOT_HELP_REPLY_IN_PRIVATE - if set to any avlue, all `mubot help` replies are sent in private
+//   MUBOT_HELP_DISABLE_HTTP - if set, no web entry point will be declared
+//   MUBOT_HELP_HIDDEN_COMMANDS - comma-separated list of commands that will not be displayed in help
 //
 // Notes:
 //   These commands are grabbed from comment blocks at the top of each file.
@@ -33,7 +33,7 @@
     return help_commands.sort()
   }
   function hiddenCommandsPattern() {
-    var hiddenCommands = process.env.HUBOT_HELP_HIDDEN_COMMANDS;
+    var hiddenCommands = process.env.MUBOT_HELP_HIDDEN_COMMANDS;
     if(hiddenCommands) {
       return new RegExp("^(hubot|mubot) (?:" + hiddenCommands.replace(/,/g, '|') + ") - ")
     }
@@ -49,7 +49,7 @@
         bot.adapter.send({room: msg.message.user.id}, cmds.join('\n'))
       }
     });
-    if(!process.env.HUBOT_HELP_DISABLE_HTTP) {
+    if(!process.env.MUBOT_HELP_DISABLE_HTTP) {
       bot.router.get("/" + bot.name + "/help", (req, res) => {
         var cmds, replyText;
         cmds = renamedHelpCommands(bot).map(cmd => cmd.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));

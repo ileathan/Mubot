@@ -1,5 +1,13 @@
-
-// Description: return room/user id from adapter.
+// Description:
+//   return room/user id from adapter.
+//
+// Commands:
+//   Mubot get room id
+//   Mubot get my id
+//
+// Author:
+//   leathan
+//
 module.exports = bot => {
 
   bot.respond(/(get )?room( id)?$/i, msg => msg.send("Current room id: " + msg.message.room));

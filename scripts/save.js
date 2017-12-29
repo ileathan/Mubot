@@ -17,8 +17,7 @@
       res.send("Database saved to disk.")
     })
     bot.brain.setAutoSave && bot.brain.setAutoSave(false);
-    bot.brain.on("connected", ()=> {
-debugger;
+    //bot.brain.on("connected", ()=> {
       try {
         var data = fs.readFileSync(path, 'utf-8');
         data && bot.brain.mergeData(JSON.parse(data));
@@ -26,7 +25,7 @@ debugger;
       } catch(err) {
         if(err.code !== 'ENOENT') console.log(err)
       }
-    });
+    //});
     bot.brain.on('save', write);
     bot.brain.on('close', write);
     bot.brain.on('shutdown', write);

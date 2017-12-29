@@ -41,17 +41,17 @@
     });
   };
 
-  module.exports = function(robot) {
-    robot.respond(/what (do you|should I) do (when|about) (.*)/i, function(msg) {
+  module.exports = function(bot) {
+    bot.respond(/what (do you|should I) do (when|about) (.*)/i, function(msg) {
       return getAdvice(msg, msg.match[3]);
     });
-    robot.respond(/how do you handle (.*)/i, function(msg) {
+    bot.respond(/how do you handle (.*)/i, function(msg) {
       return getAdvice(msg, msg.match[1]);
     });
-    robot.respond(/is (.*)\?$/i, function(msg) {
+    bot.respond(/is (.*)\?$/i, function(msg) {
       return getAdvice(msg, msg.match[1]);
     });
-    return robot.respond(/(.*) some advice about (.*)/i, function(msg) {
+    return bot.respond(/(.*) some advice about (.*)/i, function(msg) {
       return getAdvice(msg, msg.match[2]);
     });
   };

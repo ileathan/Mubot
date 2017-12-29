@@ -153,10 +153,10 @@
 
   })();
 
-  module.exports = function(robot) {
+  module.exports = function(bot) {
     var gamesByRoom;
     gamesByRoom = {};
-    return robot.hear(/^hangman( .*)?$/i, function(msg) {
+    return bot.hear(/^hangman( .*)?$/i, function(msg) {
       var room;
       if (process.env.WORDNIK_API_KEY === void 0) {
         msg.send("Missing WORDNIK_API_KEY env variable.");

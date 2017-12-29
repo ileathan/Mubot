@@ -44,7 +44,7 @@
   };
 
   reloadAllScripts = msg => {
-    var bot = msg.robot;
+    var bot = msg.bot;
     bot.middleware.listener.stack = [];
     bot.middleware.receive.stack = [];
     bot.middleware.response.stack = [];
@@ -68,7 +68,7 @@
 
 
 /*function reload() {
-    const bot = robot;
+    const bot = bot;
     const Path = require('path');
     bot.commands = [];
     bot.listeners = [];

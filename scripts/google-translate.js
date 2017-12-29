@@ -85,7 +85,7 @@
     }
   };
 
-  module.exports = function(robot) {
+  module.exports = function(bot) {
     var language_choices, pattern;
     language_choices = (function() {
       var results = [];
@@ -95,7 +95,7 @@
       return results;
     })().sort().join('|');
     pattern = new RegExp('translate(?: me)?' + ("(?: from (" + language_choices + "))?") + ("(?: (?:in)?to (" + language_choices + "))?") + '(.*)', 'i');
-    robot.respond(pattern, msg => {
+    bot.respond(pattern, msg => {
       var origin, ref, target, term, text;
       if(!msg.match[3]) return msg.send("Nothing to translate.");
       term = "\"" + msg.match[3].trim() + "\"";
@@ -117,7 +117,7 @@
         var parsed;
         if(err) {
           msg.send("Failed to connect to GAPI");
-          robot.emit('error', err, res);
+          bot.emit('error', err, res);
           return
         }
         try {
@@ -139,7 +139,7 @@
         } catch (error) {
           err = error;
           msg.send("Failed to parse GAPI response");
-          robot.emit('error', err)
+          bot.emit('error', err)
         }
       })
     })

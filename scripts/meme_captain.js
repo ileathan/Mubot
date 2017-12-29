@@ -35,123 +35,123 @@
 (function() {
   var getDataPayload, getDataPayloadAdv, memeGenerator, memeGeneratorAdv, memeGeneratorUrl;
 
-  module.exports = function(robot) {
-    robot.hear(/^help meme$/i, function(msg) {
-      return robot.send({
+  module.exports = function(bot) {
+    bot.hear(/^help meme$/i, function(msg) {
+      return bot.send({
         room: msg.envelope.user.id
       }, "Y U NO <text> - Generates the Y U NO GUY with the bottom caption of <text>\n" + "I don't always <something> but when i do <text> - Generates The Most Interesting man in the World\n" + "<text> (SUCCESS|NAILED IT) - Generates success kid with the top caption of <text>\n" + "<text> ALL the <things> - Generates ALL THE THINGS\n" + "<text> TOO DAMN <high> - Generates THE RENT IS TOO DAMN HIGH guy\n" + "Yo dawg <text> so <text> - Generates Yo Dawg\n" + "All your <text> are belong to <text> - All your <text> are belong to <text>\n" + "If <text>, <word that can start a question> <text>? - Generates Philosoraptor\n" + "<text>, BITCH PLEASE <text> - Generates Yao Ming\n" + "<text>, COURAGE <text> - Generates Courage Wolf\n" + "ONE DOES NOT SIMPLY <text> - Generates Boromir\n" + "IF YOU <text> GONNA HAVE A BAD TIME - Ski Instructor\n" + "IF YOU <text> TROLLFACE <text> - Troll Face\n" + "Aliens guy <text> - Aliens guy weighs in on something\n" + "Brace yourself <text> - Ned Stark braces for <text>\n" + "Iron Price <text> - To get <text>? Pay the iron price!\n" + "Not sure if <something> or <something else> - Generates a Futurama Fry meme\n" + "<text>, AND IT'S GONE - Bank Teller\n" + "WHAT IF I TOLD YOU <text> - Morpheus What if I told you\n" + "WTF <text> - Picard WTF\n" + "IF <text> THAT'D BE GREAT - Generates Lumberg\n" + "MUCH <text> (SO|VERY) <text> - Generates Doge\n" + "<text> EVERYWHERE - Generates Buzz Lightyear\n");
     });
-    robot.respond(/Y U NO (.+)/i, function(msg) {
+    bot.respond(/Y U NO (.+)/i, function(msg) {
       return memeGenerator(msg, 'NryNmg', 'Y U NO', msg.match[1], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/iron price (.+)/i, function(msg) {
+    bot.respond(/iron price (.+)/i, function(msg) {
       return memeGenerator(msg, 'q06KuA', msg.match[1], 'Pay the iron price', function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/aliens guy (.+)/i, function(msg) {
+    bot.respond(/aliens guy (.+)/i, function(msg) {
       return memeGenerator(msg, 'sO-Hng', msg.match[1], '', function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/brace yourself (.+)/i, function(msg) {
+    bot.respond(/brace yourself (.+)/i, function(msg) {
       return memeGenerator(msg, '7KY5sQ', 'Brace Yourself', msg.match[1], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*) (ALL the .*)/i, function(msg) {
+    bot.respond(/(.*) (ALL the .*)/i, function(msg) {
       return memeGenerator(msg, 'cKjh_w', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(I DON'?T ALWAYS .*) (BUT WHEN I DO,? .*)/i, function(msg) {
+    bot.respond(/(I DON'?T ALWAYS .*) (BUT WHEN I DO,? .*)/i, function(msg) {
       return memeGenerator(msg, 'V8QnRQ', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*)(SUCCESS|NAILED IT.*)/i, function(msg) {
+    bot.respond(/(.*)(SUCCESS|NAILED IT.*)/i, function(msg) {
       return memeGenerator(msg, 'AbNPRQ', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*) (\w+\sTOO DAMN .*)/i, function(msg) {
+    bot.respond(/(.*) (\w+\sTOO DAMN .*)/i, function(msg) {
       return memeGenerator(msg, 'RCkv6Q', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(NOT SURE IF .*) (OR .*)/i, function(msg) {
+    bot.respond(/(NOT SURE IF .*) (OR .*)/i, function(msg) {
       return memeGenerator(msg, 'CsNF8w', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(YO DAWG .*) (SO .*)/i, function(msg) {
+    bot.respond(/(YO DAWG .*) (SO .*)/i, function(msg) {
       return memeGenerator(msg, 'Yqk_kg', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(All your .*) (are belong to .*)/i, function(msg) {
+    bot.respond(/(All your .*) (are belong to .*)/i, function(msg) {
       return memeGenerator(msg, 'Ss_hXw', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*)\s*BITCH PLEASE\s*(.*)/i, function(msg) {
+    bot.respond(/(.*)\s*BITCH PLEASE\s*(.*)/i, function(msg) {
       return memeGenerator(msg, 'jo9J0Q', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*)\s*COURAGE\s*(.*)/i, function(msg) {
+    bot.respond(/(.*)\s*COURAGE\s*(.*)/i, function(msg) {
       return memeGenerator(msg, 'IMQ72w', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/ONE DOES NOT SIMPLY (.*)/i, function(msg) {
+    bot.respond(/ONE DOES NOT SIMPLY (.*)/i, function(msg) {
       return memeGenerator(msg, 'da2i4A', 'ONE DOES NOT SIMPLY', msg.match[1], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(IF YOU .*\s)(.* GONNA HAVE A BAD TIME)/i, function(msg) {
+    bot.respond(/(IF YOU .*\s)(.* GONNA HAVE A BAD TIME)/i, function(msg) {
       return memeGenerator(msg, 'lfSVJw', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*)TROLLFACE(.*)/i, function(msg) {
+    bot.respond(/(.*)TROLLFACE(.*)/i, function(msg) {
       return memeGenerator(msg, 'dGAIFw', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(IF .*), ((ARE|CAN|DO|DOES|HOW|IS|MAY|MIGHT|SHOULD|THEN|WHAT|WHEN|WHERE|WHICH|WHO|WHY|WILL|WON\'T|WOULD)[ \'N].*)/i, function(msg) {
+    bot.respond(/(IF .*), ((ARE|CAN|DO|DOES|HOW|IS|MAY|MIGHT|SHOULD|THEN|WHAT|WHEN|WHERE|WHICH|WHO|WHY|WILL|WON\'T|WOULD)[ \'N].*)/i, function(msg) {
       return memeGenerator(msg, '-kFVmQ', msg.match[1], msg.match[2] + (msg.match[2].search(/\?$/) === (-1) ? '?' : ''), function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(.*)(AND IT\'S GONE.*)/i, function(msg) {
+    bot.respond(/(.*)(AND IT\'S GONE.*)/i, function(msg) {
       return memeGenerator(msg, 'uIZe3Q', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/WHAT IF I TOLD YOU (.*)/i, function(msg) {
+    bot.respond(/WHAT IF I TOLD YOU (.*)/i, function(msg) {
       return memeGenerator(msg, 'fWle1w', 'WHAT IF I TOLD YOU', msg.match[1], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/WTF (.*)$/i, function(msg) {
+    bot.respond(/WTF (.*)$/i, function(msg) {
       return memeGenerator(msg, 'z8IPtw', 'WTF', msg.match[1], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(IF .*)(THAT'?D? BE GREAT)/i, function(msg) {
+    bot.respond(/(IF .*)(THAT'?D? BE GREAT)/i, function(msg) {
       return memeGenerator(msg, 'q1cQXg', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    robot.respond(/(MUCH .*) ((SO|VERY) .*)/i, function(msg) {
+    bot.respond(/(MUCH .*) ((SO|VERY) .*)/i, function(msg) {
       return memeGenerator(msg, 'AfO6hw', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });
     });
-    return robot.respond(/(.*)(EVERYWHERE.*)/i, function(msg) {
+    return bot.respond(/(.*)(EVERYWHERE.*)/i, function(msg) {
       return memeGenerator(msg, 'yDcY5w', msg.match[1], msg.match[2], function(url) {
         return msg.send(url);
       });

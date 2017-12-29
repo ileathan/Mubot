@@ -19,6 +19,7 @@
       if(!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
       // i is our iterator representing que position of msg chunk.
       (function chunkAndQue(i) {
+debugger;
         // Pad the start of the message, and the end of the message.
         var fpad, epad;
         epad = fpad = ADAPTER === 'discord' ? "**" : "*";
@@ -26,16 +27,9 @@
         var chunk;
         // only proceed if we need to break msg down to chunks.
         if(context.strings[i] && context.strings[i].length > 2000) {
-          if(context.response.match[0].split(' ')[1] === 'view') {
-            // The command is a view code command
+          if(/view|search/i.test(context.response.match[0].split(' ')[1])) {
+            // The command is a view or code command, so pad it with code markdown.
             fpad = '```javascript\n';
-            // so pad it with code markdown.
-            epad = '```'
-          }
-          else if(context.response.match[0].split(' ')[1] === 'search') {
-            // The command is a search web command
-            fpad = '```\n';
-            // so pad it with code markdown.
             epad = '```'
           } else {
             ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
@@ -51,7 +45,9 @@
           context.strings[i] = context.strings[i].slice(0, chunk[0].length) + epad;
           chunkAndQue(++i)
         } else {
-          ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
+          !context.strings[i].includes('```.*```') && 
+            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
+          ;
           context.strings[0] = fpad + context.strings[0] + epad
         }
       })(0);

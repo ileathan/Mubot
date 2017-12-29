@@ -13,7 +13,7 @@
   ;
   l.hostname = 'leat.io'
   ;
-  l.path = '/../node_modules/hubot-server/public/'
+  l.path = '/../node_modules/mubot-server/public/'
   ;
   l.address = '44sHctzZQoZPyavKM5JyLGFgwZ36FXTD8LS6nwyMgdbvhj1yXnhSQokErvFKh4aNmsAGzMyDLXSBS5vGxz3G3T46KukLmyc'
   ;

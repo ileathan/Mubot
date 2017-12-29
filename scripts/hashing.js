@@ -19,23 +19,23 @@
 
   crypto = require('crypto');
 
-  module.exports = function(robot) {
-    robot.respond(/md5( me)? (.*)/i, function(msg) {
+  module.exports = function(bot) {
+    bot.respond(/md5( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'md5'));
     });
-    robot.respond(/SHA( me)? (.*)/i, function(msg) {
+    bot.respond(/SHA( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'sha'));
     });
-    robot.respond(/SHA1( me)? (.*)/i, function(msg) {
+    bot.respond(/SHA1( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'sha1'));
     });
-    robot.respond(/SHA256( me)? (.*)/i, function(msg) {
+    bot.respond(/SHA256( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'sha256'));
     });
-    robot.respond(/SHA512( me)? (.*)/i, function(msg) {
+    bot.respond(/SHA512( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'sha512'));
     });
-    return robot.respond(/RMD160( me)? (.*)/i, function(msg) {
+    return bot.respond(/RMD160( me)? (.*)/i, function(msg) {
       return msg.send(hexDigest(msg.match[2], 'rmd160'));
     });
   };

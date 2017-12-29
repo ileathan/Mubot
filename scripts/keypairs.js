@@ -52,7 +52,7 @@
       balance: balance || 0,
       txids: []
     };
-    res.robot.brain.save()
+    res.bot.brain.save()
     importKeyToWallet(importKey)
     return 'Done, your address is `' + ck.publicAddress + '`.'
   }
@@ -74,7 +74,7 @@
       private: x(c.randomBytes(32)),
       get public() { return ecc.getPublic(this.private) }
     }
-    res.robot.brain.save()
+    res.bot.brain.save()
     return "Base keypair created, you may encrypt, sign, or generate coin addresses."
   }
 }).call(this)

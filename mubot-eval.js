@@ -107,7 +107,7 @@ module.exports = bot => {
     saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
   });
   // Process command.
-  bot.hear(RegExp('^(?:!|(?:[@]?' + (robot.name || robot.alias) + '\s*[:,]?\s*))(.)+', 'i'), processMessage)
+  bot.hear(RegExp('^(?:!|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*))(.)+', 'i'), processMessage)
   
   bot.hear(buildHearRegex('[!](saved|evals)(?: logs?)?( [\S]+)?(?: -?(i(?:gnore)?))?(?: (-?\d+))?(?:(?: |-| - )(\d+))?'), viewCmds);
 
@@ -150,7 +150,7 @@ function processMessage(run, msg) {
     if(allowed.includes(msg.message.user.id)) {
       if(!/^(module\.)exports ?=/.test(cmd)) {
         /[;]/.test(cmd) && (cmd = '{' + cmd + '}')
-        cmd = 'module.exports=(bot=>' + cmd + ')(robot)';
+        cmd = 'module.exports=(bot=>' + cmd + ')(bot)';
       }
       let result = _eval(cmd, true);
       result = JSON.stringify(result, null, 2) || result || 'true';
@@ -267,7 +267,7 @@ function processMessage(run, msg) {
       return msg.send("No command found.")
     ;
     saved[id][tag] = cmd;
-    msg.robot.brain.save();
+    msg.bot.brain.save();
     msg.send("Saved " + formatCmd(cmd) + ' as ' + tag + '.');
   }
   ;

@@ -16,8 +16,8 @@
 (function() {
   var Base36, Base36Builder;
 
-  module.exports = function(robot) {
-    robot.hear(/base36 e(ncode)?( me)? (.*)/i, function(msg) {
+  module.exports = function(bot) {
+    bot.hear(/base36 e(ncode)?( me)? (.*)/i, function(msg) {
       try {
         msg.send(Base36.encode(msg.match[3]));
       } catch (e) {
@@ -27,7 +27,7 @@
         msg.send("Base36 encoding only works with Integer values.");
       }
     });
-    robot.hear(/base36 d(ecode)?( me)? (.*)/i, function(msg) {
+    bot.hear(/base36 d(ecode)?( me)? (.*)/i, function(msg) {
       try {
         msg.send(String(Base36.decode(msg.match[3])));
       } catch (e) {
