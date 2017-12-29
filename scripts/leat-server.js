@@ -500,7 +500,7 @@
         cookieToUsername[cookie] = user.username
         ;
       }
-      users[user.username] = user.toJSON()
+      user.loginCookies.length && (users[user.username] = user.toJSON())
       ;
     }
 
@@ -675,29 +675,23 @@
       isLoggedIn(socket, (username, cookie) => {
 
         socket.on('lC.load', (_, callback) => {
-          ChatMessages.find().sort({ _id: -1}).limit(20).exec(
-          (err, chatMsgs) => {
+          ChatMessages.find().sort({ _id: -1}).limit(20).exec((err, chatMsgs) => {
             if(username) {
-              Transactions.find({
-                $or: [
-                  { from: username }, { to: username }
-                ]
-              }, { __v: 0 }).sort({ _id: -1 }).limit(777).exec(
-              (err, trans) => {
+              Transactions.find({$or: [{ from: username }, { to: username }]}, { __v: 0 })
+                .sort({ _id: -1 }).limit(777).exec((err, trans) => {
                   callback(Object.assign({}, users[username], {
                     chatMsgs: chatMsgs.reverse(),
                     transactions: trans.reverse(),
-                    users: users
-                  }
-                  )
+                    users: {}
+                  })
                 )
-              }
-              )
+              })
+              ;
             } else {
               callback(Object.assign({}, users[toGuest()], {
                 chatMsgs: chatMsgs.reverse(),
                 transactions: [],
-                users: users
+                users: {}
               }))
               ;
             }
@@ -877,29 +871,22 @@
             ;
             // Create new login cookie.
             ;
-            var cookie = encode(
-              crypto.randomBytes(37).toString('hex')
-            )
+            var cookie = encode(crypto.randomBytes(37).toString('hex'))
             ;
-            Users.findOneAndUpdate({
-              'username': user.username
-            }, {
-              $push: { loginCookies: cookie }
-            }, (err, user) => {
-              if(!user) return callback('')
-              ;
-              callback(cookie)
-              ;
-              cookieToUsername[cookie] = user.username
-              ;
+            Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
+              if(!user) {
+                return callback('');
+              }
+              user = user.toJSON();
+              callback(cookie);
+              cookieToUsername[cookie] = user.username;
               // Add socket or create sockets obj and add.
               usernameToSockets[user.username] ?
                 usernameToSockets[user.username][socket.id] = socket
               :
                 usernameToSockets[user.username] = {[socket.id]: socket}
               ;
-              users[user.username] = user.toJSON()
-              ;
+              users[user.username] = user;
             })
             ;
           })

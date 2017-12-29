@@ -12,16 +12,17 @@
 //
 
 module.exports = function(robot) {
+  const crypto = require('crypto');
   robot.respond(/embed (http[^ ]+)? ?([^-]+)\s*-\s*([^-]+?)(?:\s*-\s*(.+))?$/i, function(msg) {
-debugger;
-    color = "" + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1)   
-    color = parseInt(color)
+    //color = "" + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1) + Math.floor((Math.random() * 9) + 1)   
+    color = '#' + crypto.randomBytes(3).toString('hex')
+    //color = parseInt(color)
     var data = {
       embed: {
         color: color,
         author: {
           name: msg.message.user.name,
-          icon_url: "https://images-na.ssl-images-amazon.com/images/I/31PZ5sMI95L.jpg"
+          icon_url: "https://leat.io/favicon.ico"
         },
         fields: [
           {

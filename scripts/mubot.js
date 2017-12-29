@@ -35,7 +35,7 @@
     else {
       bot.respond(/bal(?:ances?)?\s+@?\s*(\w+)(?: (.+))?$/i, l.balanceByName);
       bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
-      adapater === 'slack' && bot.react(l.transferSlacReaction);
+      adapter === 'slack' && bot.react(l.transferSlackReaction);
     }
   }
   /************************
@@ -113,7 +113,7 @@
     l.transfer(res)
   }
 
-  l.transferSlackReacion = res => {
+  l.transferSlackReaction = res => {
     let {type, reaction} = res.message
         recipientId = res.message.item_user.id
     ;
@@ -124,7 +124,7 @@
   }
   ;
   // discord allows multiple people to have the same display name, so we match against names and check the  discriminator.
-  l.discordFuzzyTransfer = res => {
+  l.transferDiscordFuzzy = res => {
     let recipientId = null,
         [, amount, recipientName, discriminator, context ] = res.match,
         matchedUsers = l.bot.brain.usersForFuzzyName(recipientName)
