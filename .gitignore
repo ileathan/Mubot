@@ -1,4 +1,4 @@
-node_modules/hubot-server/credentials/*
+node_modules/mubot-server/credentials/*
 .gitignore
 .gitattributes
 brain.json
