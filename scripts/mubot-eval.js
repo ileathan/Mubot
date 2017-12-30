@@ -116,6 +116,11 @@ e.realEval = msg => {
     delete global.botG;
     try {
       result = inspect(result, null, 2) || 'true';
+      if(result.length > 1994) {
+        let {dumpKeysRecursivly} = require('recursive-keys');
+        result = dumpKeysRecursivly(result);
+        result = JSON.stringify(result).slice(0, 1994);
+      }
     } catch(e) {
       result = e.slice(0, 27);
     }
