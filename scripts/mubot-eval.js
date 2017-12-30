@@ -2,7 +2,7 @@
 //   eval
 
 const _eval = require('eval');
-const inspect = require('util').inspect;
+const {inspect} = require('util');
 const { curry, alwaysF, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test, repeat } = require('ramda');
 
 const repeatStr = pipe(repeat, join(''))
@@ -102,6 +102,7 @@ const e = {};
 
 // Implicitly pass global this scope to eval.
 e.realEval = msg => {
+  let {inspect} = require('util');
   let cmd = evalCmd = msg.match[1];
   let id = e.msgToUserId(msg);
   if(allowed.includes(id)) {
@@ -113,7 +114,11 @@ e.realEval = msg => {
 
     let result = _eval(evalCmd, true);
     delete global.botG;
-    result = JSON.stringify(result, null, 2) || result || 'true';
+    try {
+      result = inspect(result, null, 2) || 'true';
+    } catch(e) {
+      result = e.slice(0, 27);
+    }
     e.addToLog(cmd, result, id)
     msg.bot.brain.save();
     msg.send('# Result: ```' + result + '```');
