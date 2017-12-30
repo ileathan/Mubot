@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   hubot bing me <query> - Queries Bing and returns first link
+//   imubot bing me <query> - Queries Bing and returns first link
 //
 // Author:
 //   leathan

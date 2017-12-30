@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   hubot abs|abstract <topic> - Prints a nice abstract of the given topic
+//   imubot abs|abstract <topic> - Prints a nice abstract of the given topic
 //
 // Author:
 //   tantalor

@@ -5,29 +5,29 @@
 //   None
 //
 // Commands:
-//   hubot Y U NO <text> - Generates the Y U NO GUY with the bottom caption of <text>
-//   hubot I don't always <something> but when i do <text> - Generates The Most Interesting man in the World
-//   hubot <text> (SUCCESS|NAILED IT) - Generates success kid with the top caption of <text>
-//   hubot <text> ALL the <things> - Generates ALL THE THINGS
-//   hubot <text> TOO DAMN <high> - Generates THE RENT IS TOO DAMN HIGH guy
-//   hubot Yo dawg <text> so <text> - Generates Yo Dawg
-//   hubot All your <text> are belong to <text> - All your <text> are belong to <text>
-//   hubot If <text>, <word that can start a question> <text>? - Generates Philosoraptor
-//   hubot <text>, BITCH PLEASE <text> - Generates Yao Ming
-//   hubot <text>, COURAGE <text> - Generates Courage Wolf
-//   hubot ONE DOES NOT SIMPLY <text> - Generates Boromir
-//   hubot IF YOU <text> GONNA HAVE A BAD TIME - Ski Instructor
-//   hubot IF YOU <text> TROLLFACE <text> - Troll Face
-//   hubot Aliens guy <text> - Aliens guy weighs in on something
-//   hubot Brace yourself <text> - Ned Stark braces for <text>
-//   hubot Iron Price <text> - To get <text>? Pay the iron price!
-//   hubot Not sure if <something> or <something else> - Generates a Futurama Fry meme
-//   hubot <text>, AND IT'S GONE - Bank Teller
-//   hubot WHAT IF I TOLD YOU <text> - Morpheus What if I told you
-//   hubot WTF <text> - Picard WTF
-//   hubot IF <text> THAT'D BE GREAT - Generates Lumberg
-//   hubot MUCH <text> (SO|VERY) <text> - Generates Doge
-//   hubot <text> EVERYWHERE - Generates Buzz Lightyear
+//   imubot Y U NO <text> - Generates the Y U NO GUY with the bottom caption of <text>
+//   imubot I don't always <something> but when i do <text> - Generates The Most Interesting man in the World
+//   imubot <text> (SUCCESS|NAILED IT) - Generates success kid with the top caption of <text>
+//   imubot <text> ALL the <things> - Generates ALL THE THINGS
+//   imubot <text> TOO DAMN <high> - Generates THE RENT IS TOO DAMN HIGH guy
+//   imubot Yo dawg <text> so <text> - Generates Yo Dawg
+//   imubot All your <text> are belong to <text> - All your <text> are belong to <text>
+//   imubot If <text>, <word that can start a question> <text>? - Generates Philosoraptor
+//   imubot <text>, BITCH PLEASE <text> - Generates Yao Ming
+//   imubot <text>, COURAGE <text> - Generates Courage Wolf
+//   imubot ONE DOES NOT SIMPLY <text> - Generates Boromir
+//   imubot IF YOU <text> GONNA HAVE A BAD TIME - Ski Instructor
+//   imubot IF YOU <text> TROLLFACE <text> - Troll Face
+//   imubot Aliens guy <text> - Aliens guy weighs in on something
+//   imubot Brace yourself <text> - Ned Stark braces for <text>
+//   imubot Iron Price <text> - To get <text>? Pay the iron price!
+//   imubot Not sure if <something> or <something else> - Generates a Futurama Fry meme
+//   imubot <text>, AND IT'S GONE - Bank Teller
+//   imubot WHAT IF I TOLD YOU <text> - Morpheus What if I told you
+//   imubot WTF <text> - Picard WTF
+//   imubot IF <text> THAT'D BE GREAT - Generates Lumberg
+//   imubot MUCH <text> (SO|VERY) <text> - Generates Doge
+//   imubot <text> EVERYWHERE - Generates Buzz Lightyear
 //
 // Author:
 //   bobanj, ericjsilva

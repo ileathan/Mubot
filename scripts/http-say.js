@@ -11,7 +11,7 @@
 //   None
 //
 // URLs:
-//   GET /hubot/say?message=<message>[&room=<room>&type=<type>]
+//   GET /imubot/say?message=<message>[&room=<room>&type=<type>]
 //
 // Author:
 //   ajacksified
@@ -19,7 +19,7 @@
 (function() {
   const querystring = require('querystring');
   module.exports = bot => {
-    bot.router.get("/hubot/say", function(req, res) {
+    bot.router.get("/imubot/say", function(req, res) {
       var envelope, query;
       query = querystring.parse(req._parsedUrl.query);
       envelope = {};

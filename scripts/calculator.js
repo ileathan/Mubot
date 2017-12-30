@@ -8,8 +8,8 @@
 //   None
 //
 // Commands:
-//   hubot calculate|math <expression> - Calculate the given math expression.
-//   hubot convert <expression> in <units> - Convert expression to given units.
+//   imubot calculate|math <expression> - Calculate the given math expression.
+//   imubot convert <expression> in <units> - Convert expression to given units.
 //
 // Author:
 //   leathan

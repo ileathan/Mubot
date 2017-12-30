@@ -8,10 +8,10 @@
 //   WORDNIK_API_KEY
 //
 // Commands:
-//   hubot define me <word> - Grabs a dictionary definition of a word.
-//   hubot pronounce me <word> - Links to a pronunciation of a word.
-//   hubot spell me <word> - Suggests correct spellings of a possible word.
-//   hubot bigram me <word> - Grabs the most frequently used bigram phrases containing this word
+//   imubot define me <word> - Grabs a dictionary definition of a word.
+//   imubot pronounce me <word> - Links to a pronunciation of a word.
+//   imubot spell me <word> - Suggests correct spellings of a possible word.
+//   imubot bigram me <word> - Grabs the most frequently used bigram phrases containing this word
 //
 // Notes:
 //   You'll need an API key from http://developer.wordnik.com/

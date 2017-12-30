@@ -5,7 +5,7 @@
 //   Mubot mine me [coin] - Just monero and soon just Bitmark, donate for others.
 //
 
-// this module. export it if needed outside of hubot. `module.exports = l`
+// this module. export it if needed outside of imubot. `module.exports = l`
 module.exports = bot => {
   bot.on("leat.io loaded", l.load);
   bot.respond(/mine(?: me)?(?: (.*))?/i, l.mine);

@@ -2,7 +2,7 @@
 //   Check if a messae triggers a listener, and improve upon the default ping script.
 //
 // Commands:
-//   hubot check[ me] <text> - Checks if text is a command.
+//   imubot check[ me] <text> - Checks if text is a command.
 //
 // Author:
 //   leathan

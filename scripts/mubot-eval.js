@@ -122,7 +122,7 @@ e.realEval = msg => {
         result = JSON.stringify(result).slice(0, 1994);
       }
     } catch(e) {
-      result = e.slice(0, 27);
+      result = inspect(e);
     }
     e.addToLog(cmd, result, id)
     msg.bot.brain.save();

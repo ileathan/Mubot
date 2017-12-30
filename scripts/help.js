@@ -2,11 +2,11 @@
 //   Generates help commands for Hubot.
 //
 // Commands:
-//   hubot help - Displays all of the help commands that this bot knows about.
-//   hubot help <query> - Displays all help commands that match <query>.
+//   imubot help - Displays all of the help commands that this bot knows about.
+//   imubot help <query> - Displays all help commands that match <query>.
 //
 // URLS:
-//   /hubot/help
+//   /imubot/help
 //
 // Configuration:
 //   MUBOT_HELP_REPLY_IN_PRIVATE - if set to any avlue, all `mubot help` replies are sent in private
@@ -29,13 +29,13 @@
     if(hiddenCommandsPattern()) {
       help_commands = help_commands.filter(command => !hiddenCommandsPattern().test(command))
     }
-    help_commands = help_commands.map(command => command.replace(/^(hubot|mubot)/i, bot.alias || bot.name));
+    help_commands = help_commands.map(command => command.replace(/^(imubot|mubot)/i, bot.alias || bot.name));
     return help_commands.sort()
   }
   function hiddenCommandsPattern() {
     var hiddenCommands = process.env.MUBOT_HELP_HIDDEN_COMMANDS;
     if(hiddenCommands) {
-      return new RegExp("^(hubot|mubot) (?:" + hiddenCommands.replace(/,/g, '|') + ") - ")
+      return new RegExp("^(imubot|mubot) (?:" + hiddenCommands.replace(/,/g, '|') + ") - ")
     }
   }
   module.exports = bot => {

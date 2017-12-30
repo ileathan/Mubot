@@ -8,8 +8,8 @@
 //   None
 //
 // Commands:
-//   hubot pug me - Receive a pug
-//   hubot pug bomb N - get N pugs
+//   imubot pug me - Receive a pug
+//   imubot pug bomb N - get N pugs
 //
 
 (function() {

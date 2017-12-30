@@ -2,7 +2,7 @@
 //   Sets a break point in the code allowing  live inspections and manipulations.
 //
 // Commands:
-//   hubot break|halt|freeze - halts the bot code.
+//   imubot break|halt|freeze - halts the bot code.
 //
 
 module.exports = function(bot) {

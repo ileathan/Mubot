@@ -2,7 +2,7 @@
 //   Allow connecting each user with a private key for signitures and encryption.
 //
 // Commands:
-//   hubot crypto me [coin] - creates a basekeypair, or extends that pair (seeds a coin keypair).
+//   imubot crypto me [coin] - creates a basekeypair, or extends that pair (seeds a coin keypair).
 //
 // Author:
 //   leathan

@@ -2,9 +2,9 @@
 //   Coin alerts.
 //
 // Commands:
-//   hubot start|stop scanner alert - manually start/stops the scanners useful for custom delays.
-//   hubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
-// . hubot alerts [raw] - display the current alerts.
+//   imubot start|stop scanner alert - manually start/stops the scanners useful for custom delays.
+//   imubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
+// . imubot alerts [raw] - display the current alerts.
 (function(){
   const http = require("request");
   const delay = 120000; // 2 mins.

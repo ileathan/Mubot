@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   hubot throw a coin - Gives you heads or tails
+//   imubot throw a coin - Gives you heads or tails
 //
 
 (function() {

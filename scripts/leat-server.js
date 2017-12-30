@@ -620,8 +620,8 @@
       server: bot.server,
       host: 'pool.supportxmr.com',
        port: 3333,
-       //key: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/privkey.pem'),
-       //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/hubot-server/credentials/cert.pem')
+       //key: fs.readFileSync('/Users/leathan/Mubot/node_modules/imubot-server/credentials/privkey.pem'),
+       //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/imubot-server/credentials/cert.pem')
     })
     l.proxy.listen();
     //l.debug("Stratum launched")
