@@ -186,7 +186,7 @@
     ;
     if(l.updateBalance(userId, amount)) {
       let exec = require('child_process').exec;
-      let command = 'bitmarkd sendtoaddress ' + address + ' ' + parseFloat(amount / 1000.0);
+      let command = 'bitmarkd sendtoaddress ' + address + ' ' + parseFloat(amount / 1000);
       exec(command, (error, stdout) => res.send(stdout));
     } else {
       res.send("Sorry, you don't have enough marks.");
