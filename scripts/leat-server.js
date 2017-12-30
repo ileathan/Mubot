@@ -5,11 +5,17 @@
 //   leathan
 //
 (function() {
-  // Export.
-  module.exports = bot => l.load(bot)
-  ;
-  // Configuration.
+  // Define.
   const l = {}
+  ;
+  // Export.
+  module.exports = bot => {
+    // Import.
+    Object.assign(l, bot.leat)
+    // Load.
+    l.load(bot)
+    ;
+  }
   ;
   l.hostname = 'leat.io'
   ;
@@ -37,7 +43,6 @@
   l.includes.crypto = require('crypto');
   l.includes.argonp = require('argon2-ffi').argon2i;
   l.includes.argond = require('argon2-ffi').argon2d;
-  l.includes.salt = () => crypto.randomBytes(77);
   l.includes.c = require('encode-x')();
   // secure info, dont export these.
   l.secure = {};
@@ -64,6 +69,8 @@
     memoryCost: 7777,
     timeCost: 77
   }
+  ;
+  l.salt = () => l.includes.crypto.randomBytes(77)
   ;
   /*
   * Begin mongoose schematic configuration.
@@ -175,8 +182,8 @@
   l.db.Users = l.db.conn.models.Users || l.db.conn.model('Users', l.db.schema.UsersSchema)
   ;
   // Garbage collection.
-  //delete l.db.schema;
-  //delete l.db.conn;
+  delete l.db.schema;
+  delete l.db.conn;
   /**********************************************
   *   _____ _             _                     *
   *  / ____| |           | |                    *
@@ -247,7 +254,7 @@
         hashLength: 77
       }
       ;
-      const salt = crypto.randomBytes(77)
+      const salt = l.includes.crypto.randomBytes(77)
       ;
       argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
 
@@ -434,9 +441,9 @@
     if(text === null)
       return;
     // For AES, this is always 16.
-    var salt = crypto.randomBytes(16);
+    var salt = l.includes.crypto.randomBytes(16);
     // Open AES encryption stream.
-    var cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
+    var cipher = l.includes.crypto.createCipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
     var encrypted = cipher.update(text);
     // Close the stream and update encrypted.
     encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -447,7 +454,7 @@
     try {
       var salt = Buffer.from(text.substring(0, 32), 'hex');
       var encrypted = Buffer.from(text.substring(32), 'hex');
-      var decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), salt);
+      var decipher = l.includes.crypto.createDecipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
       var decrypted = decipher.update(encrypted);
       // Close the stream and updated decrepted.
       decrypted = Buffer.concat([decrypted, decipher.final()]);
@@ -459,22 +466,27 @@
   }
   // Our very own home baked encoders.
   l.encode = data => {
-    return c.from16To64(data).toString()
+    return l.includes.c.from16To64(data).toString()
   }
   l.decode = data => {
-    return c.from64To16(data).toString()
+    return l.includes.c.from64To16(data).toString()
   }
   // Static salts
   l.ssalt = data => {
     return '7' + data + l.secure.secret
   }
-  l.totalShares = 0;
+  l.total_shares = 0;
 
   l.idToUsername = (id, callback) => {
     l.db.Users.findOne({id}).then(user=>callback(user.username))
   }
   l.db.SharesFound.count({}, (err, count) => {
-    l.totalShares = count;
+    l.total_shares = count;
+  }
+  )
+  ;
+  l.db.Users.count({}, (err, count) => {
+    l.total_users = count;
   }
   )
   ;
@@ -510,7 +522,7 @@
       if(!user)
        return callback(false, "No such user.")
       ;
-      l.argonp.verify(
+      l.includes.argonp.verify(
         l.decrypt(l.decode(user.password)),
         l.ssalt(logindata.password),
         l.ARGON_PCONF
@@ -674,23 +686,23 @@
         socket.on("l.newChatMessage", data => {
           let message = data.message,
               date = new Date,
-              username = username // dont change outer scope'd 'username'.
+              name = username
           ;
           if(!message.trim())
             return
           ;
-          if(username && message[0] === '/') {
+          if(name && message[0] === '/') {
             l.emitToUserSockets(username, "lS.newChatMessage", {
               username: l.hostname,
               message: 'Processing... ',
               date
             })
-            l.runCommand(username, message.slice(1), bot);
+            l.runCommand(name, message.slice(1), bot);
             return;
           }
-          username || (username = l.toGuest(socket));
-          l.io.emit("lS.newChatMessage", {username, message, date})
-          l.db.ChatMessages.create({username, message}, _=>0)
+          name || (name = l.toGuest(socket));
+          l.io.emit("lS.newChatMessage", {username: name, message, date})
+          l.db.ChatMessages.create({username: name, message}, _=>0)
         })
         ;
         socket.on('disconnect', () => {
@@ -789,7 +801,7 @@
           l.statsR = {};
           l.statsR.uptime = stats.uptime;
           l.statsR.clients = stats.miners.length;
-          l.statsR.total_hashes = l.totalShares;
+          l.statsR.total_hashes = l.total_shares;
           callback(users, l.statsR)
         })
         ;
@@ -828,7 +840,7 @@
             ;
             // Create new login cookie.
             ;
-            let cookie = l.encode(crypto.randomBytes(37).toString('hex'))
+            let cookie = l.encode(l.includes.crypto.randomBytes(37).toString('hex'))
             ;
             l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
               if(!user) {
@@ -855,6 +867,7 @@
 
       socket.on("l.createAccount", (acnt, callback) => {
 
+
         if(/^_|[^a-zA-Z0-9_]/.test(acnt.username)) {
 
           return callback({ error: 'Illegal name, try again.' })
@@ -870,12 +883,12 @@
             callback({ error: 'Username already exists.' })
           ;
           else
-            l.argonp.hash(l.ssalt(acnt.password), l.salt(), l.ARGON_PCONF).then(pass_hash => {
+            l.includes.argonp.hash(l.ssalt(acnt.password), l.salt(), l.ARGON_PCONF).then(pass_hash => {
 
               acnt.password = l.encode(l.encrypt(pass_hash))
               ;
               let cookie = l.encode(
-                crypto.randomBytes(37).toString('hex')
+                l.includes.crypto.randomBytes(37).toString('hex')
               )
               ;
               l.includes.exec('echo monerod getnewaddress', (error, stdout) => {
@@ -888,11 +901,10 @@
                   let keys, rndIdx, rndKey
                   ;
                   // Filters out guests, their usernames start with "#".
-                  keys = Object.keys(
-                    l.users.filter(_ =>
+                  keys = Object.keys(l.users)
+                    .filter(_ =>
                       _.slice(0, 1) !== "#"
                     )
-                  )
                   ;
                   rndIdx = Math.floor(Math.random() * keys.length)
                   ;
@@ -930,17 +942,19 @@
     ;
   }
   ;
+  l.deletedIds = [];
   l.deleteUser = username => {
-    let id = l.users[name].id;
-    l.deletedIds.push(l.users[name].id);
+    let id = l.users[username].id;
+    l.deletedIds.push(l.users[username].id);
     l.db.DeletedContent.create({id}, _=>0);
+    l.db.Users.remove({username}, 1);
   }
   l.getNewId = () => {
     return l.deletedIds.pop() || l.total_users
   }
   ;
   l.setUserPass = (user, pass, callback) => {
-    l.argonp.hash(l.ssalt(pass), l.salt(), l.ARGON_PCONF).then(pass_hash => {
+    l.includes.argonp.hash(l.ssalt(pass), l.salt(), l.ARGON_PCONF).then(pass_hash => {
       l.db.Users.findOneAndUpdate({
         username: new RegExp('^' + user + '$','i')
       }, {
@@ -1079,7 +1093,7 @@
   l.shareFound = username => {
     let needs_to_pay, myuser
     ;
-    ++l.totalShares
+    ++l.total_shares
     ;
     // Every 777 shares found, long out all inactive users
     myuser = l.users[username]
