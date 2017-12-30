@@ -76,61 +76,68 @@
   ;
   l.db.conn = l.includes.mongoose.createConnection(l.db.endpoint)
   ;
-  l.db.BlockChainSchema = new l.includes.mongoose.Schema({
-    'share': String,
-    'salt': String,
-    'previousBlockHash': String,
-    'hash': String,
-    "date": { type: Date, default: Date.now() }
-  })
-  l.db.PokerGamesSchema = new l.includes.mongoose.Schema({
-    'status': Number,
-    'players': Object,
-    'config': Object,
-    'index': Number,
+  l.db.schema = {}
+  ;
+  l.db.schema.DeletedContentSchema = new l.includes.mongoose.Schema({
+    id: String,
+  });
+  l.db.schema.BlockChainSchema = new l.includes.mongoose.Schema({
+    share: String,
+    salt: String,
+    previousBlockHash: String,
+    hash: String,
+  });
+  l.db.schema.PokerGamesSchema = new l.includes.mongoose.Schema({
+    status: Number,
+    players: Object,
+    config: Object,
+    index: Number,
     // In the chain of shares that seaded game sequences.
-    'share': String,
+    share: String,
+  })
+  l.db.schema.SharesFoundSchema = new l.includes.mongoose.Schema({
+    workerId: String,
+    result: String,
+    username: String,
+    jobid: String,
+    nonce: String,
     "date": { type: Date, default: Date.now() }
-  })
-  l.db.SharesFoundSchema = new l.includes.mongoose.Schema({
-    'workerId': String,
-    'result': String,
-    'username': String,
-    'jobid': String,
-    'nonce': String,
+  });
+  l.db.schema.TransactionsSchema = new l.includes.mongoose.Schema({
+    from: String,
+    to: String,
+    amount: Number,
+    type: String,
     "date": { type: Date, default: Date.now() }
-  })
-  l.db.TransactionsSchema = new l.includes.mongoose.Schema({
-    'from': String,
-    'to': String,
-    'amount': Number,
-    'type': String,
-    "date": { type: Date, default: Date.now() }
-  })
-  l.db.ChatMessagesSchema = new l.includes.mongoose.Schema({
-    'username': String,
-    'message': String,
-  })
-  l.db.UsersSchema = new l.includes.mongoose.Schema({
-    'username': String,
-    'loginCookies': Array,
-    'password': String,
-    'tfa': Boolean,
-    'wallet': String,
-    'balance': { type: Number, default: 0 },
-    'ref': Number,
-    'isMiningFor': String,
-    'refPayments': { type: Number, default: 0 },
-    'refPaymentsReceived': { type: Number, default: 0 },
-    'minedPayments': { type: Number, default: 0 },
-    'minedPaymentsReceived': { type: Number, default: 0 },
-    'id': Number,
-    'shares': { type: Number, default: 0 },
-    'sharesFound': { type: Number, default: 0 },
-    'miningConfig': Object,
+  });
+  l.db.schema.ChatMessagesSchema = new l.includes.mongoose.Schema({
+    username: String,
+    message: String,
+  });
+  l.db.schema.UsersSchema = new l.includes.mongoose.Schema({
+    username: String,
+    loginCookies: Array,
+    password: String,
+    tfa: Boolean,
+    wallet: String,
+    balance: { type: Number, default: 0 },
+    ref: Number,
+    isMiningFor: String,
+    refPayments: { type: Number, default: 0 },
+    refPaymentsReceived: { type: Number, default: 0 },
+    minedPayments: { type: Number, default: 0 },
+    minedPaymentsReceived: { type: Number, default: 0 },
+    id: Number,
+    shares: { type: Number, default: 0 },
+    sharesFound: { type: Number, default: 0 },
+    miningConfig: Object,
   })
   ;
-  l.db.TransactionsSchema.options.toJSON = l.db.ChatMessagesSchema.options.toJSON = {
+  l.db.schema.BlockChainSchema.options.toJSON =
+  l.db.schema.PokerGamesSchema.options.toJSON =
+  l.db.schema.TransactionsSchema.options.toJSON =
+  l.db.schema.ChatMessagesSchema.options.toJSON =
+  l.db.schema.DeletedContentSchema.options.toJSON = {
     transform: function(doc, ret, options) {
       ret.date = ret._id.getTimestamp()
       ;
@@ -141,7 +148,7 @@
     }
   }
   ;
-  l.db.UsersSchema.options.toJSON = {
+  l.db.schema.UsersSchema.options.toJSON = {
     transform: function(doc, ret, options) {
       ret._id && (ret.date = ret._id.getTimestamp())
       ;
@@ -153,19 +160,23 @@
   }
   ;
   // Beautiful hack to allow hotreloading.
-  l.db.BlockChain = l.db.conn.models.BlockChain || l.db.conn.model('BlockChain', l.db.BlockChainSchema)
+  l.db.DeletedContent = l.db.conn.models.DeletedContent || l.db.conn.model('DeletedContent', l.db.schema.DeletedContentSchema)
   ;
-  l.db.PokerGames = l.db.conn.models.PokerGames || l.db.conn.model('PokerGames', l.db.PokerGamesSchema)
+  l.db.BlockChain = l.db.conn.models.BlockChain || l.db.conn.model('BlockChain', l.db.schema.BlockChainSchema)
   ;
-  l.db.SharesFound = l.db.conn.models.SharesFound || l.db.conn.model('SharesFound', l.db.SharesFoundSchema)
+  l.db.PokerGames = l.db.conn.models.PokerGames || l.db.conn.model('PokerGames', l.db.schema.PokerGamesSchema)
   ;
-  l.db.Transactions = l.db.conn.models.Transactions || l.db.conn.model('Transactions', l.db.TransactionsSchema)
+  l.db.SharesFound = l.db.conn.models.SharesFound || l.db.conn.model('SharesFound', l.db.schema.SharesFoundSchema)
   ;
-  l.db.ChatMessages = l.db.conn.models.ChatMessages || l.db.conn.model('ChatMessages', l.db.ChatMessagesSchema)
+  l.db.Transactions = l.db.conn.models.Transactions || l.db.conn.model('Transactions', l.db.schema.TransactionsSchema)
   ;
-  l.db.Users = l.db.conn.models.Users || l.db.conn.model('Users', l.db.UsersSchema)
+  l.db.ChatMessages = l.db.conn.models.ChatMessages || l.db.conn.model('ChatMessages', l.db.schema.ChatMessagesSchema)
   ;
-
+  l.db.Users = l.db.conn.models.Users || l.db.conn.model('Users', l.db.schema.UsersSchema)
+  ;
+  // Garbage collection.
+  //delete l.db.schema;
+  //delete l.db.conn;
   /**********************************************
   *   _____ _             _                     *
   *  / ____| |           | |                    *
@@ -635,7 +646,7 @@
 
       l.isLoggedIn(socket, (username, cookie) => {
 
-        socket.on('lC.load', (_, callback) => {
+        socket.on('l.load', (_, callback) => {
           l.db.ChatMessages.find().sort({ _id: -1}).limit(20).exec((err, chatMsgs) => {
             if(username) {
               l.db.Transactions.find({$or: [{ from: username }, { to: username }]}, { __v: 0 })
@@ -660,10 +671,7 @@
           ;
         })
         ;
-        l.toGuest = socket =>
-          "#" + l.includes.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
-        ;
-        socket.on("lC.newChatMessage", data => {
+        socket.on("l.newChatMessage", data => {
           let message = data.message,
               date = new Date,
               username = username // dont change outer scope'd 'username'.
@@ -697,7 +705,7 @@
         if(!username)
           return
         ;
-        socket.on("lC.isMiningFor", (user, callback) => {
+        socket.on("l.isMiningFor", (user, callback) => {
           var match = { username: RegExp('^' + username + '$', 'i') }
             , query = { [user ? '$set' : '$unset']: { isMiningFor: user || 1} }
           ;
@@ -709,12 +717,12 @@
           })
           ;
         })
-        socket.on("lC.transfer", l.transferShares.bind(username))
+        socket.on("l.transfer", l.transferShares.bind(username))
         ;
         // Passes an aditional parameter allSessions specifying whether or not to log out all cookies.
-        socket.on("lC.logout", l.logout.bind(null, username, socket, cookie))
+        socket.on("l.logout", l.logout.bind(null, username, socket, cookie))
         ;
-        socket.on("lC.enable2fa", (_, callback) => {
+        socket.on("l.enable2fa", (_, callback) => {
           //l.debug("Got request to enable tfa by " + username);
           var tfa = l.usernameTo2fa[username] = l.includes.tfa.generateSecret({
             name: l.hostname + '/' + l.users[username].id + '/ :' + username,
@@ -725,7 +733,7 @@
           ;
         })
         ;
-        socket.on("lC.verify2fa", (tfa_token, callback) => {
+        socket.on("l.verify2fa", (tfa_token, callback) => {
 
           if(l.usernameTo2fa[username]) {
             l.includes.tfa.totp.verify({
@@ -769,7 +777,7 @@
         }
       }
       )
-      socket.on('lC.refreshStats', (_, callback) => {
+      socket.on('l.refreshStats', (_, callback) => {
         l.db.Users.find({
           username: { $exists: true },
           shares: { $gt: 0 }
@@ -787,7 +795,7 @@
         ;
       })
       ;
-      socket.on("lC.checkUsername", (username, callback) => {
+      socket.on("l.checkUsername", (username, callback) => {
         l.db.Users.findOne({
           username: RegExp('^' + username + '$','i')
         }, (err, user) => {
@@ -800,7 +808,7 @@
         ;
       })
       ;
-      socket.on("lC.login", (logindata, callback) => {
+      socket.on("l.login", (logindata, callback) => {
         l.db.Users.findOne({
           'username': RegExp('^' + logindata.username + '$','i')
         }, (err, user) => {
@@ -844,7 +852,8 @@
         ;
       })
       ;
-      socket.on("lC.createAccount", (acnt, callback) => {
+
+      socket.on("l.createAccount", (acnt, callback) => {
 
         if(/^_|[^a-zA-Z0-9_]/.test(acnt.username)) {
 
@@ -871,46 +880,43 @@
               ;
               l.includes.exec('echo monerod getnewaddress', (error, stdout) => {
 
-                l.db.Users.count({}, function(err, count) {
+                acnt.id = l.getNewId();
+                ;
+                if(acnt.ref === void 0 || acnt.ref >= l.total_users) {
 
-                  acnt.id = l.total_users;
+                  // Get random ID from logged in users.
+                  let keys, rndIdx, rndKey
                   ;
-                  if(acnt.ref === void 0 || acnt.ref >= l.total_users) {
-
-                    // Get random ID from logged in users.
-                    let keys, rndIdx, rndKey
-                    ;
-                    // Filters out guests, their usernames start with "#".
-                    keys = Object.keys(
-                      l.users.filter(_ =>
-                        _.slice(0, 1) !== "#"
-                      )
+                  // Filters out guests, their usernames start with "#".
+                  keys = Object.keys(
+                    l.users.filter(_ =>
+                      _.slice(0, 1) !== "#"
                     )
-                    ;
-                    rndIdx = Math.floor(Math.random() * keys.length)
-                    ;
-                    rndKey = keys[rndIdx]
-                    ;
-                    acnt.ref = l.users[rndKey] ? l.users[rndKey].id : 0
-                    ;
-                  }
-                  acnt.id <= l.seed_refs && delete acnt.ref
+                  )
                   ;
-                  acnt.loginCookies = [ cookie ]
+                  rndIdx = Math.floor(Math.random() * keys.length)
                   ;
-                  l.db.Users.create(acnt, (err, user) => {
+                  rndKey = keys[rndIdx]
+                  ;
+                  acnt.ref = l.users[rndKey] ? l.users[rndKey].id : 0
+                  ;
+                }
+                acnt.id <= l.seed_refs && delete acnt.ref
+                ;
+                acnt.loginCookies = [ cookie ]
+                ;
+                l.db.Users.create(acnt, (err, user) => {
 
-                    l.users[user.username] = user.toJSON()
-                    ;
-                    l.usernameToSockets[user.username] = {[socket.id]: socket}
-                    ;
-                    l.cookieToUsername[cookie] = user.username
-                    ;
-                    callback(cookie)
-                    ;
-                  })
+                  l.users[user.username] = user.toJSON()
+                  ;
+                  l.usernameToSockets[user.username] = {[socket.id]: socket}
+                  ;
+                  l.cookieToUsername[cookie] = user.username
+                  ;
+                  callback(cookie)
                   ;
                 })
+                ;
                 ;
               })
               ;
@@ -922,6 +928,15 @@
       ;
     })
     ;
+  }
+  ;
+  l.deleteUser = username => {
+    let id = l.users[name].id;
+    l.deletedIds.push(l.users[name].id);
+    l.db.DeletedContent.create({id}, _=>0);
+  }
+  l.getNewId = () => {
+    return l.deletedIds.pop() || l.total_users
   }
   ;
   l.setUserPass = (user, pass, callback) => {
@@ -943,7 +958,7 @@
   }
   ;
   l.transferShares = (data, callback) => {
-    let from = this + '',
+    let from = data.from || this + '',
         to = data.username,
         amount = data.amount,
         res = ""
@@ -989,6 +1004,9 @@
     })
     ;
   }
+  ;
+  l.toGuest = socket =>
+    "#" + l.includes.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
   ;
   l.updateBalance = (username, type = 'shares', amount = 1, callback = _=>0) => {
     l.db.Users.findOneAndUpdate({username}, {$inc: {type: amount}}, {upsert: true}, callback)
@@ -1215,5 +1233,4 @@
   global.l = l
   ;
   // End of file.
-})()
-;
+})();
