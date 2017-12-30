@@ -1,4 +1,4 @@
-// Description:
+(function (exports, require, module, __filename, __dirname) { // Description:
 //   Allows sending messages over the max length for discord, also enforces power commands.
 //
 (function() {
@@ -45,7 +45,7 @@ debugger;
           context.strings[i] = context.strings[i].slice(0, chunk[0].length) + epad;
           chunkAndQue(++i)
         } else {
-          !context.strings[i].includes('```.*```') && 
+          context.strings[i].split('```').length > 1 || 
             ADAPTER === 'slack' && (context.strings[i] = context.strings[i].replace(/\n/g, '*\n*'));
           ;
           context.strings[0] = fpad + context.strings[0] + epad
@@ -55,3 +55,5 @@ debugger;
     });
   }
 }).call(this);
+
+});

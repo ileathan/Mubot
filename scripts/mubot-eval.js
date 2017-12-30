@@ -123,6 +123,7 @@ e.realEval = msg => {
 }
 ;
 
+
 e.addToLog = function(cmd, res, id) {
  evals[id] || (evals[id] = (evals[id] = {}));
  evals[id][cmd] ? delete evals[id][cmd] && (evals[id][cmd] = res) : evals[id][cmd] = res;
