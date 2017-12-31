@@ -1,8 +1,14 @@
+// Descriptions:
+//  Yet another mubot crypto package
+//
+// Commands:
+//   !coins [byname|byprice|byticker|byrank|byvolume]
+//
 
 (function(){
   const API = "https://api.coinmarketcap.com/v1/ticker?limit=0";
   const request = require('request');
-  const returnMode = {raw: 1, r: 1, name: 2, names: 2, n: 2};
+  const returnMode = {json: 1, raw: 1, raw: 1, r: 1, name: 2, view: 2, list: 2, names: 2, n: 2};
   const modes = Object.keys(returnMode);
   const cmdToCoinKey = {
     id: 'id',
@@ -18,14 +24,27 @@
     'max supply': 'max_supply',
     'percent 1h': 'percent_change_1h',
     'percent 1d': 'percent_change_24h',
-    'percent': 'percent_change_7d',
+    percent: 'percent_change_7d',
+    'max supply': 'max_supply',
+    percent_change_1h: 'percent_change_1h',
+    percent_change_1d: 'percent_change_24h',
+    percent_change_7d: 'percent_change_7d',
     'last updated': 'last_updated'
   };
+
   const commands = Object.keys(cmdToCoinKey);
   //
+  const stringToCmdRe = string => {
+    for(let cmd of commands) {
+      if(RegExp(cmdToStringArray(cmd).join('|'), 'i').test(string))
+        return '(' + cmdToStringArray(cmd).join('|') + ')'
+      ;
+    }
+  }
+  ;
   const stringToCmd = string => {
     for(let cmd of commands) {
-      if(cmdToStringArray(cmd).includes(string.toLowerCase()))
+      if(RegExp('^('+cmdToStringArray(cmd).join('|')+')$', 'i').test(string))
         return cmd
       ;
     }
@@ -41,6 +60,18 @@
      		break;
       case 'rank':
      		return ['byrank', 'br', 'rank', 'r']
+     		break;
+      case 'price':
+     		return ['byprice', 'price']
+     		break;
+      case 'percent':
+     		return ['percent', '%', 'per']
+     		break;
+      case 'supply':
+     		return ['supply', 'sup']
+     		break;
+      case 'price':
+     		return ['byprice', 'price']
      		break;
     	default: return [cmd];
 		}
@@ -62,7 +93,7 @@
         matches.length + " matches."
       :
         mode === 2 ?
-          matches.reduce((_,a)=>a.push(_.symbol),[]).join(', ')
+          matches.reduce((a,_)=>a.push(_.symbol) && a,[]).join(', ')
         :
           JSON.stringify(matches, null, 2)
   ;
@@ -70,7 +101,7 @@
   const getMatches = msg => {
     var mode = returnMode[msg.match[1]] || 0,
         cmd = stringToCmd(msg.match[2]),
-        search = msg.match[3],
+        search = msg.match[3].replace(/(?:`((?:\\.|[^`])+)`)/, '$1') || msg.match[3],
         matches = []
     ;
     var re = {};
@@ -79,7 +110,7 @@
       re.source = search.slice(1, -re.options.length - 1);
     } else {
       re.options = 'i';
-      re.source = search;
+      re.source = '^(' + search.trim().split(/[\W]/).join('|') + ')$';
     }
     matches = CoinsArray.filter(_=>
       RegExp(re.source, re.options).test(_[cmdToCoinKey[cmd]])
@@ -108,9 +139,7 @@
   })
   ;
   const buildRegex = cmd => {
-    cmd = cmdToStringArray(cmd)
-    ;
-    return RegExp('^!coins (?:-?(' + modes.join('|') + ') )?(?:-?(' + cmd.join('|') + ')) (.+)$', 'i')
+    return new RegExp('^!coins (?:-?(' + modes.join('|') + ') )?-?(' + cmdToStringArray(cmd).join('|') + ') (.+)$', 'i')
     ;
   }
 }).call(this)

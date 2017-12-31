@@ -1,163 +1,207 @@
 // Description:
-//   eval
-
+//  evaluate commands against live code. (No need to hotreload)
+//
+// Commands:
+//  !always [on/off] - Allows execution of code placed anywhere in text like `bot.name`
+//  \`\`\`'Hello, World!'\`\`\` - Executes the command against the bots live code.
+//
+//
+const l = {};
 const _eval = require('eval');
 const {inspect} = require('util');
-const { curry, alwaysF, append, concat, ifElse, isEmpty, join, map, mergeAll, pipe, reject, test, repeat } = require('ramda');
+//const inspect = require('object-inspect');
 
-const repeatStr = pipe(repeat, join(''))
-
-const S = require('sanctuary');
-const R = require('ramda');
-const RF = require('ramda-fantasy');
-const vm = require('vm');
-const treisInit = require('treis').__init;
-
-
-const wrap = curry((x, s) => x + s + x);
-const mdLink = curry((text, url) => `[${text}](${url})`);
-const mdBold = wrap('**');
-const mdStrike = wrap('~~');
-const mdPre = wrap('`');
-const mdCode = curry((lang, str) => '```' + lang + '\n' + str + '\n```');
-const mdHeader = (n, text) => [ '#'.repeat(n), text ].join(' ');
-
-const evalCode = str => {
-  const output = [];
-  const fakeConsole = {
-    log: (...arg) => {
-      output.push(join(' ', map(inspect, arg)));
-      return void 0;
-    }
-  }
-  const timeouts = [];
-  const fakeSetTimeout = (fn, ms) => {
-    let timeout;
-    timeouts.push(new Promise((res, rej) => {
-      timeout = setTimeout(() => {
-        try {
-          fn();
-          res();
-        } catch (e) {
-          rej(e);
-        }
-      }, ms);
-    }));
-    return timeout;
-  }
-  const treis = treisInit(fakeConsole.log, false);
-  const sandbox = mergeAll([
-    { R, S, console: fakeConsole, treis, trace: treis, setTimeout: fakeSetTimeout },
-    R,
-    RF
-  ]);
-  let value
-  try {
-    value = vm.runInNewContext(str, sandbox, {
-      timeout: 10000
-    });
-  } catch (e) {
-    return Promise.reject(e);
-  }
-
-  return Promise.all(append(Promise.resolve(value), timeouts))
-    .then(alwaysF({ value, output }))
-  ;
+module.exports = bot => {
+  // Load commands from brain.
+  bot.brain.on('loaded', () => {
+    l.evals = bot.brain.data.evals || (bot.brain.data.evals = {})
+    l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
+    l.always = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
+  });
+  // Capture all commands.
+  bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), l.processMessage)
+  // Configure inspector.
+  bot.respond(/(?:set )?(?:nest level|level|nest)(?: me)?(?: (.+))?/i, msg => {
+    l.setDepth(msg.match[1] || 0)
+    msg.send("Inspects nesting level set to " + depth + ".")
+  })
+  bot.respond(/(?:set )?(?:arr(?:ay)?)?(?: length)?(?: (.+))?/i, msg => {
+    l.maxArrayLength(msg.match[1] || 1)
+    msg.send("Inspects array maxArrayLength set to " + maxArrayLength + ".")
+  })
+  bot.respond(/(?:set )?(?:message length|message|max)(?: (.+))?/i, msg => {
+    l.setMaxMessageLength(msg.match[1] || 1917)
+    msg.send("Inspects max length to " + maxArrayLength + ".")
+  })
+  // Capture all markdown code.
+  bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, msg => {
+    l.always[l.msgToUserId(msg)] ||
+      l.realEval(msg)
+    ;
+  });
+  bot.hear(/(?:[^!]|)(?:`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```)/i, msg => {
+    msg.match[1] = msg.match[1] || msg.match[2];
+    l.always[l.msgToUserId(msg)] &&
+      l.realEval(msg)
+    ;
+  });
 }
 
-const nlMdCode = lang => pipe(mdCode(lang), concat('\n'));
-const isMultiline = test(/\n/);
-const inspectInfinite = (val) => inspect(val, { depth: Infinity });
-const getErrorMessage = (e) => e.message || String(e);
-const formatValueToReply = pipe(inspectInfinite, nlMdCode('js'));
-const formatErrorToReply = pipe(getErrorMessage, ifElse(isMultiline, nlMdCode('text'), mdPre));
+// Persistant
+l.allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
+l.evals = {};
+l.saved = {};
+// Not persistent
+l.always = {};
+l.last_mode = null;
 
-const formatOutput = (arr) =>
-  join('\n', [
-    mdHeader(1, 'Output'),
-    mdCode('', join('\n', arr))
-  ])
-;
-const formatReply = res =>
-  join('\n', reject(isEmpty, [
-    formatValueToReply(res.value),
-    isEmpty(res.output) ? '' : formatOutput(res.output)
-  ]))
-;
-const fakeEval = msg => {
-  let id = e.msgToUserId(msg);
-  let cmd = res.match[1];
-  evalCode(cmd)
-    .then(done)
-    .catch(done)
-  ;
-  const done = res => { msg.send(formatReply(res)); e.addToLog(cmd, res, id) }
+let maxArrayLength = 1;
+let depth = 0;
+let maxMessageLength = 1917; 
+
+l.setMaxMessageLength = _ => maxMessageLength = _ | 0;
+l.setMaxArrayLength = _ => maxArrayLength = _ | 0;
+l.setDepth = _ => depth = _ | 0;
+
+l.preventHacks = msg => {
+  safeBot = {};
+  Object.assign(safeBot, msg.bot);
+  delete safeBot.leat.secure;
+  delete safeBot.cookieToUsername;
+  return safeBot;
 }
 ;
-var evals, saved, last_mode;
-const always = {};
-const allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
-
-const e = {};
-
-// Implicitly pass global this scope to eval.
-e.realEval = msg => {
-  let {inspect} = require('util');
+l.realEval = msg => {
   let cmd = evalCmd = msg.match[1];
-  let id = e.msgToUserId(msg);
-  if(allowed.includes(id)) {
-    if(!/module[.]exports\s*=/.test(cmd)) {
-      !/[;]|return(;|\s|\n|$)/.test(cmd) && (evalCmd = 'return ' + evalCmd);
-      evalCmd = 'module.exports=((bot, botD, botS)=>{' + evalCmd + '})(global.botG, global.bot, global.botSlack)';
-    }
-    global.botG = global.bot || msg.bot;
+  let id = l.msgToUserId(msg);
+  let afterCmd = msg.match.input.split('`').pop() || "";
 
-    let result = _eval(evalCmd, true);
-    delete global.botG;
-    try {
-      result = inspect(result, null, 2) || 'true';
-      if(result.length > 1994) {
-        let {dumpKeysRecursivly} = require('recursive-keys');
-        result = dumpKeysRecursivly(result);
-        result = JSON.stringify(result).slice(0, 1994);
-      }
-    } catch(e) {
-      result = inspect(e);
-    }
-    e.addToLog(cmd, result, id)
-    msg.bot.brain.save();
-    msg.send('# Result: ```' + result + '```');
+  let args = [];
+  if(l.allowed.includes(id)) {
+     args = [{bot, msg}, true]
   } else {
-    msg.send(e.fakeEval(msg));
+     let http = require('request');
+     args = [{http, request: http, req: http}, false]
   }
+
+
+  let opts = { depth, maxArrayLength };
+  if(afterCmd[0] === '{') {
+    try {
+      Object.assign(opts, JSON.parse(afterCmd));
+    } catch(e) {
+      return msg.send("Error parsing JSON.");
+    }
+  } else {
+    [opts.depth = 0, opts.maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
+  }
+
+  if(!/module[.]exports\s*=/.test(cmd)) {
+    !/return .+/.test(cmd) && (evalCmd = 'return ' + evalCmd);
+    evalCmd = 'module.exports=(()=>{' + evalCmd + '})()';
+  }
+   // Remove sensitive data from bot.
+  let bot = l.preventHacks(msg);
+  // filename is the second param.
+  let o = _eval(evalCmd, msg.bot.name + "_" + msg.message.user.name, ...args);
+
+  // Allow 83 chars for res/oLen display.
+  let oLen = 0, res = "";
+  try {
+    if(inspect(o) === '[Function]') {
+      oLen = (o + "").length;
+      if(o > maxMessageLength) {
+        res = '(Msg len > 2000 [' + oLen + '])'
+        o = o.slice(0, maxMessageLength);
+      }
+    } else {
+      o = inspect(o, opts)
+    }
+  } catch(e) {
+    o = inspect(e);
+  }
+  res || (res = oLen);
+  msg.send('# Output [' + res + ']```' + (o + "").slice(0, maxMessageLength) + '```');
+
+  l.addToLog(cmd, o, id)
+  msg.bot.brain.save();
 }
 ;
 
 
-e.addToLog = function(cmd, res, id) {
+l.processMessage = (msg, dontRun) => {
+  let cmd = msg.match ? msg.match[1] : msg;
+  let match = void 0, res = "";
+  if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
+    if(l.always[msg.message.user.id]) {
+      return;
+    }
+    res = 'realEval';
+  }
+  else if(match = cmd.match(/^`((?:\\.|[^`])+)`/i)) {
+    if(l.always[msg.message.user.id]) {
+      return;
+    }
+    res = 'realEval';
+  }
+  else if(match = cmd.match(/^coins/i)) {
+    res = '';
+  }
+  else if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
+    res = 'runLastCmd';
+  }
+  else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
+    res = 'getLengths';
+  }
+  else if(match = cmd.match(/^(?:list|view|l|saved|evals?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
+    res = 'viewCmds';
+  }
+  else if(match = cmd.match(/^(?:clear|del(?:ete)?) all ?(.*)?/i)) {
+    res = 'deleteAllCmds';
+  }
+  else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: ([\S]+))?(?: -?(i(?:gnore)?))?(.+)?$/i)) {
+    res = 'deleteCmds';
+  }
+  else if(match = cmd.match(/^fake ```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
+    res = 'fakeEval';
+  }
+  else if(match = cmd.match(/^fake `(\\.|[^`])+`/i)) {
+    res = 'fakeEval';
+  }
+  else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
+    res = 'saveCmd';
+  }
+  else if(match = cmd.match(/^(?:set )?always(?: (.*))?/i)) {
+    res = 'setAlways';
+  }
+  if(!res) return;
+  if(!dontRun) {
+    msg.match = match;
+    l[res](msg);
+  }
+  return !!match;
+}
+
+
+
+l.addToLog = function(cmd, res, id) {
  evals[id] || (evals[id] = (evals[id] = {}));
  evals[id][cmd] ? delete evals[id][cmd] && (evals[id][cmd] = res) : evals[id][cmd] = res;
 }
 
-e.msgToUserId = function(msg) {
-  return msg.username ?
-    // Discord.
-    msg.username.id
-  :
-    // Slack.
-    msg.message.user.id
-  ;
+l.msgToUserId = function(msg) {
+  return msg.message.user.id;
 }
 
-e.getLengths = function(msg) {
-  const mode = e.isModeSave(msg.match[1]);
-  const id = e.msgToUserId(msg);
+l.getLengths = function(msg) {
+  const mode = l.isModeSave(msg.match[1]);
+  const id = l.msgToUserId(msg);
   const formatLengthReply = mode => {
     const obj = mode ? saved[id] || {} : evals[id] || {};
     const cmds = mode ? Object.values(obj) : Object.keys(obj);
     const amnt = cmds.length;
     const last = cmds.pop();
-    return amnt + " " + (mode?'saved':'logged') + " eval(s)." + (amnt ? " Last: " + e.formatCmd(last) : "");
+    return amnt + " " + (mode?'saved':'logged') + " eval(s)." + (amnt ? " Last: " + l.formatCmd(last) : "");
   }
   let res = "";
   mode ?
@@ -168,8 +212,8 @@ e.getLengths = function(msg) {
   msg.send(res);
 }
 ;
-e.deleteAllCmds = function(msg) {
-  const id = e.msgToUserId(msg);
+l.deleteAllCmds = function(msg) {
+  const id = l.msgToUserId(msg);
   const mode = msg.match[1];
   if(mode === 'all') {
     const amntDelSaved = Object.keys(saved[id] || {}).length;
@@ -178,36 +222,36 @@ e.deleteAllCmds = function(msg) {
     for(let key in saved[id] || {}) delete saved[id][key];
     return msg.send("Deleted " + amntDelLog + " log evals and " + amntDelSaved + " saved evals.");
   }
-  const obj = e.isModeSave(mode) ? saved[id] || {} : evals[id] || {};
+  const obj = l.isModeSave(mode) ? saved[id] || {} : evals[id] || {};
   const amntDel = Object.keys(obj).length;
   for(let key in obj) delete obj[key];
   msg.send("Deleted " + amntDel + " " + (mode ? "saved" : "log") + " evals.");
 }
 ;
 
-e.deleteCmds = function(msg) {
-  const id = e.msgToUserId(msg);
+l.deleteCmds = function(msg) {
+  const id = l.msgToUserId(msg);
   if(!saved[id] || !evals[id]) {
     return msg.send("No log found")
   }
   var [, mode, ignore, delCmd ] = msg.match;
   var startAt, endAt, res;
   if(saved[id][delCmd]) {
-    res = "Deleted " + e.formatCmd(saved[id][delCmd]) + ".";
+    res = "Deleted " + l.formatCmd(saved[id][delCmd]) + ".";
     delete saved[id][delCmd];
   }
   else if(Object.keys(evals[id])[delCmd]) {
-    res = "Deleted " + e.formatCmd(evals[id][delCmd]) + ".";
+    res = "Deleted " + l.formatCmd(evals[id][delCmd]) + ".";
     delete evals[id][delCmd];
   }
   else if(/[!]|last/i.test(delCmd)) {
-    let obj = e.isModeSave(mode) ? saved[id] : evals[id];
+    let obj = l.isModeSave(mode) ? saved[id] : evals[id];
     last_mode === 'saved' ?
       delCmd = Object.values(saved[id]).pop()
     :
       delCmd = Object.keys(evals[id]).pop()
     ;
-    res = "Deleted " + e.formatCmd(obj[delCmd]) + ".";
+    res = "Deleted " + l.formatCmd(obj[delCmd]) + ".";
     delete obj[delCmd];
   } else {
     let keys = Object.keys(obj);
@@ -240,11 +284,11 @@ e.deleteCmds = function(msg) {
 }
 ;
 
-e.runLastCmd = function(msg) {
-  const id = e.msgToUserId(msg);
+l.runLastCmd = function(msg) {
+  const id = l.msgToUserId(msg);
   var mode = msg.match[1];
   mode === void 0 && (mode = last_mode || 'evals');
-  mode = e.isModeSave(mode)
+  mode = l.isModeSave(mode)
   var obj = mode ? saved[id] || {} : evals[id] || {};
   var last = mode ? Object.values(obj).pop() : Object.keys(obj).pop();
 
@@ -252,11 +296,11 @@ e.runLastCmd = function(msg) {
     return msg.send("There is no last " + mode + " command.")
   ;
   msg.match = [, last];
-  e.realEval(msg);
+  l.realEval(msg);
 }
 ;
-e.runCmd = function(msg) {
-  const id = e.msgToUserId(msg);
+l.runCmd = function(msg) {
+  const id = l.msgToUserId(msg);
   const tag = msg.match[1];
   var cmd = "";
   if(commands.includes(tag.toLowerCase()))
@@ -274,11 +318,11 @@ e.runCmd = function(msg) {
     return msg.send("Command not found.")
   ;
   msg.match[1] = cmd;
-  e.realEval(msg);
+  l.realEval(msg);
 }
 ;
-e.saveCmd = function(msg) {
-  const id = e.msgToUserId(msg);
+l.saveCmd = function(msg) {
+  const id = l.msgToUserId(msg);
   if(!evals[id]) {
     return msg.send("No log found")
   }
@@ -287,7 +331,7 @@ e.saveCmd = function(msg) {
     tag = cmdIndx;
     cmdIndx = Object.keys(evals[id]).length - 1;
   }
-  if(e.isReserved(tag))
+  if(l.isReserved(tag))
     return msg.send("Cannot save, your name is a reserved command.")
   ;
   const cmd = Object.keys(evals[id])[cmdIndex];
@@ -297,25 +341,25 @@ e.saveCmd = function(msg) {
   ;
   saved[id][tag] = cmd;
   msg.bot.brain.save();
-  msg.send("Saved " + e.formatCmd(cmd) + ' as ' + tag + '.');
+  msg.send("Saved " + l.formatCmd(cmd) + ' as ' + tag + '.');
 }
 ;
-e.formatCmd = function(cmd) {
+l.formatCmd = function(cmd) {
   if(!cmd) return null;
   //cmd = cmd.slice(29, -32).replace(/^return\s*/, '');
   return '`' + cmd + (cmd.length > 20 ? '..' : '') + '`';
 }
 ;
-e.isModeSave = function(modeStr) {
+l.isModeSave = function(modeStr) {
   return /\s*-?(s(aved?)|tag(ged|s)?|recorded)\s*/.test(modeStr);
 }
 
-e.viewCmds = function(msg) {
-  const id = e.msgToUserId(msg);
+l.viewCmds = function(msg) {
+  const id = l.msgToUserId(msg);
   let [, mode, res, ignore, indexes ] = msg.match
   ;
   let [startAt, endAt] = (indexes || "").split(/\s*[-]\s*/);
-  mode = e.isModeSave(mode);
+  mode = l.isModeSave(mode);
   let commands = res ? Object.values(mode ? saved[id] : evals[id]) : Object.keys(mode ? saved[id] : evals[id])
   ;
   if(startAt === '!') {
@@ -323,7 +367,7 @@ e.viewCmds = function(msg) {
     !mode && (remove = parseInt(remove));
     let cmd = commands[remove]
     let i = mode ? commands.indexOf(remove) : remove;
-    return  msg.send("(1) " + i + ': ' + e.formatCmd(cmd));
+    return  msg.send("(1) " + i + ': ' + l.formatCmd(cmd));
   }
   global.m = msg.match;
   commands || (commands = []);
@@ -349,91 +393,34 @@ e.viewCmds = function(msg) {
   ;
   length > 17 && (commands = commands.slice(-17));
   msg.send("("+length+") " + commands.map(_=>
-    i++ + ': ' + e.formatCmd(_)
+    i++ + ': ' + l.formatCmd(_)
   ).join(', '))
 }
 ;
 
-e.setAlways = function(msg) {
+l.setAlways = function(msg) {
   let isAlways = !(msg.match[1] || "").match(/off|false|0|no|x/i);
-  let id = e.msgToUserId(msg);
+  let id = l.msgToUserId(msg);
   isAlways ?
-    always[id] ?
+    l.always[id] ?
       msg.send("Eval mode already set to always.")
     :
-      (always[id] = 1) && msg.send("Eval mode set to always.")
+      (()=>{
+        l.always[id] = 1;
+        msg.bot.brain.save();
+        msg.send("Eval mode set to always.");
+      })()
     //
   :
-    always[id] ?
-      delete always[id] && msg.send("Eval mode set to trigger only.")
+    l.always[id] ?
+      (()=>{
+        delete l.always[id];
+        msg.send("Eval mode set to trigger only.");
+        msg.bot.brain.save();
+      })()
     :
       msg.send("Eval mode already set to trigger only.")
     //
   ;
 }
 ;
-
-module.exports = bot => {
-  // Load commands from brain.
-  bot.brain.on('loaded', () => {
-    evals = bot.brain.data.evals || (bot.brain.data.evals = {})
-    saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
-  });
-  // Process command.
-  bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), processMessage)
-
-  bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, e.realEval)
-
-  bot.hear(/(?:[^!]|)(?:`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```)/i, msg => {
-    msg.match[1] = msg.match[1] || msg.match[2];
-    always[e.msgToUserId(msg)] &&
-      e.realEval(msg)
-    ;
-  });
-
-  function processMessage(msg, dontRun) {
-    let cmd = msg.match ? msg.match[1] : msg;
-    let match = void 0, res = "";
-    if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
-      res = 'realEval';
-    }
-    else if(match = cmd.match(/`((?:\\.|[^`])+)`/i)) {
-      res = 'realEval';
-    }
-    else if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
-      res = 'runLastCmd';
-    }
-    else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
-      res = 'getLengths';
-    }
-    else if(match = cmd.match(/^(?:list|view|l|saved|evals?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
-      res = 'viewCmds';
-    }
-    else if(match = cmd.match(/^(?:clear|del(?:ete)?) all ?(.*)?/i)) {
-      res = 'deleteAllCmds';
-    }
-    else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: ([\S]+))?(?: -?(i(?:gnore)?))?(.+)?$/i)) {
-      res = 'deleteCmds';
-    }
-    else if(match = cmd.match(/^fake ```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
-      res = 'fakeEval';
-    }
-    else if(match = cmd.match(/^fake `(\\.|[^`])+`/i)) {
-      res = 'fakeEval';
-    }
-    else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
-      res = 'saveCmd';
-    }
-    else if(match = cmd.match(/^(?:set )?always(?: (.*))?/i)) {
-      res = 'setAlways';
-    }
-    if(!res) return;
-    if(!dontRun) {
-      msg.match = match;
-      e[res](msg);
-    }
-    return !!match;
-  }
-
-
-}
