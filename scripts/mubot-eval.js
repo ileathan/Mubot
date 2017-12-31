@@ -72,20 +72,29 @@ l.preventHacks = msg => {
 }
 ;
 l.realEval = msg => {
-  let cmd = evalCmd = msg.match[1];
-  let id = l.msgToUserId(msg);
-  let afterCmd = msg.match.input.split('`').pop() || "";
-
-  let args = [];
+  let cmd = evalCmd = msg.match[1],
+      id = msg.message.user.id,
+      afterCmd = msg.match.input.split('`').pop() || "",
+      // Remove sensitive data from bot.
+      bot = l.preventHacks(msg),
+      opts = [], o = ""
+  ;
+  // Set command options.
   if(l.allowed.includes(id)) {
-     args = [{bot, msg}, true]
+     opts = [{bot, msg}, true]
   } else {
      let http = require('request');
-     args = [{http, request: http, req: http}, false]
+     opts = [{http, request: http, req: http}, false]
   }
+  // Sanitize the command. 
+  if(!/module[.]exports\s*=/.test(cmd)) {
+    !/return .+/.test(cmd) && (evalCmd = 'return ' + evalCmd);
+    evalCmd = 'module.exports=(()=>{' + evalCmd + '})()';
+  }
+  // filename is the second param.
+  o = _eval(evalCmd, msg.bot.name + "_" + msg.message.user.name, ...opts);
 
-
-  let opts = { depth, maxArrayLength };
+  // Reuse opts variable for the formating options.
   if(afterCmd[0] === '{') {
     try {
       Object.assign(opts, JSON.parse(afterCmd));
@@ -93,26 +102,17 @@ l.realEval = msg => {
       return msg.send("Error parsing JSON.");
     }
   } else {
-    [opts.depth = 0, opts.maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
+    [depth = 0, maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
+    opts = { depth, maxArrayLength };
   }
-
-  if(!/module[.]exports\s*=/.test(cmd)) {
-    !/return .+/.test(cmd) && (evalCmd = 'return ' + evalCmd);
-    evalCmd = 'module.exports=(()=>{' + evalCmd + '})()';
-  }
-   // Remove sensitive data from bot.
-  let bot = l.preventHacks(msg);
-  // filename is the second param.
-  let o = _eval(evalCmd, msg.bot.name + "_" + msg.message.user.name, ...args);
 
   // Allow 83 chars for res/oLen display.
-  let oLen = 0, res = "";
+  let oLen = 0;
   try {
     if(inspect(o) === '[Function]') {
       oLen = (o + "").length;
       if(o > maxMessageLength) {
-        res = '(Msg len > 2000 [' + oLen + '])'
-        o = o.slice(0, maxMessageLength);
+        oLen = 'Msg trimmed > 2000 ' + oLen + ''
       }
     } else {
       o = inspect(o, opts)
@@ -120,10 +120,14 @@ l.realEval = msg => {
   } catch(e) {
     o = inspect(e);
   }
-  res || (res = oLen);
-  msg.send('# Output [' + res + ']```' + (o + "").slice(0, maxMessageLength) + '```');
 
-  l.addToLog(cmd, o, id)
+  o = (o || "").slice(0, maxMessageLength);
+  o ?
+    msg.send('# Output [' + oLen + '] ```' + o + '```')
+  : 
+    o = 'void 0'
+  ;
+  l.addToLog(cmd, o || void 0, id)
   msg.bot.brain.save();
 }
 ;
