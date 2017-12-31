@@ -1,4 +1,4 @@
-(function (exports, require, module, __filename, __dirname) { // Description:
+// Description:
 //   Allows sending messages over the max length for discord, also enforces power commands.
 //
 (function() {
@@ -19,7 +19,6 @@
       if(!context.plaintext || !context.strings[0] || !context.strings[0].length) return done();
       // i is our iterator representing que position of msg chunk.
       (function chunkAndQue(i) {
-debugger;
         // Pad the start of the message, and the end of the message.
         var fpad, epad;
         epad = fpad = ADAPTER === 'discord' ? "**" : "*";
@@ -55,5 +54,3 @@ debugger;
     });
   }
 }).call(this);
-
-});

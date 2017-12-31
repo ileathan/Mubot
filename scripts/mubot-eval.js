@@ -17,21 +17,24 @@ module.exports = bot => {
     l.evals = bot.brain.data.evals || (bot.brain.data.evals = {})
     l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
     l.always = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
+
+    // Export
+    Object.assign(bot.mubot, l);
   });
   // Capture all commands.
   bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), l.processMessage)
   // Configure inspector.
   bot.respond(/(?:set )?(?:nest level|level|nest)(?: me)?(?: (.+))?/i, msg => {
-    l.setDepth(msg.match[1] || 0)
-    msg.send("Inspects nesting level set to " + depth + ".")
+    l.setDepth(msg.match[1] || 0);
+    msg.send("Inspects nesting level set to " + depth + ".");
   })
   bot.respond(/(?:set )?(?:arr(?:ay)?)?(?: length)?(?: (.+))?/i, msg => {
-    l.maxArrayLength(msg.match[1] || 1)
+    l.maxArrayLength(msg.match[1] || 1);
     msg.send("Inspects array maxArrayLength set to " + maxArrayLength + ".")
   })
   bot.respond(/(?:set )?(?:message length|message|max)(?: (.+))?/i, msg => {
-    l.setMaxMessageLength(msg.match[1] || 1917)
-    msg.send("Inspects max length to " + maxArrayLength + ".")
+    l.setMaxMessageLength(msg.match[1] || 1917);
+    msg.send("Inspects max length set to " + maxArrayLength + ".");
   })
   // Capture all markdown code.
   bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, msg => {
@@ -46,7 +49,7 @@ module.exports = bot => {
     ;
   });
 }
-
+;
 // Persistant
 l.allowed = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
 l.evals = {};
@@ -95,6 +98,7 @@ l.realEval = msg => {
   o = _eval(evalCmd, msg.bot.name + "_" + msg.message.user.name, ...opts);
 
   // Reuse opts variable for the formating options.
+  opts = {};
   if(afterCmd[0] === '{') {
     try {
       Object.assign(opts, JSON.parse(afterCmd));
@@ -115,19 +119,17 @@ l.realEval = msg => {
         oLen = 'Msg trimmed > 2000 ' + oLen + ''
       }
     } else {
-      o = inspect(o, opts)
+      o || (o = 'void 0');
+      o = inspect(o, opts);
     }
   } catch(e) {
     o = inspect(e);
   }
 
-  o = (o || "").slice(0, maxMessageLength);
-  o ?
-    msg.send('# Output [' + oLen + '] ```' + o + '```')
-  : 
-    o = 'void 0'
-  ;
-  l.addToLog(cmd, o || void 0, id)
+  o = o.slice(0, maxMessageLength);
+  o && msg.send('# Output [' + oLen + '] ```' + o + '```');
+
+  l.addToLog(cmd, o, id)
   msg.bot.brain.save();
 }
 ;
