@@ -2,8 +2,8 @@
 //   Allows Hubot to (re)load scripts without restart
 //
 // Commands:
-//   imubot reload - Reloads scripts without restart. Loads new scripts too.
-//   imubot command count - Tells how many commands imubot knows
+//   mubot reload - Reloads scripts without restart. Loads new scripts too.
+//   mubot command count - Tells how many commands mubot knows
 //
 // Author:
 //   leathan & spajus

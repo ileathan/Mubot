@@ -1,8 +1,8 @@
 // Description: 
-//   Kill your imubot on command.
+//   Kill your mubot on command.
 //
 // Commands:
-//   imubot die - kills your imubot
+//   mubot die - kills your mubot
 //
 // Author:
 //   leathan

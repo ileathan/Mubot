@@ -1,5 +1,5 @@
 // Description:
-//   Email from imubot to any address
+//   Email from mubot to any address
 //
 // Dependencies:
 //   None
@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot email <user@email.com> -s <subject> -m <message> - Sends email with the <subject> <message> to address <user@email.com>
+//   mubot email <user@email.com> -s <subject> -m <message> - Sends email with the <subject> <message> to address <user@email.com>
 //
 // Author:
 //   earlonrails

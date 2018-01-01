@@ -8,10 +8,10 @@
 //   None
 //
 // Commands:
-//   imubot what should I do about (.\*)
-//   imubot what do you think about (.\*)
-//   imubot how do you handle (.\*)
-//   imubot I need some advice
+//   mubot what should I do about (.\*)
+//   mubot what do you think about (.\*)
+//   mubot how do you handle (.\*)
+//   mubot I need some advice
 //
 // Author:
 //   pengwynn

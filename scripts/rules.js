@@ -1,12 +1,12 @@
 // Description:
-//   Make sure that imubot knows the rules.
+//   Make sure that mubot knows the rules.
 //
 // Commands:
-//   imubot the rules - Make sure imubot still knows the rules.
-//   imubot ping - Reply with pong
-//   imubot adapter - Reply with the adapter
-//   imubot echo <text> - Reply back with <text>
-//   imubot time - Reply with current time
+//   mubot the rules - Make sure mubot still knows the rules.
+//   mubot ping - Reply with pong
+//   mubot adapter - Reply with the adapter
+//   mubot echo <text> - Reply back with <text>
+//   mubot time - Reply with current time
 //
 // Notes:
 //   DON'T DELETE THIS SCRIPT! ALL ROBAWTS MUST KNOW THE RULES

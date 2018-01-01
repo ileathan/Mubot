@@ -1,10 +1,10 @@
 // Description:
-//   Make imubot yell, spam, or use leetspeak.
+//   Make mubot yell, spam, or use leetspeak.
 //
 // Commands:
-//   imubot yell <text> - Yells the text.
-//   imubot hax <text> - Displays text with alternate capitalization.
-//   imubot leet[ me] <text> - returns text in leetspeak.
+//   mubot yell <text> - Yells the text.
+//   mubot hax <text> - Displays text with alternate capitalization.
+//   mubot leet[ me] <text> - returns text in leetspeak.
 //
 // Author:
 //   leathan

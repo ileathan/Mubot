@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot beer me - Has imubot give you a beer.
+//   mubot beer me - Has mubot give you a beer.
 //
 // Author:
 //  houndbee

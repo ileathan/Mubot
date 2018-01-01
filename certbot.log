@@ -23,4 +23,4 @@ Traceback (most recent call last):
     namespace.webroot_path.append(_validate_webroot(webroot_path))
   File "/usr/local/Cellar/certbot/0.12.0_1/libexec/lib/python2.7/site-packages/certbot/plugins/webroot.py", line 286, in _validate_webroot
     raise errors.PluginError(webroot_path + " does not exist or is not a directory")
-PluginError: /Users/leathan/Mubot/node_modules/imubot-server/public/ does not exist or is not a directory
+PluginError: /Users/leathan/Mubot/node_modules/mubot-server/public/ does not exist or is not a directory

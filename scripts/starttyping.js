@@ -1,7 +1,7 @@
 // Description:
-//   Make imubot start typing.
+//   Make mubot start typing.
 // Commands:
-//   imubot type - Makes imubot start typing.
+//   mubot type - Makes mubot start typing.
 (function(){
   module.exports = bot => {
     bot.respond(/type$/i, res => {

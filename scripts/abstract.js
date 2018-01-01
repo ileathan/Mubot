@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot abs|abstract <topic> - Prints a nice abstract of the given topic
+//   mubot abs|abstract <topic> - Prints a nice abstract of the given topic
 //
 // Author:
 //   tantalor

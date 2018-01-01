@@ -9,7 +9,7 @@
 //   MUBOT_9GAG_NO_GIFS (optional, skips GIFs if defined; default is undefined)
 //
 // Commands:
-//   imubot meme - Returns a random meme image
+//   mubot meme - Returns a random meme image
 //
 // Author:
 //   EnriqueVidal

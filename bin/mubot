@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-export PATH="node_modules/.bin:node_modules/imubot/node_modules/.bin:$PATH"
+export PATH="node_modules/.bin:node_modules/mubot/node_modules/.bin:$PATH"
 export EXPRESS_USER=
 export EXPRESS_PASSWORD=
 export HUBOT_LOG_LEVEL=debug
@@ -9,6 +9,6 @@ export HUBOT_DISCORD_TOKEN=
 export HUBOT_MAX_MESSAGE_LENGTH=
 export WORDNIK_API_KEY=
 #npm install
-export PATH="node_modules/.bin:node_modules/imubot/node_modules/.bin:$PATH"
+export PATH="node_modules/.bin:node_modules/mubot/node_modules/.bin:$PATH"
 
-node node_modules/.bin/imubot.js --name "Mubot" "$@"
+node node_modules/.bin/mubot.js --name "Mubot" "$@"

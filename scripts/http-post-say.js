@@ -11,12 +11,12 @@
 //   None
 //
 // URLs:
-//   POST /imubot/say
+//   POST /mubot/say
 //     message = <message>
 //     room = <room>
 //     type = <type>
 //
-//   curl -X POST http://localhost:8080/imubot/say -d message=lala -d room='//dev'
+//   curl -X POST http://localhost:8080/mubot/say -d message=lala -d room='//dev'
 //
 // Author:
 //   insom
@@ -24,7 +24,7 @@
 //
 (function() {
   module.exports = bot => {
-    bot.router.post("/imubot/say", (req, res) => {
+    bot.router.post("/mubot/say", (req, res) => {
       var body, envelope, message, room;
       body = req.body;
       room = body.room;

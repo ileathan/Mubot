@@ -1,0 +1,7 @@
+{
+  "unused": true,
+
+  // Off "Do not use String as a constructor".
+  // The reason is for test running.
+  "-W053": false
+}

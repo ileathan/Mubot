@@ -9,9 +9,9 @@
 //   None
 //
 // Commands:
-//   imubot is <user> available - Find out if the specified user is available or not
-//   imubot i am <available|free|not busy|at hand|back|here> - Set that you are available - (the 'i am' is optional)
-//   imubot i am <unavailable|dnd|do not disturb|busy|in the zone|away|gone|afk|brb> - Setthat you are not available - (the 'i am' is optional)
+//   mubot is <user> available - Find out if the specified user is available or not
+//   mubot i am <available|free|not busy|at hand|back|here> - Set that you are available - (the 'i am' is optional)
+//   mubot i am <unavailable|dnd|do not disturb|busy|in the zone|away|gone|afk|brb> - Setthat you are not available - (the 'i am' is optional)
 //
 // Author:
 //  tombell

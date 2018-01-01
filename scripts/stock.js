@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot stock [info|quote|price] [for|me] <ticker> [1d|5d|2w|1mon|1y] - Get a stock price
+//   mubot stock [info|quote|price] [for|me] <ticker> [1d|5d|2w|1mon|1y] - Get a stock price
 //
 // Author:
 //   leathan

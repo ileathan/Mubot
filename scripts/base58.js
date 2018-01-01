@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot base58 encode|decode <query> - Base58 encode or decode <query>
+//   mubot base58 encode|decode <query> - Base58 encode or decode <query>
 //
 // Author:
 //   jimeh

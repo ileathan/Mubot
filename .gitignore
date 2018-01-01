@@ -1,4 +1,4 @@
 node_modules/mubot-server/credentials/*
-.gitignore
+*gitignore*
 .gitattributes
 *brain.json*

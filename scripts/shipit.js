@@ -11,7 +11,7 @@
 //   MUBOT_SHIP_EXTRA_SQUIRRELS
 //
 // Commands:
-//   imubot ship it - Display a motivation squirrel
+//   mubot ship it - Display a motivation squirrel
 //
 // Author:
 //   maddox

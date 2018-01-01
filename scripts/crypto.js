@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot swap|crypto|c [market] [amount] <coin> [coin2] [depth] a coin - Returns information about the coin(s).
+//   mubot swap|crypto|c [market] [amount] <coin> [coin2] [depth] a coin - Returns information about the coin(s).
 //
 // Author:
 //   leathan

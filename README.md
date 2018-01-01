@@ -1,6 +1,6 @@
 # Mubot
 
-A bot that aside from inhereting imubot's most usefull core features and scripts, allows you to host a multiple of preconfigured webservices. One of which allows you to connect directly to the bitmark network.
+A bot that aside from inhereting mubot's most usefull core features and scripts, allows you to host a multiple of preconfigured webservices. One of which allows you to connect directly to the bitmark network.
 
 The main webservice is a marking implementation that uses an included back end marking API. Seperate marking implemenations (like mubots own text based markings) are not shown here but will also use the back end API.
 ![Image of coloring](https://preview.ibb.co/bwkMfF/Screen_Shot_2017_07_17_at_10_30_29_PM.png)
@@ -48,7 +48,7 @@ nvm use node
 
 ### Full Instalation
 
-... This project is still constantly in developement but a full guide is coming. That way each end user can host their own marking servers accompanied with a customized and extended imubot implementation.
+... This project is still constantly in developement but a full guide is coming. That way each end user can host their own marking servers accompanied with a customized and extended mubot implementation.
 
 
 --- Hacking Mubot in REPL mode:
@@ -60,7 +60,7 @@ All commands from here on out are in REPL:
 
 2.) 
 ```javascript
-Mubot = require('imubot')
+Mubot = require('mubot')
 ```
 
 3.) 
@@ -71,7 +71,7 @@ process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yII
 
 4.) 
 ```javascript
-bot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot') // (path_to_imubot, adapter_name, http_server, name, alias)
+bot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot') // (path_to_mubot, adapter_name, http_server, name, alias)
 ```
 
 5.) 
@@ -92,7 +92,7 @@ bot.run()
 At this point you should be logged in to discord with a fully functional Mubot! (1 liner for both slack and discord)
 
 ```javascript
-process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAm"; Mubot = require('imubot'); botDiscord = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot'); botDiscord.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); botDiscord.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \"")); botDiscord.run(); process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-auQ8rtm6DKDXaTqGWCDaS2hl"; botSlack = Mubot.loadBot(process.cwd()+'/node_modules/', 'slack', true, 'Mubot', 'Mubot'); botSlack.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); botSlack.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \"")); botSlack.run()
+process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAm"; Mubot = require('mubot'); botDiscord = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot'); botDiscord.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); botDiscord.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \"")); botDiscord.run(); process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-auQ8rtm6DKDXaTqGWCDaS2hl"; botSlack = Mubot.loadBot(process.cwd()+'/node_modules/', 'slack', true, 'Mubot', 'Mubot'); botSlack.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); botSlack.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \"")); botSlack.run()
 ```
 
 

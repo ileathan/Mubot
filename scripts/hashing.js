@@ -8,7 +8,7 @@
 //   None
 //
 // Commands:
-//   imubot md5|sha|sha1|sha256|sha512|rmd160 me <string> - Generate hash of <string>
+//   mubot md5|sha|sha1|sha256|sha512|rmd160 me <string> - Generate hash of <string>
 //
 // Author:
 //   jimeh
