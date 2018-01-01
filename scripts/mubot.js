@@ -13,7 +13,7 @@
 //   + <times> <user> <reason>        -   transfers coins the specified user.
 //   withdraw <address> <amount>      -   Withdraw amount to address (Just Bitmark supported).
 //   marks [user]                     -   Balance for a user or self.
-//   mubot mode                       -   Sets the coin to be transfered upon +'ing.
+//   Mubot mode                       -   Sets the coin to be transfered upon +'ing.
 //
 // Author:
 //   Project Bitmark
