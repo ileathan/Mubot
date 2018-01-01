@@ -9,6 +9,7 @@
 const l = {};
 const _eval = require('eval');
 const {inspect} = require('util');
+const http = require('request');
 //const inspect = require('object-inspect');
 
 module.exports = bot => {
@@ -16,7 +17,7 @@ module.exports = bot => {
   bot.brain.on('loaded', () => {
     l.evals = bot.brain.data.evals || (bot.brain.data.evals = {})
     l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
-    l.always = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
+    l.alwaysEvals = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
 
     // Export
     Object.assign(bot.mubot, l);
@@ -24,13 +25,13 @@ module.exports = bot => {
   // Capture all commands.
   bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), l.utils.processMessage)
   bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, res => {
-    l.always[res.message.user.id] ||
+    l.config.alwaysEvals[res.message.user.id] ||
       l.realEval(res)
     ;
   });
   bot.hear(/(?:[^!]|)(?:`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```)/i, res => {
     res.match[1] = res.match[1] || res.match[2];
-    l.always[res.message.user.id] &&
+    l.config.alwaysEvals[res.message.user.id] &&
       l.realEval(res)
     ;
   });
@@ -40,7 +41,10 @@ module.exports = bot => {
 l.allowedUsers = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
 l.evals = {};
 l.saved = {};
-l.alwaysUsers = {};
+l.config = {};
+l.config.alwaysEvals = {};
+l.config.maxCmdLen = 17;
+l.config.maxMsgLen = 1917;
 // Utils
 l.utils = {};
 
@@ -57,14 +61,13 @@ l.realEval = res => {
       id = res.message.user.id,
       afterCmd = res.match.input.split('`').pop() || "",
       // Remove sensitive data from bot.
-      bot = l.utils.preventHacks(res.bot),
+      bot = l.utils.preventHacks(res),
       opts = [], o = ""
   ;
   // Set command options.
   if(l.allowedUsers.includes(id)) {
-     opts = [{bot, res}, true]
+     opts = [{bot, res, http}, true]
   } else {
-     let http = require('request');
      opts = [{http, request: http, req: http}, false]
   }
   // Sanitize the command. 
@@ -76,36 +79,9 @@ l.realEval = res => {
   o = _eval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
 
   // Reuse opts variable for the formating options.
-  opts = {};
-  if(afterCmd[0] === '{') {
-    try {
-      Object.assign(opts, JSON.parse(afterCmd));
-    } catch(e) {
-      return res.send("Error parsing JSON.");
-    }
-  } else {
-    [depth = 0, maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
-    opts = { depth, maxArrayLength };
-  }
-
-  // Allow 83 chars for res/oLen display.
-  let oLen = 0;
-  try {
-    if(inspect(o) === '[Function]') {
-      oLen = (o + "").length;
-      if(o > maxMessageLength) {
-        oLen = 'Msg trimmed > 2000 ' + oLen + ''
-      }
-    } else {
-      o || (o = 'void 0');
-      o = inspect(o, opts);
-    }
-  } catch(e) {
-    o = inspect(e);
-  }
-
-  o = o.slice(0, maxMessageLength);
-  o && res.send(res.bot.mubot.inspect(o));
+debugger;
+  o.slice && o.slice(0, l.config.maxMsgLen);
+  o && res.send(res.bot.mubot.inspect(o, opts));
 
   l.utils.addToLog(cmd, o, id)
   res.bot.brain.save();
@@ -117,13 +93,13 @@ l.utils.processMessage = (res, dontRun) => {
   let cmd = res.match ? res.match[1] : res;
   let match = void 0, fn = "";
   if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
-    if(l.alwaysUsers[res.message.user.id]) {
+    if(l.config.alwaysEvals[res.message.user.id]) {
       return;
     }
     fn = 'realEval';
   }
   else if(match = cmd.match(/^`((?:\\.|[^`])+)`/i)) {
-    if(l.alwaysUsers[res.message.user.id]) {
+    if(l.config.alwaysEvals[res.message.user.id]) {
       return;
     }
     fn = 'realEval';
@@ -327,7 +303,7 @@ l.saveCmd = res => {
 }
 ;
 l.utils.formatCmd = cmd => {
-  return cmd ? '`' + cmd + (cmd.length > l.utils.maxCmdLen ? '..' : '') + '`' : null;
+  return cmd ? '`' + cmd + (cmd.length > l.config.maxCmdLen ? '..' : '') + '`' : null;
 }
 ;
 l.utils.isModeSave = str => {
@@ -376,19 +352,19 @@ l.setAlways = res => {
       id = res.message.user.id
   ;
   isAlways ?
-    l.always[id] ?
+    l.config.alwaysEvals[id] ?
       res.send("Eval mode already set to always.")
     :
       (()=>{
-        l.always[id] = 1;
+        l.config.alwaysEvals[id] = 1;
         res.bot.brain.save();
         res.send("Eval mode set to always.");
       })()
     //
   :
-    l.always[id] ?
+    l.config.alwaysEvals[id] ?
       (()=>{
-        delete l.always[id];
+        delete l.config.alwaysEvals[id];
         res.send("Eval mode set to trigger only.");
         res.bot.brain.save();
       })()

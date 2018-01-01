@@ -10,7 +10,7 @@
 // Author:
 //   leathan
 //
-module.exports = bot =>
+module.exports = bot => {
 // Configure inspector.
   bot.respond(/(?:set )?(?:nest level|level|nest|depth)(?: me)?(?: (.+))?/i, res => {
     l.setDepth(res.match[1] || 0);
