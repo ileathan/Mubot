@@ -9,7 +9,6 @@
 //
 (function(){
   module.exports = bot => {
-    bot.respond(/ping(?: me)?/i, res => res.send(bot.client.pings[0] + 'ms.'));
     bot.respond(/check(?: me)? (.*)/i, res => res.send(scanMe(bot, r.match[1])))
   };
   function scanMe(bot, string) {

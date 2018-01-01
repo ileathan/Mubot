@@ -11,19 +11,24 @@
 //   leathan
 //
 ;(function(){
+// Default config
+let maxArrayLength = 1,
+    maxMessageLength = 1917,
+    depth = 0;
+;
 module.exports = bot => {
 // Configure inspector.
-  bot.respond(/(?:set )?(?:nest level|level|nest|depth)(?: me)?(?: (.+))?/i, res => {
-    l.setDepth(res.match[1] || 0);
-    res.send("Inspects nesting level set to " + l.depth + ".");
+ bot.respond(/(?:set )?(?:nest level|level|nest|depth)(?: me)?(?: (.+))?/i, res => {
+    l.depth = res.match[1]|0;
+    res.send("Inspects nesting level set to " + depth + ".");
   });
-  bot.respond(/(?:set )?(?:arr(?:ay)?)?(?: length)?(?: (.+))?/i, res => {
-    l.maxArrayLength(res.match[1] || 1);
-    res.send("Inspects array maxArrayLength set to " + l.maxArrayLength + ".")
+  bot.respond(/(?:set )?(?:arr(?:ay)?)(?: length)?(?: (.+))?/i, res => {
+    l.maxArrayLength = res.match[1]|0;
+    res.send("Inspects array maxArrayLength set to " + maxArrayLength + ".")
   });
   bot.respond(/(?:set )?(?:message length|message|max)(?: (.+))?/i, res => {
-    l.setMaxMessageLength(res.match[1] || 1917);
-    res.send("Inspects max length set to " + l.maxArrayLength + ".");
+    l.maxMessageLength = res.match[1]|0;
+    res.send("Inspects max length set to " + maxArrayLength + ".");
   });
   // Export
   Object.assign(bot.mubot, {inspect: l});
@@ -36,15 +41,14 @@ const l = {}
 l.run = (o = null, opts) => {
   // Reuse opts variable for the formating options.
   opts || (opts = {
-    depth: l.depth || 0,
-    maxArrayLength: l.maxArrayLength || 1
+    depth, maxArrayLength
   });
   // Allow 83 chars for res/oLen display.
   let oLen = 0;
   try {
     if(inspect(o) === '[Function]') {
       oLen = (o + "").length;
-      if(o > l.maxMessageLength) {
+      if(o > maxMessageLength) {
         oLen = 'Msg trimmed > 2000 ' + oLen + ''
       }
     } else {
@@ -54,12 +58,17 @@ l.run = (o = null, opts) => {
   } catch(e) {
     o = inspect(e);
   }
-  o = o.slice(0, l.maxMessageLength || 1917);
+  o = o.slice(0, maxMessageLength);
   return o ? '# Output [' + (oLen || o.length) + '] ```' + o + '```' : null;
 }
 ;
-l.setMaxMessageLength = _ => l.maxMessageLength = _ | 0;
-l.setMaxArrayLength = _ => l.maxArrayLength = _ | 0;
-l.setDepth = _ => l.depth = _ | 0;
+
+Object.defineProperty(l, 'maxMessageLength', {set(n){maxMessageLength = n}})
+;
+Object.defineProperty(l, 'maxArrayLength', {set(n){maxArrayLength = n}})
+;
+Object.defineProperty(l, 'depth', {set(n){depth = n}})
+;
+
 
 }).call(this);
