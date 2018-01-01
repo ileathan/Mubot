@@ -16,5 +16,5 @@ l.commandCount = res =>
   res.send("I am aware of " + res.bot.commands.length + " commands.")
 ;
 l.ping = res =>
-  res.send(res.bot.client.pings[0] + 'ms.'));
+  res.send(res.bot.client.pings[0] + 'ms.');
 ;
