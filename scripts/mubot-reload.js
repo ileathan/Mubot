@@ -11,12 +11,16 @@
   const Fs = require('fs'),
         Path = require('path')
   ;
-  let defaultMode = "all"
+  let reloadMode = "all"
   ;
   module.exports = bot => {
     bot.respond(/reload(?: (.+))?$/i, l.reload)
-    bot.respond(/(?:set )?(?:reload|reload mode|load|load mode)(?: me)?(?: (.+))?/i, res => {
-      l.reloadMode = res.match[1];
+    bot.respond(/set (?:reload|load)(?: mode)?(?: me)?(?: (.+))?/i, res => {
+      let mode = res.match[1]
+      if(!mode) {
+        return res.send("Please specific a mode to set, possible modes are `all|src|scripts|external|<filepath>`.");
+      }
+      l.reloadMode = mode;
       res.send("Reload code set to " + reloadMode + ".");
     });
     Object.assign(bot.mubot, {reload: l})
@@ -24,7 +28,7 @@
   ;
   const l = {}
   ;
-  Object.defineProperty(l, 'defaultMode', {set(n){defaultMode = n}})
+  Object.defineProperty(l, 'reloadMode', {set(n){reloadMode = n}})
   ;
   l.reload = res => {
     let bot = res.bot,
