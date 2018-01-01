@@ -17,10 +17,10 @@ module.exports = bot => {
   bot.brain.on('loaded', () => {
     l.evals = bot.brain.data.evals || (bot.brain.data.evals = {})
     l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {})
-    l.alwaysEvals = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
+    l.config.alwaysEvals = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {})
 
     // Export
-    Object.assign(bot.mubot, l);
+    Object.assign(bot.mubot, {eval: l});
   });
   // Capture all commands.
   bot.hear(RegExp('^(?:[!]|(?:[@]?' + (bot.name || bot.alias) + '\s*[:,]?\s*[!]))(.+)', 'i'), l.utils.processMessage)
@@ -79,11 +79,22 @@ l.realEval = res => {
   o = _eval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
 
   // Reuse opts variable for the formating options.
-debugger;
+  opts = {};
+  if(afterCmd[0] === '{') {
+    try {
+      Object.assign(opts, JSON.parse(afterCmd));
+    } catch(e) {
+      return res.send("Error parsing JSON.");
+    }
+  } else {
+    let [depth = 0, maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
+    opts = { depth, maxArrayLength };
+  }
   o.slice && o.slice(0, l.config.maxMsgLen);
-  o && res.send(res.bot.mubot.inspect(o, opts));
+  o && res.send(res.bot.mubot.inspect.run(o, opts));
 
   l.utils.addToLog(cmd, o, id)
+
   res.bot.brain.save();
 }
 ;

@@ -10,6 +10,7 @@
 // Author:
 //   leathan
 //
+;(function(){
 module.exports = bot => {
 // Configure inspector.
   bot.respond(/(?:set )?(?:nest level|level|nest|depth)(?: me)?(?: (.+))?/i, res => {
@@ -30,12 +31,14 @@ module.exports = bot => {
 ;
 const {inspect} = require('util')
 ;
-const l = o => {
+const l = {}
+;
+l.run = (o = null, opts) => {
   // Reuse opts variable for the formating options.
-  let opts = {
+  opts || (opts = {
     depth: l.depth || 0,
     maxArrayLength: l.maxArrayLength || 1
-  };
+  });
   // Allow 83 chars for res/oLen display.
   let oLen = 0;
   try {
@@ -53,8 +56,10 @@ const l = o => {
   }
   o = o.slice(0, l.maxMessageLength || 1917);
   return o ? '# Output [' + oLen + '] ```' + o + '```' : null;
-
 }
+;
 l.setMaxMessageLength = _ => l.maxMessageLength = _ | 0;
 l.setMaxArrayLength = _ => l.maxArrayLength = _ | 0;
 l.setDepth = _ => l.depth = _ | 0;
+
+}).call(this);
