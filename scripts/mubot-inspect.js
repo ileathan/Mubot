@@ -55,7 +55,7 @@ l.run = (o = null, opts) => {
     o = inspect(e);
   }
   o = o.slice(0, l.maxMessageLength || 1917);
-  return o ? '# Output [' + oLen || o.length + '] ```' + o + '```' : null;
+  return o ? '# Output [' + (oLen || o.length) + '] ```' + o + '```' : null;
 }
 ;
 l.setMaxMessageLength = _ => l.maxMessageLength = _ | 0;
