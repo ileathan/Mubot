@@ -11,9 +11,11 @@
   const Fs = require('fs'),
         Path = require('path')
   ;
-  let reloadMode = "all"
+  let bot = null,
+      reloadMode = "all"
   ;
-  module.exports = bot => {
+  module.exports = _bot => {
+    bot = _bot;
     bot.respond(/reload(?: (.+))?$/i, l.reload)
     bot.respond(/set (?:reload|load)(?: mode)?(?: me)?(?: (.+))?/i, res => {
       let mode = res.match[1]
@@ -23,35 +25,35 @@
       l.reloadMode = mode;
       res.send("Reload code set to " + reloadMode + ".");
     });
-    Object.assign(bot.mubot, {reload: l})
+    Object.assign(bot.mubot, l)
   }
   ;
   const l = {}
   ;
-  Object.defineProperty(l, 'reloadMode', {set(n){reloadMode = n}})
-  ;
-  l.reload = res => {
-    let bot = res.bot,
-        mode = res.match[1].split(/[\s\W]*/)
+  const reload = res => {
+    let bot = res.bot || l.bot,
+        mode = res.match[1] ? res.match[1].split(/[\s\W]*/) : [].slice.call(arguments, 1)
     ;
     bot.middleware.listener.stack = [];
     bot.middleware.receive.stack = [];
     bot.middleware.response.stack = [];
-    bot._events = {};
-    bot.brain._events;
-    bot._eventsCount = 0;
     bot.commands = [];
     bot.listeners = [];
+
+    bot._events = {};
+    bot.brain._events = {};
+    //bot.client._events = {};
     bot.events._events = {}
 
-    if(mode && mode.filter(_=>/src|scripts|external|all/i.test(_)).length === 0) {
-      bot.load(Path.resolve(".", res.match[1]));
+    if(mode.includes("all") || !mode.length) {
+       mode = null;
+    }
+    // mode is [filepath]
+    if(mode && !mode.filter(_=>/src|scripts|external|all/i.test(_)).length) {
+      bot.load(Path.resolve(".", mode[0]));
     }
     if(!mode || mode.includes("scripts")) {
       bot.load(Path.resolve(".", "scripts"));
-    }
-    if(mode.includes("all")) {
-       mode = null;
     }
     if(!mode || mode.includes("src")) {
       bot.load(Path.resolve(".", "src", "scripts"));
@@ -67,4 +69,8 @@
     }
     res.send("Reloaded `" + (mode ? mode : "all") + "` code.")
   }
+  Object.defineProperty(l, 'reload', {value: reload, enumerable: true})
+  ;
+  Object.defineProperty(l, 'reloadMode', {set(n){reloadMode = n}, enumerable: true})
+  ;
 }).call(this);

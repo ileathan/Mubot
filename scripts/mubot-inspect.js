@@ -63,11 +63,11 @@ l.run = (o = null, opts) => {
 }
 ;
 
-Object.defineProperty(l, 'maxMessageLength', {set(n){maxMessageLength = n}})
+Object.defineProperty(l, 'maxMessageLength', {set(n){maxMessageLength = n}, enumerable: true})
 ;
-Object.defineProperty(l, 'maxArrayLength', {set(n){maxArrayLength = n}})
+Object.defineProperty(l, 'maxArrayLength', {set(n){maxArrayLength = n}, enumerable: true})
 ;
-Object.defineProperty(l, 'depth', {set(n){depth = n}})
+Object.defineProperty(l, 'depth', {set(n){depth = n}, enumerable: true})
 ;
 
 

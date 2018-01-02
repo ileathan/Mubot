@@ -10,6 +10,7 @@
   const eccrypto  = require('eccrypto');
   const crypto    = require('crypto');
 
+  let keys;
   module.exports = bot => {
     bot.brain.on('loaded', () => {
       keys = bot.brain.data.keys || (bot.brain.data.keys = {});

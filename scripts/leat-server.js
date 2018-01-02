@@ -557,7 +557,7 @@
       l.verifyPassword(username, password, username => {
         let user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
         Object.assign(user, l.users[username]);
-        
+
         if(user[id]) {
           delete user[id];
           delete l.verified[username][id]

@@ -57,13 +57,14 @@ l.utils.preventHacks = res => {
 }
 ;
 l.realEval = res => {
-  let cmd = evalCmd = res.match[1],
+  let cmd = res.match[1], evalCmd = cmd,
       id = res.message.user.id,
       afterCmd = res.match.input.split('`').pop() || "",
       // Remove sensitive data from bot.
       bot = l.utils.preventHacks(res),
       opts = [], o = ""
   ;
+
   // Set command options.
   if(l.allowedUsers.includes(id)) {
      opts = [{bot, res, http}, true]
@@ -77,7 +78,6 @@ l.realEval = res => {
   }
   // filename is the second param.
   o = _eval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
-
   // Reuse opts variable for the formating options.
   opts = {};
   if(afterCmd[0] === '{') {
@@ -87,14 +87,14 @@ l.realEval = res => {
       return res.send("Error parsing JSON.");
     }
   } else {
-    let [depth = 0, maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/);
-    opts = { depth, maxArrayLength };
+    [opts.depth, opts.maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/).map(Number);
   }
-  o.slice && o.slice(0, l.config.maxMsgLen);
-  o && res.send(res.bot.mubot.inspect.run(o, opts));
-
-  l.utils.addToLog(cmd, o, id)
-
+  //if(o !== void 0) {
+  //  o.slice && o.slice(0, l.config.maxMsgLen);
+  //}
+  o = res.bot.mubot.inspect.run(o, opts);
+  o && res.send(o);
+  l.utils.addToLog(cmd, o || "void 0", id)
   res.bot.brain.save();
 }
 ;
