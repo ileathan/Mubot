@@ -441,7 +441,7 @@ l.utils.isModeSave = str => {
   /\s*-?(s(aved?)|tag(ged|s)?|recorded)\s*/.test(str);
 }
 ;
-l.utils.addToLog = (res) => {
+l.utils.addToLog = res => {
   let id = res.message.user.id,
       cmd = res.cmd,
       log = l.log[id] || (l.log[id] = {})
@@ -450,7 +450,8 @@ l.utils.addToLog = (res) => {
   if(Number.isInteger(cmd)) {
     cmd = ' ' + cmd
   }
-  log[cmd] ? delete log[cmd] && (log[cmd] = res) : log[cmd] = res;
+  delete log[cmd];
+  log[cmd] = res.o;
   bot.brain.save();
 }
 ;
