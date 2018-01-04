@@ -40,7 +40,7 @@ Object.defineProperty(l, 'exports', {
         l.create(res)
       ;
     });
-    bot.hear(/^[^!].*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
+    bot.hear(/^(?:[^!]|).*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
       res.match[1] = res.match[1] || res.match[2];
       l.config.alwaysEval[res.message.user.id] &&
         l.create(res)
@@ -378,9 +378,8 @@ l.utils.preventHacks = (res = {send: _=>_}) => {
 }
 ;
 l.utils.processMessage = (res = {send: _=>_}, cmd) => {
-debugger;
   // ||"" throughout so we dont undefined vars for props.
-  if(!cmd && !(cmd = ((res.match||"")[1])))
+  if(!(cmd = ((res.match||"")[1])))
     return "No message to process."
   ;
   let id = res.message.user.id,
