@@ -11,64 +11,96 @@
 //   leathan
 //
 ;(function(){
-// Default config
-let maxArrayLength = 1,
-    maxMessageLength = 1917,
-    depth = 0;
-;
-module.exports = bot => {
-// Configure inspector.
- bot.respond(/(?:set )?(?:nest level|level|nest|depth)(?: me)?(?: (.+))?/i, res => {
-    l.depth = res.match[1]|0;
-    res.send("Inspects nesting level set to " + depth + ".");
-  });
-  bot.respond(/(?:set )?(?:arr(?:ay)?)(?: length)?(?: (.+))?/i, res => {
-    l.maxArrayLength = res.match[1]|0;
-    res.send("Inspects array maxArrayLength set to " + maxArrayLength + ".")
-  });
-  bot.respond(/(?:set )?(?:message length|message|max)(?: (.+))?/i, res => {
-    l.maxMessageLength = res.match[1]|0;
-    res.send("Inspects max length set to " + maxArrayLength + ".");
-  });
-  // Export
-  Object.assign(bot.mubot, {inspect: l});
-}
-;
+// Imports
 const {inspect} = require('util')
+;
+const flatten = require('mubot-flatten')
 ;
 const l = {}
 ;
-l.run = (o = null, opts) => {
-  // Reuse opts variable for the formating options.
-  opts || (opts = {
-    depth, maxArrayLength
-  });
+Object.defineProperty(l, 'imports', {
+  enumerable: false,
+  value: {inspect, flatten}
+})
+;
+Object.defineProperty(l, 'exports', {
+  enumerable: false,
+  value: bot => {
+    bot.respond(/(?:set )?inspect(?: ([^{]+))?(?: (.+))?/i, res => {
+      let [, key, prop] = msg.match;
+      l.config[key] ?
+        prop ?
+          (l.config[key] = prop) && res.send(`Set ${key} to ${prop}.`)
+        :
+          res.send(`${key} is ${l.config[key]}.`)
+        //
+      :
+        prop ?
+          (res.o = prop) && l.run(res)
+        :
+          res.send("No value specified.")
+        //
+      ;
+    });
+    // Export
+    Object.assign(bot.mubot, {inspect: l});
+  }
+})
+;
+// Main
+l.run = res => {
+  let maxLen = l.config.maxMessageLength,
+      o = res.send ? res.o : (res = {send: _=>_, o: res}).o,
+      opts = Object.assign(l.config, res.opts)
+  ;
   // Allow 83 chars for res/oLen display.
   let oLen = 0;
   try {
-    if(inspect(o) === '[Function]') {
-      oLen = (o + "").length;
-      if(o > maxMessageLength) {
-        oLen = 'Msg trimmed > 2000 ' + oLen + ''
-      }
-    } else {
-      o || (o = 'void 0');
-      o = inspect(o, opts);
-    }
+    inspect(o) === '[Function]' ?
+      (oLen = (o = o + "").length) &&
+      oLen > maxLen && (
+        oLen = 'Msg (' + oLen + ') trimmed to ' + maxLen
+      )
+    :
+      !Array.isArray(o) ? 
+        o = inspect(opts.flatten ?
+          flatten(o, {
+            maxDepth: opts.depth, safe: !!opts.safe, maxCount: opts.maxCount
+          })
+        : o, opts)
+      :
+        opts.excludes ? (()=>{
+          if(typeof o === "object") {
+            excludeArr = Array.isArray(opts.excludes) ? opts.excludes : Object.keys(opts.excludes);
+            for(let key of excludeArr) {
+              delete o[key];
+            }
+          }
+        })() : o = inspect(o, opts)
+      //
+    ;
   } catch(e) {
     o = inspect(e);
   }
-  o = o.slice(0, maxMessageLength);
-  return o ? '# Output [' + (oLen || o.length) + '] ```' + o + '```' : null;
+  o !== "null" && res.send(
+    '# Output ['+(oLen||o.length)+'] ```'+o.slice(0, maxLen)+'```'
+  );
 }
 ;
-
-Object.defineProperty(l, 'maxMessageLength', {set(n){maxMessageLength = n}, enumerable: true})
+// Default config
+l.config = {};
+l.config.maxArrayLength = 3,
+l.config.maxMessageLength = 1917,
+l.config.depth = 0,
+l.config.showHidden = false,
+l.config.customInspect = false,
+l.config.showProxy = true
+l.config.flatten = false;
+l.config.maxCount = 17;
+l.config.excludes = null; // Array of keys to exclude.
 ;
-Object.defineProperty(l, 'maxArrayLength', {set(n){maxArrayLength = n}, enumerable: true})
-;
-Object.defineProperty(l, 'depth', {set(n){depth = n}, enumerable: true})
+module.exports = l.exports
 ;
 
-
+// End file.
 }).call(this);

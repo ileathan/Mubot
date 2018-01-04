@@ -11,7 +11,7 @@
   // Export.
   module.exports = bot => {
     // Import.
-    Object.assign(l, bot.leat)
+    Object.assign(bot.leat, l)
     // Load.
     l.load(bot)
     ;
@@ -25,25 +25,24 @@
   ;
   l.intervals = {}
   ;
-  l.debug = msg => console.log(msg);
-  ;
   l.debug.mode = process.env.DEBUG
   ;
   // first seed_refs users are except for life from ref fees.
   l.seed_refs = 77;
   // Store imports/requires here, dont export these.
-  l.includes = {};
-  l.includes.qrcode = require('qrcode');
-  l.includes.tfa = require('speakeasy');
-  l.includes.md5 = require('md5');
-  l.includes.request = require('request');
-  l.includes.exec = require('child_process').exec;
-  l.includes.mongoose = require('mongoose');
-  l.includes.path = require('path');
-  l.includes.crypto = require('crypto');
-  l.includes.argonp = require('argon2-ffi').argon2i;
-  l.includes.argond = require('argon2-ffi').argon2d;
-  l.includes.c = require('encode-x')();
+  l.imports = {};
+  l.imports.qrcode = require('qrcode');
+  l.imports.tfa = require('speakeasy');
+  l.imports.md5 = require('md5');
+  l.imports.request = require('request');
+  l.imports.exec = require('child_process').exec;
+  l.imports.mongoose = require('mongoose');
+  l.imports.path = require('path');
+  l.imports.crypto = require('crypto');
+  l.imports.argonp = require('argon2-ffi').argon2i;
+  l.imports.argond = require('argon2-ffi').argon2d;
+  l.imports.c = require('encode-x')();
+  l.imports.TextMessage = require('../node_modules/mubot/src/message.js');
   // secure info, dont export these.
   l.secure = {};
   l.secure.encryption_key = process.env.ENCRYPTION_KEY.slice(0, 32);
@@ -70,7 +69,7 @@
     timeCost: 77
   }
   ;
-  l.salt = () => l.includes.crypto.randomBytes(77)
+  l.salt = () => l.imports.crypto.randomBytes(77)
   ;
   /*
   * Begin mongoose schematic configuration.
@@ -79,22 +78,22 @@
   ;
   l.db.endpoint = 'mongodb://localhost/gambler-api'
   ;
-  l.includes.mongoose.Promise = global.Promise
+  l.imports.mongoose.Promise = global.Promise
   ;
-  l.db.conn = l.includes.mongoose.createConnection(l.db.endpoint)
+  l.db.conn = l.imports.mongoose.createConnection(l.db.endpoint)
   ;
   l.db.schema = {}
   ;
-  l.db.schema.DeletedContentSchema = new l.includes.mongoose.Schema({
+  l.db.schema.DeletedContentSchema = new l.imports.mongoose.Schema({
     id: String,
   });
-  l.db.schema.BlockChainSchema = new l.includes.mongoose.Schema({
+  l.db.schema.BlockChainSchema = new l.imports.mongoose.Schema({
     share: String,
     salt: String,
     previousBlockHash: String,
     hash: String,
   });
-  l.db.schema.PokerGamesSchema = new l.includes.mongoose.Schema({
+  l.db.schema.PokerGamesSchema = new l.imports.mongoose.Schema({
     status: Number,
     players: Object,
     config: Object,
@@ -102,7 +101,7 @@
     // In the chain of shares that seaded game sequences.
     share: String,
   })
-  l.db.schema.SharesFoundSchema = new l.includes.mongoose.Schema({
+  l.db.schema.SharesFoundSchema = new l.imports.mongoose.Schema({
     workerId: String,
     result: String,
     username: String,
@@ -110,18 +109,18 @@
     nonce: String,
     "date": { type: Date, default: Date.now() }
   });
-  l.db.schema.TransactionsSchema = new l.includes.mongoose.Schema({
+  l.db.schema.TransactionsSchema = new l.imports.mongoose.Schema({
     from: String,
     to: String,
     amount: Number,
     type: String,
     "date": { type: Date, default: Date.now() }
   });
-  l.db.schema.ChatMessagesSchema = new l.includes.mongoose.Schema({
+  l.db.schema.ChatMessagesSchema = new l.imports.mongoose.Schema({
     username: String,
     message: String,
   });
-  l.db.schema.UsersSchema = new l.includes.mongoose.Schema({
+  l.db.schema.UsersSchema = new l.imports.mongoose.Schema({
     username: String,
     loginCookies: Array,
     password: String,
@@ -254,7 +253,7 @@
         hashLength: 77
       }
       ;
-      const salt = l.includes.crypto.randomBytes(77)
+      const salt = l.imports.crypto.randomBytes(77)
       ;
       argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
 
@@ -359,7 +358,7 @@
 
   PokerGame.prototype.deal = function(block) {
 
-    this.deck = l.includes.md5(this.getLuckyStrings() + block.hash);
+    this.deck = l.imports.md5(this.getLuckyStrings() + block.hash);
 
     for(let i = 0, len = this.players.length; i < len; ++i) {
     }
@@ -441,9 +440,9 @@
     if(text === null)
       return;
     // For AES, this is always 16.
-    var salt = l.includes.crypto.randomBytes(16);
+    var salt = l.imports.crypto.randomBytes(16);
     // Open AES encryption stream.
-    var cipher = l.includes.crypto.createCipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
+    var cipher = l.imports.crypto.createCipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
     var encrypted = cipher.update(text);
     // Close the stream and update encrypted.
     encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -454,7 +453,7 @@
     try {
       var salt = Buffer.from(text.substring(0, 32), 'hex');
       var encrypted = Buffer.from(text.substring(32), 'hex');
-      var decipher = l.includes.crypto.createDecipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
+      var decipher = l.imports.crypto.createDecipheriv('aes-256-cbc', Buffer.from(l.secure.encryption_key), salt);
       var decrypted = decipher.update(encrypted);
       // Close the stream and updated decrepted.
       decrypted = Buffer.concat([decrypted, decipher.final()]);
@@ -466,10 +465,10 @@
   }
   // Our very own home baked encoders.
   l.encode = data => {
-    return l.includes.c.from16To64(data).toString()
+    return l.imports.c.from16To64(data).toString()
   }
   l.decode = data => {
-    return l.includes.c.from64To16(data).toString()
+    return l.imports.c.from64To16(data).toString()
   }
   // Static salts
   l.ssalt = data => {
@@ -522,7 +521,7 @@
       if(!user)
        return callback(false, "No such user.")
       ;
-      l.includes.argonp.verify(
+      l.imports.argonp.verify(
         l.decrypt(l.decode(user.password)),
         l.ssalt(logindata.password),
         l.ARGON_PCONF
@@ -575,7 +574,7 @@
     l.bot = bot;
     l.io = bot.io.of('/0');
     bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res) =>
-       res.sendFile(l.includes.path.join(__dirname + l.path + 'm.html'))
+       res.sendFile(l.imports.path.join(__dirname + l.path + 'm.html'))
     )
     ;
     bot.router.get(l.legacy_endpoints.concat(['/', '/:number', '/:number/']), (req, res, next) => {
@@ -594,7 +593,7 @@
       if(!req.cookies.loginCookie && !req.cookies.ref)
         res.cookie('ref', ref)
       ;
-      res.sendFile(l.includes.path.join(__dirname + l.path + 'leat.html'))
+      res.sendFile(l.imports.path.join(__dirname + l.path + 'leat.html'))
     })
     ;
     // #Load logged in users into memory.
@@ -614,9 +613,9 @@
       Object.assign(bot.leat, l); // export
       bot.emit("leat.io loaded", bot);
     });
-    l.includes.proxy = require('leat-stratum-proxy');
+    l.imports.proxy = require('leat-stratum-proxy');
     const fs = require('fs')
-    l.proxy = new l.includes.proxy({
+    l.proxy = new l.imports.proxy({
       server: bot.server,
       host: 'pool.supportxmr.com',
        port: 3333,
@@ -691,15 +690,24 @@
           if(!message.trim())
             return
           ;
+
+          /*TextListener = Object.assign(Object.create(l.bot.listeners[0]), l.bot.listeners[0]);
+          TextListerne
+          function leatAdatper() {
+            this.send = res => {
+              l.emitToUserSockets(username, "lS.newChatMessage", {
+                username: l.hostname,
+                message: 'Processing... ',
+                date
+              });
+            };
+          }
+
           if(name && message[0] === '/') {
-            l.emitToUserSockets(username, "lS.newChatMessage", {
-              username: l.hostname,
-              message: 'Processing... ',
-              date
-            })
+            
             l.runCommand(name, message.slice(1), bot);
             return;
-          }
+          }*/
           name || (name = l.toGuest(socket));
           l.io.emit("lS.newChatMessage", {username: name, message, date})
           l.db.ChatMessages.create({username: name, message}, _=>0)
@@ -736,19 +744,19 @@
         ;
         socket.on("l.enable2fa", (_, callback) => {
           //l.debug("Got request to enable tfa by " + username);
-          var tfa = l.usernameTo2fa[username] = l.includes.tfa.generateSecret({
+          var tfa = l.usernameTo2fa[username] = l.imports.tfa.generateSecret({
             name: l.hostname + '/' + l.users[username].id + '/ :' + username,
             length: 37
           });
           //var token = TFA.totp({secret: tfa.base32, encoding: 'base32' });
-          l.includes.qrcode.toDataURL(tfa.otpauth_url,  (err, tfa_url) => callback(tfa_url))
+          l.imports.qrcode.toDataURL(tfa.otpauth_url,  (err, tfa_url) => callback(tfa_url))
           ;
         })
         ;
         socket.on("l.verify2fa", (tfa_token, callback) => {
 
           if(l.usernameTo2fa[username]) {
-            l.includes.tfa.totp.verify({
+            l.imports.tfa.totp.verify({
               secret: l.usernameTo2fa[username].base32,
               encoding: 'base32',
               token: tfa_token
@@ -758,7 +766,7 @@
             ;
           } else {
             l.getUser2fa(username, tfa => callback(
-              l.includes.tfa.totp.verify({
+              l.imports.tfa.totp.verify({
                 secret: tfa,
                 encoding: 'base32',
                 token: tfa_token
@@ -828,7 +836,7 @@
           if(!user)
             return callback(false, "No such user.")
           ;
-          l.includes.argonp.verify(
+          l.imports.argonp.verify(
             l.decrypt(l.decode(user.password)),
             l.ssalt(logindata.password),
             l.ARGONP_CONF
@@ -840,7 +848,7 @@
             ;
             // Create new login cookie.
             ;
-            let cookie = l.encode(l.includes.crypto.randomBytes(37).toString('hex'))
+            let cookie = l.encode(l.imports.crypto.randomBytes(37).toString('hex'))
             ;
             l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
               if(!user) {
@@ -883,15 +891,15 @@
             callback({ error: 'Username already exists.' })
           ;
           else
-            l.includes.argonp.hash(l.ssalt(acnt.password), l.salt(), l.ARGON_PCONF).then(pass_hash => {
+            l.imports.argonp.hash(l.ssalt(acnt.password), l.salt(), l.ARGON_PCONF).then(pass_hash => {
 
               acnt.password = l.encode(l.encrypt(pass_hash))
               ;
               let cookie = l.encode(
-                l.includes.crypto.randomBytes(37).toString('hex')
+                l.imports.crypto.randomBytes(37).toString('hex')
               )
               ;
-              l.includes.exec('echo monerod getnewaddress', (error, stdout) => {
+              l.imports.exec('echo monerod getnewaddress', (error, stdout) => {
 
                 acnt.id = l.getNewId();
                 ;
@@ -954,7 +962,7 @@
   }
   ;
   l.setUserPass = (user, pass, callback) => {
-    l.includes.argonp.hash(l.ssalt(pass), l.salt(), l.ARGON_PCONF).then(pass_hash => {
+    l.imports.argonp.hash(l.ssalt(pass), l.salt(), l.ARGON_PCONF).then(pass_hash => {
       l.db.Users.findOneAndUpdate({
         username: new RegExp('^' + user + '$','i')
       }, {
@@ -1020,7 +1028,7 @@
   }
   ;
   l.toGuest = socket =>
-    "#" + l.includes.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
+    "#" + l.imports.md5(l.secure.secret + socket.handshake.address).slice(0, 8)
   ;
   l.updateBalance = (username, type = 'shares', amount = 1, callback = _=>0) => {
     l.db.Users.findOneAndUpdate({username}, {$inc: {type: amount}}, {upsert: true}, callback)
@@ -1243,6 +1251,8 @@
     cb(false)
     ;
   }
+  l.info = msg => l.bot.logger.stream.write(`${l.hostname} INFO: ${msg}\n`)
+  l.debug = msg => l.bot.logger.stream.write(`${l.hostname} DEBUG: ${msg}\n`)
   // Debugging
   global.l = l
   ;

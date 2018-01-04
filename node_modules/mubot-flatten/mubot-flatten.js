@@ -42,7 +42,7 @@ function flatten (target, opts) {
   step(target)
 
   if(filter) {
-    outputs = Object.keys(map).filter(_=>filter.test(_));
+    output = Object.keys(map).filter(_=>filter.test(_));
   }
   if(filter.values) {
     output = Object.values(map).filter(_=>filter.values.test(_));

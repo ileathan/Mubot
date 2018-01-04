@@ -20,7 +20,9 @@
     bot.respond(/set (?:reload|load)(?: mode)?(?: me)?(?: (.+))?/i, res => {
       let mode = res.match[1]
       if(!mode) {
-        return res.send("Please specific a mode to set, possible modes are `all|src|scripts|external|<filepath>`.");
+        return res.send(
+          "Please specific a mode to set, possible modes are `all|src|scripts|external|<filepath>`."
+        );
       }
       l.reloadMode = mode;
       res.send("Reload code set to " + reloadMode + ".");
@@ -30,7 +32,9 @@
   ;
   const l = {}
   ;
-  const reload = res => {
+  const Reload = res => {
+    // Hack on res in case we dont want a reply.
+    res || (res = {send: _=>0, match:[]});
     let bot = res.bot || l.bot,
         mode = res.match[1] ? res.match[1].split(/[\s\W]*/) : [].slice.call(arguments, 1)
     ;
@@ -39,8 +43,9 @@
     bot.middleware.response.stack = [];
     bot.commands = [];
     bot.listeners = [];
-
     bot._events = {};
+    bot.leat.io._events = {};
+    bot.bitmark.io._events = {};
     bot.brain._events = {};
     //bot.client._events = {};
     bot.events._events = {}
@@ -69,8 +74,12 @@
     }
     res.send("Reloaded `" + (mode ? mode : "all") + "` code.")
   }
-  Object.defineProperty(l, 'reload', {value: reload, enumerable: true})
+  Object.defineProperty(l, 'reload', {value: Reload, enumerable: true})
   ;
-  Object.defineProperty(l, 'reloadMode', {set(n){reloadMode = n}, enumerable: true})
+  Object.defineProperty(l.reload, 'SRC_MODE', {
+    set(n){ reloadMode = n },
+    get(){ return reloadMode },
+    enumerable: true
+  })
   ;
 }).call(this);
