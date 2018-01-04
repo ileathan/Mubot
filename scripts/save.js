@@ -11,16 +11,14 @@
   const circularJSON = require('circular-json');
   const fs = require('fs'), Path = require('path');
   const path = Path.join(__dirname, '/../brain.json');
-  const write = data =>{debugger;
-global.data = data;
-    fs.writeFile(
-      path,
-      JSON.stringify(
-        data,
-        (key, value)=> key === "parent" ? value.id : value
-      ), 'utf-8', _=>0
-    )
-  ;}
+  const write = data => {
+    try {
+      fs.writeFile(path, circularJSON.parse(data), 'utf-8', _=>0)
+    } catch(e) {
+      //debugger;
+    }
+    ;
+  }
   module.exports = bot => {
     bot.respond(/save$/i, res => {
       bot.brain.save();

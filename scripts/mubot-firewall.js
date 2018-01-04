@@ -32,18 +32,33 @@ l.config = {
   cache_size: 1000
 }
 ;
+l.seen.persist = () => {
+  bot.brain.data.seen || (bot.brain.data.seen = {});
 
+  for(let seen in l.seen) {
+    if(seen === "last") break;
+    if(seen === "persist") break;
+    if(seen === "load") break;
+    delete l.seen[seen].reqs;
 
+    Object.assign(bot.brain.data.seen, l.seen[seen])
+  }
+  bot.brain.save()
+}
+;
+l.seen.persist = () => {
+  bot.brain.data.seen || (bot.brain.data.seen = {});
+
+  for(let seen in l.bot.brain.data.seen) {
+    Object.assign(l.seen[seen], bot.brain.data.seen)
+  }
+  bot.brain.save()
+}
+;
 Object.defineProperty(l, 'exports', {
   enumerable: false,
   value: _bot => {
     bot = _bot;
-    bot.brain.on('loaded', () => {
-      l.seen = bot.brain.data.seen || (bot.brain.data.seen = {});
-      // Export
-      Object.assign(bot.mubot, {firewall: l});
-    })
-    ;
     l.start();
     l.router.start();
     
@@ -90,10 +105,9 @@ l.configure = (res = {send: _=>_}) => {
         } catch(e) {
           try {
             // Attempt to fix the json.
-            let invalid = prop;
-            let maybeValid = invalid.replace(/(['"])?([a-z0-9A-Z_]+)(['"])?\s*:/g, '"$2": ');
-            let json = JSON.parse(maybeValid);
-            Object.assign(obj, maybeValid);
+            let rjson = require('relaxed-json');
+            prop = rjson.parse(prop);
+            Object.assign(obj, prop);
           } catch(e) {
             res.send("Error parsing JSON.")
           }

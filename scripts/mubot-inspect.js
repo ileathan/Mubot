@@ -14,13 +14,15 @@
 // Imports
 const {inspect} = require('util')
 ;
+const rjson = require('relaxed-json')
+;
 const flatten = require('mubot-flatten')
 ;
 const l = {}
 ;
 Object.defineProperty(l, 'imports', {
   enumerable: false,
-  value: {inspect, flatten}
+  value: {inspect, flatten, rjson}
 })
 ;
 Object.defineProperty(l, 'exports', {
@@ -36,7 +38,7 @@ Object.defineProperty(l, 'exports', {
         //
       :
         prop ?
-          (res.o = prop) && l.run(res)
+          (res.o = rjson.parse(prop)) && l.run(res)
         :
           res.send("No value specified.")
         //
@@ -48,13 +50,14 @@ Object.defineProperty(l, 'exports', {
 })
 ;
 // Main
-l.run = res => {
+l.run = (res = {send: _=>_, o: res}) => {
   let maxLen = l.config.maxMessageLength,
-      o = res.send ? res.o : (res = {send: _=>_, o: res}).o,
-      opts = Object.assign(l.config, res.opts)
+      opts = Object.assign({}, l.config, res.opts),
+      o = res.o, oLen = 0
   ;
-  // Allow 83 chars for res/oLen display.
-  let oLen = 0;
+  if(opts.save) {
+    Object.assign(l.config, res.opts);
+  }
   try {
     inspect(o) === '[Function]' ?
       (oLen = (o = o + "").length) &&
@@ -63,18 +66,20 @@ l.run = res => {
       )
     :
       !Array.isArray(o) ? 
-        o = inspect(opts.flatten ?
-          flatten(o, {
-            maxDepth: opts.depth, safe: !!opts.safe, maxCount: opts.maxCount
-          })
-        : o, opts)
+        o = opts.flatten ? 
+          inspect(flatten(o, opts), opts)
+        :
+          inspect(o, opts)
+        //
       :
         opts.excludes ? (()=>{
           if(typeof o === "object") {
-            excludeArr = Array.isArray(opts.excludes) ? opts.excludes : Object.keys(opts.excludes);
+            let excludes = rjson.parse(opts.excludes);
+            excludeArr = Array.isArray(excludes) ? excludes : Object.keys(excludes);
             for(let key of excludeArr) {
               delete o[key];
             }
+            return o
           }
         })() : o = inspect(o, opts)
       //
@@ -90,6 +95,7 @@ l.run = res => {
 // Default config
 l.config = {};
 l.config.maxArrayLength = 3,
+// Assuming the "default spam logic" truncate to <2k chars (83 char padding for info/markdown).
 l.config.maxMessageLength = 1917,
 l.config.depth = 0,
 l.config.showHidden = false,
@@ -97,6 +103,7 @@ l.config.customInspect = false,
 l.config.showProxy = true
 l.config.flatten = false;
 l.config.maxCount = 17;
+l.config.maxDepth = 9;
 l.config.excludes = null; // Array of keys to exclude.
 ;
 module.exports = l.exports

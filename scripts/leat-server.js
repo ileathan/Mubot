@@ -25,8 +25,6 @@
   ;
   l.intervals = {}
   ;
-  l.debug.mode = process.env.DEBUG
-  ;
   // first seed_refs users are except for life from ref fees.
   l.seed_refs = 77;
   // Store imports/requires here, dont export these.
@@ -1250,9 +1248,9 @@
     ;
     cb(false)
     ;
-  }
-  l.info = msg => l.bot.logger.stream.write(`${l.hostname} INFO: ${msg}\n`)
-  l.debug = msg => l.bot.logger.stream.write(`${l.hostname} DEBUG: ${msg}\n`)
+  };
+  l.info = msg => l.bot.logger.stream.write(`${l.hostname} INFO: ${msg}\n`);
+  l.debug = msg => l.bot.logger.stream.write(`${l.hostname} DEBUG: ${msg}\n`);
   // Debugging
   global.l = l
   ;

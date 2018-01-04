@@ -23,6 +23,7 @@ Object.defineProperty(l, 'exports', {
   enumerable: false,
   value: _bot => {
     bot = _bot;
+    l.utils.preventHacks();
     // Load evals and config from brain.
     bot.brain.on('loaded', () => {
       l.config.save();
@@ -34,12 +35,12 @@ Object.defineProperty(l, 'exports', {
       RegExp('^(?:[!]|(?:[@]?'+(bot.name||bot.alias)+'\s*[:,]?\s*[!]))(.+)', 'i'),
       l.utils.processMessage
     );
-    bot.respond(/```[a-z]*\n?((?:.|\n)+)\n?```/i, res => {
+    bot.respond(/```((?:.|\n)+)\n?```/i, res => {
       l.config.alwaysEval[res.message.user.id] ||
         l.create(res)
       ;
     });
-    bot.hear(/(?:[^!]|)(?:`((?:\\.|[^`])+)`|```[a-z]*\n?((?:.|\n)+)\n?```)/i, res => {
+    bot.hear(/^[^!].*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
       res.match[1] = res.match[1] || res.match[2];
       l.config.alwaysEval[res.message.user.id] &&
         l.create(res)
@@ -56,8 +57,7 @@ l.config.sudoers = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR 
 l.config.alwaysEval = {};
 l.config.maxCmdLen = 17;
 l.config.maxMsgLen = 1917;
-l.config.save = res => {
-  res || (res = {send: _=>_});
+l.config.save = (res = {send: _=>_}) => {
   l.log = bot.brain.data.log || (bot.brain.data.log = {});
   l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {});
   l.config.alwaysEval = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {});
@@ -68,15 +68,12 @@ l.config.save = res => {
 l.create = (res = {send: _=>_}) => {
   let cmd = res.match[1], evalCmd = cmd,
       id = res.message.user.id,
-      afterCmd = res.afterCmd || res.match.input.split('`').pop() || "",
+      userOpts = res.match.input.split('`').pop() || "",
       // Remove sensitive data from bot.
-      bot = l.utils.preventHacks(res),
       opts = [], o = ""
   ;
   // Set command options.
-debugger;
   if(l.config.sudoers.includes(id)) {
-debugger;
      opts = [{bot, res, http: bot.http, mubot: bot.mubot, leat: bot.leat, bitmark: bot.bitmark}, true]
   } else {
      opts = [{http: bot.http}, false]
@@ -92,25 +89,24 @@ debugger;
   try {
     o = _eval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
   } catch(e) {
-    o = e;
     e.stack = e.stack.split('\n').slice(0, 7).join('\n');
+    o = e;
   }
   // Reuse opts variable for the formating options.
-  opts = {};
-  if(afterCmd[0] === '{') {
-    try {
-      Object.assign(opts, JSON.parse(afterCmd));
-    } catch(e) {
-      return res.send("Error parsing JSON.");
+  if(userOpts) {
+    try { userOpts = JSON.parse(userOpts) }
+    catch(e) {
+      let rjson = require('relaxed-json');
+      try { userOpts = rjson.parse('{'+userOpts+'}') }
+      catch(e) {
+        try { userOptsrjson.parse(userOpts) }
+        catch(e) { return res.send("Error parsing JSON.") }
+      }
     }
-  } else {
-    [opts.depth, opts.maxArrayLength = 1] = afterCmd.split(/\s*[\D]\s*/).map(Number);
   }
-  Object.assign(res, {o, opts, cmd})
+  Object.assign(res, {o, userOpts, cmd})
   res.bot.mubot.inspect.run(res);
-  l.utils.addToLog(res)
-  
-  res.bot.brain.save();
+  l.utils.addToLog(res);
 }
 ;
 l.list = (res = {send: _=>_}) => {
@@ -136,13 +132,15 @@ l.list = (res = {send: _=>_}) => {
 }
 ;
 l.deleteAll = (res = {send: _=>_}) => {
+
   let id = res.message.user.id,
-      mode = res.match[1],
+      mode = res.match[1] || "all",
       [saved = {}, log = {}] = [l.saved[id], l.log[id]]
   ;
   if(mode === 'all') {
-    let amntDelS = Object.keys(saved).length;
-    let amntDelL = Object.keys(log).length;
+    let amntDelS = Object.keys(saved).length,
+        amntDelL = Object.keys(log).length
+    ;
     for(let key in log)
        delete log[key]
     ;
@@ -153,10 +151,10 @@ l.deleteAll = (res = {send: _=>_}) => {
       `Deleted ${amntDelL} logged evals and ${amntDelS} saved evals.`
     );
   }
-  let obj = l.utils.isModeSave(mode) ? saved : log;
-  let delAmnt = Object.keys(obj).length;
-  for(let key in obj)
-    delete obj[key]
+  let evals = l.utils.isModeSave(mode) ? saved : log;
+  let delAmnt = Object.keys(evals).length;
+  for(let cmd in evals)
+    delete evals[cmd]
   ;
   return res.send(
     `Deleted ${delAmnt} ${mode ? "saved" : "log"} evals.`
@@ -234,18 +232,19 @@ l.delete = (res = {send: _=>_}) => {
 }
 ;
 l.runLast = res => {
+debugger;
   let id = res.message.user.id,
-      [mode, afterCmd] = (res.match[1]||"").split(' ');
+      [mode, userOpts = ""] = (res.match[1]||"").split(' ');
   ;
   mode = l.utils.isModeSave(mode)
   let obj = (mode ? l.saved[id] : l.log[id]) || {},
       last = mode ? Object.values(obj).pop() : Object.keys(obj).pop()
   ;
   if(!last)
-    return res.send("There is no last " + mode + " command.")
+    return res.send(`There is no last ${mode?"saved":"logged"} command.`)
   ;
   res.match[1] = last;
-  res.afterCmd = afterCmd;
+  res.match.index = "`" + userOpts;
   l.create(res);
 }
 ;
@@ -301,9 +300,9 @@ l.view = (res = {send: _=>_}) => {
   ;
   mode = l.utils.isModeSave(mode);
   let cmds = values ?
-    Object.values(mode ? l.saved[id] : log[id])
+    Object.values((mode ? l.saved[id] : l.log[id]) || {})
   :
-    Object.keys(mode ? saved[id] : log[id])
+    Object.keys((mode ? l.saved[id] : l.log[id]) || {})
   ;
   if(startAt === '!') {
     let remove = startAt.slice(1),
@@ -364,32 +363,29 @@ l.setAlways = (res = {send: _=>_}) => {
 l.utils = {}
 ;
 // Should never need to rely on this, but in. case of mistype.
-l.utils.preventHacks = res => {
-  let safeBot = {};
-  Object.assign(safeBot, res.bot);
-  delete safeBot.leat.secure;
-  delete safeBot.cookieToUsername;
-  delete safeBot.server.ca;
-  delete safeBot.server.cert;
-  delete safeBot.server.key;
-  delete safeBot.server._connectionKey;
-  return safeBot;
+l.utils.preventHacks = (res = {send: _=>_}) => {
+  Object.defineProperties(bot.server, {
+    ca: { enumerable: false },
+    cert: { enumerable: false },
+    key: { enumerable: false },
+    _sharedCreds: { enumerable: false }
+  })
+  Object.defineProperties(bot.leat, {
+    secure: { enumerable: false },
+    cookieToUsername: { enumerable: false }
+  });
+  res.send("Sucess.")
 }
 ;
-l.utils.processMessage = res => {
-  let id = res.message.user.id;
-  if(!res)
+l.utils.processMessage = (res = {send: _=>_}, cmd) => {
+debugger;
+  // ||"" throughout so we dont undefined vars for props.
+  if(!cmd && !(cmd = ((res.match||"")[1])))
     return "No message to process."
   ;
-  let dontRun = res.dontRun;
-  if(!res.send)
-    res.send = {send: _=>_, match: [, res], dontRun };
+  let id = res.message.user.id,
+      dontRun = res.dontRun, fn = ""
   ;
-  let cmd = res.match[1],
-      match = void 0,
-      fn = ""
-  ;
-  // ||"" in case use has no logs/saved so we dont check undefined for [cmd].
   if((l.saved[id]||"")[cmd] || (l.log[id]||"")[cmd]) {
      // --cmd so that !1 runs the 0'th command.
      match = Number.isInteger(cmd) ? --cmd : cmd;
@@ -397,22 +393,20 @@ l.utils.processMessage = res => {
      match = [, match];
      fn = 'run';
   }
-  else if(match = cmd.match(/```[a-z]*\n?((?:.|\n)+)\n?```/i)) {
-    if(l.config.alwaysEval[res.message.user.id]) {
-      return;
-    }
+  else if(match = cmd.match(/```((?:.|\n)+)\n?```/i)) {
+    // We capture always ussers with a different listener regexp.
+    if(l.config.alwaysEval[id]) { return; }
     fn = 'create';
   }
   else if(match = cmd.match(/^`((?:\\.|[^`])+)`/i)) {
-    if(l.config.alwaysEval[res.message.user.id]) {
-      return;
-    }
+    // Likewhie.
+    if(l.config.alwaysEval[id]) { return; }
     fn = 'create';
   }
   //else if(match = cmd.match(/^coins/i)) {
   //  fn = '';
   //}
-  else if(match = cmd.match(/^(?:[!]|last) ?(.*)?/i)) {
+  else if(match = cmd.match(/^(?:[!]|last)(?: (.+))?/i)) {
     fn = 'runLast';
   }
   else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
@@ -421,7 +415,7 @@ l.utils.processMessage = res => {
   else if(match = cmd.match(/^(?:list|view|l|saved|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
     fn = 'view';
   }
-  else if(match = cmd.match(/^(?:clear|del(?:ete)?) all ?(.*)?/i)) {
+  else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {
     fn = 'deleteAll';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: ([\S]+))?(?: -?(i(?:gnore)?))?(.+)?$/i)) {
@@ -451,14 +445,14 @@ l.utils.isModeSave = str => {
 l.utils.addToLog = (res) => {
   let id = res.message.user.id,
       cmd = res.cmd,
-      log = l.log[id]
+      log = l.log[id] || (l.log[id] = {})
   ;
   // We want our object to be ordered, but numbers are automatically first in js obj enumeration.
   if(Number.isInteger(cmd)) {
-    cmd = '_' + cmd
+    cmd = ' ' + cmd
   }
-  log || (log = (log = {}));
   log[cmd] ? delete log[cmd] && (log[cmd] = res) : log[cmd] = res;
+  bot.brain.save();
 }
 ;
 // Export.
