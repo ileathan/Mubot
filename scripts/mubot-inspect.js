@@ -69,7 +69,7 @@ l.run = (res = {send: _=>_, o: res}) => {
         o = opts.flatten ? 
           inspect(flatten(o, opts), opts)
         :
-          inspect(o, opts)
+          typeof o === "string" ? o : inspect(o, opts)
         //
       :
         opts.excludes ? (()=>{

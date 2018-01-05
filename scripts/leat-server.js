@@ -570,7 +570,11 @@
 
   l.load = bot => {
     l.bot = bot;
-    l.io = bot.io.of('/0');
+    try {
+      l.io = bot.io.of('/0');
+    } catch(e) {
+      return;
+    }
     bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res) =>
        res.sendFile(l.imports.path.join(__dirname + l.path + 'm.html'))
     )
@@ -621,14 +625,14 @@
        //cert: fs.readFileSync('/Users/leathan/Mubot/node_modules/mubot-server/credentials/cert.pem')
     })
     l.proxy.listen();
-    //l.debug("Stratum launched")
+    l.debug("Stratum launched");
 
     l.proxy.on('accepted', data => {
       var [addr, user = ""] = data.login.split('.');
       var [user, diff] = user.split('+');
 
       if(addr !== l.address) {
-        console.log("Unique addr miner - " + addr);
+        l.info("Unique addrress detected " + addr + ".");
         return;
       }
       if(user && user.substr(0, 2) === '_#') {
@@ -636,7 +640,11 @@
       } else {
         l.shareFound(user);
       }
-      l.debug(data.login+"("+user+"/"+l.cookieToUsername[data.cookie]+"). Total: "+(data.hashes||0)+" Cookie: "+data.cookie)
+
+      l.info(
+        `${data.id} ${data.login.slice(-25)} (${user}/${l.cookieToUsername[data.cookie]}).`
+        + ` Total: ${data.hashes||0} Cookie: ${data.cookie}`
+      );
     })
     l.proxy.on('found', data => {
       l.db.SharesFound.create({
@@ -678,6 +686,31 @@
             }
           })
           ;
+        })
+        ;
+        socket.on('connect_error', error => {
+          l.debug(`Socket connect error ${error}`)
+        });
+        socket.on('connect_timeout', timeout => {
+          l.debug(`Socket timed out ${timeout}`)
+        });
+        socket.on('error', error => {
+          l.debug(`Socket error ${error}`)
+        });
+        socket.on('reconnect', attemptNumber => {
+          l.debug(`Socket reconnected. ${attemptNumber}`)
+        });
+        socket.on('reconnect_attempt', attemptNumber => {
+          l.debug(`Socket reconnect attempt. ${attemptNumber}`)
+        });
+        socket.on('reconnecting', attemptNumber => {
+          l.debug(`Socket reconnecting. ${attemptNumber}`)
+        });
+        socket.on('reconnect_error', error => {
+          l.debug("Socket reconnect error.")
+        });
+        socket.on('reconnect_failed', ()=> {
+          l.debug("Socket reconnect attempt failure.")
         })
         ;
         socket.on("l.newChatMessage", data => {
@@ -741,7 +774,7 @@
         socket.on("l.logout", l.logout.bind(null, username, socket, cookie))
         ;
         socket.on("l.enable2fa", (_, callback) => {
-          //l.debug("Got request to enable tfa by " + username);
+          l.debug("Got request to enable tfa by " + username);
           var tfa = l.usernameTo2fa[username] = l.imports.tfa.generateSecret({
             name: l.hostname + '/' + l.users[username].id + '/ :' + username,
             length: 37
@@ -814,21 +847,14 @@
       })
       ;
       socket.on("l.checkUsername", (username, callback) => {
-        l.db.Users.findOne({
-          username: RegExp('^' + username + '$','i')
-        }, (err, user) => {
-          if(err)
-            return next(err)
-          ;
-          callback(!user)
-          ;
-        })
+debugger;
+        l.db.Users.findOne({username: RegExp(`^${username}$`,'i')}, (_, u)=>{debugger;return callback(!u)})
         ;
       })
       ;
       socket.on("l.login", (logindata, callback) => {
         l.db.Users.findOne({
-          'username': RegExp('^' + logindata.username + '$','i')
+          'username': RegExp(`^${logindata.username}$`,'i')
         }, (err, user) => {
 
           if(!user)
@@ -1054,7 +1080,7 @@
       } else {
         delete l.cookieToUsername[cookie]
       }
-      //l.debug(user.username + " loggin out. (allSessions: "+allSessions+")")
+      l.debug(user.username + " logging out. (allSessions: "+allSessions+")")
     }
     )
     ;
@@ -1081,15 +1107,12 @@
           delete l.usernameToSockets[user.username];
           delete l.users[user.username]
           ;
-          //l.debug("Automagically logged " + user.username + " out.")
+          l.debug("Automagically logged " + user.username + " out.")
         })
         ;
       }
       l.cached.shares[username] = l.users[username].shares;
-      //l.debug("logging out inactive finished")
     }
-
-
   }, 77777777)
   ;
   /*
@@ -1106,9 +1129,8 @@
     ;
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#") {
-      l.db.Users.findOneAndUpdate({username: l.hostname}, {$inc: {'shares': 1}}, {upsert: true}, () => {
-         //l.debug("Server got +1'd by " + username + ".");
-      });
+      l.db.Users.findOneAndUpdate({username: l.hostname}, {$inc: {'shares': 1}}, {upsert: true}, _=>0);
+      l.info("Server got +1'd by " + username + ".");
       return;
     }
     ++myuser.sharesFound
@@ -1128,30 +1150,18 @@
     if(needs_to_pay) {
       l.db.Users.findOneAndUpdate({
         'id': myuser.ref
-      }, {
-        $inc: {
-          'shares': 1,
-          'refPaymentsReceived': 1
-        }
+      }, { 
+        $inc: { 'shares': 1, 'refPaymentsReceived': 1 }
       }, (err, beingPaid) => {
         if(err || !beingPaid)
           return
         ;
         l.db.Transactions.create({
-          from: username,
-          to: beingPaid.username,
-          type: 'ref',
-          amount: 1
+          from: username, to: beingPaid.username,
+          type: 'ref', amount: 1
         }, _=>0)
         ;
-        l.db.Users.findOneAndUpdate({
-          username: new RegExp('^' + username + '$','i')
-        }, {
-          $inc: {
-            'refPayments': 1,
-            'sharesFound': 1
-          }
-        }, _=>0)
+        l.db.Users.findOneAndUpdate({username}, {$inc: { 'refPayments': 1, 'sharesFound': 1 }}, _=>0)
         ;
         ++myuser.refPayments
         ;
@@ -1184,10 +1194,8 @@
             return
           ;
           l.db.Transactions.create({
-            from: username,
-            to: beingPaid.username,
-            type: 'mined_for',
-            amount: 1
+            from: username, to: beingPaid.username,
+            type: 'mined_for', amount: 1
           }, _=>0)
           ;
           if(l.users[beingPaid.username]) {
@@ -1199,22 +1207,17 @@
             l.emitToUserSockets(beingPaid.username, "lS.minedPayment", username)
           }
           ++myuser.minedPayments
-        }
-        )
-      }
-      )
+        })
+        ;
+      })
+      ;
     } else {
-      l.db.Users.findOneAndUpdate({
-        username: new RegExp('^' + username + '$','i')
-      }, {
-        $inc: {
-          'shares': 1,
-          'sharesFound': 1
-        }
+      l.db.Users.findOneAndUpdate({username}, {
+        $inc: { 'shares': 1, 'sharesFound': 1 }
       }, (err, user) => {
         ++myuser.shares
-      }
-      )
+      })
+      ;
     }
   }
   l.isLoggedIn = (socket, cb) => {
@@ -1249,10 +1252,9 @@
     cb(false)
     ;
   };
+  // Debugging
   l.info = msg => l.bot.logger.stream.write(`${l.hostname} INFO: ${msg}\n`);
   l.debug = msg => l.bot.logger.stream.write(`${l.hostname} DEBUG: ${msg}\n`);
-  // Debugging
-  global.l = l
-  ;
+
   // End of file.
 })();

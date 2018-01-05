@@ -13,57 +13,50 @@ const l = {};
 const myEval = require('eval'); // '_' just to not overwrite this.eval.
 const {inspect} = require('util');
 // Show our imports.
-Object.defineProperty(l, 'imports', {
-  enumerable: false,
-  value: { myEval, inspect }
-})
-;
-// Default config (Change sudoers to YOUR user IDs!!)
-l.config = {
-  _load: (res = {send: _=>_}) => {
-    Object.assign(l, bot.brain.data.eval || (
-      bot.brain.data.eval = {
-        log: {},
-        saved: {},
-        always: {},
-        config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
-      }
-    ));
-    return res.send("Merged eval config to brain.");
-  }
+l.exports = _bot => {
+  bot = _bot;
+  Object.assign(l, bot.brain.data.eval || (
+    bot.brain.data.eval = {
+      log: {},
+      saved: {},
+      always: {},
+      config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
+    }
+  ))
+  ;
+  l.utils.preventHacks();
+  // Load evals and config from brain.
+  bot.brain.on('loaded', () => {
+    l.config._load();
+    // Export to mubot.
+    Object.assign(bot.mubot, {eval: l});
+  });
+  // Capture all markdown formatted code.
+  bot.hear(
+    RegExp('^(?:[!]|(?:[@]?'+(bot.name||bot.alias)+'\s*[:,]?\s*[!]))(.+)', 'i'),
+    l.utils.processMessage
+  );
+  bot.respond(/```((?:.|\n)+)\n?```/i, res => {
+    l.always[res.message.user.id] ||
+      l.create(res)
+    ;
+  });
+  bot.hear(/^(?:[^!]|).*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
+    res.match[1] = res.match[1] || res.match[2];
+    l.always[res.message.user.id] &&
+      l.create(res)
+    ;
+  })
+  ;
 }
 ;
-// Exports.
-Object.defineProperty(l, 'exports', {
-  enumerable: false,
-  value: _bot => {
-    bot = _bot;
-    l.utils.preventHacks();
-    // Load evals and config from brain.
-    bot.brain.on('loaded', () => {
-debugger;
-      l.config._load();
-      // Export to mubot.
-      Object.assign(bot.mubot, {eval: l});
-    });
-    // Capture all markdown formatted code.
-    bot.hear(
-      RegExp('^(?:[!]|(?:[@]?'+(bot.name||bot.alias)+'\s*[:,]?\s*[!]))(.+)', 'i'),
-      l.utils.processMessage
-    );
-    bot.respond(/```((?:.|\n)+)\n?```/i, res => {
-      l.always[res.message.user.id] ||
-        l.create(res)
-      ;
-    });
-    bot.hear(/^(?:[^!]|).*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
-      res.match[1] = res.match[1] || res.match[2];
-      l.always[res.message.user.id] &&
-        l.create(res)
-      ;
-    });
-  }
+l.imports = { eval: myEval, inspect };
+Object.defineProperties(l, {
+  exports: {enumerable: false},
+  imports: {enumerable: false}
 })
+;
+module.exports = l.exports
 ;
 // API
 l.create = (res = {send: _=>_}) => {
@@ -106,7 +99,7 @@ l.create = (res = {send: _=>_}) => {
     }
   }
   Object.assign(res, {o, userOpts, cmd})
-  res.bot.mubot.inspect.run(res);
+  bot.mubot.inspect.run(res);
   l.utils.addToLog(res);
 }
 ;
@@ -383,7 +376,8 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
     return "No message to process."
   ;
   let id = res.message.user.id,
-      dontRun = res.dontRun, fn = ""
+      dontRun = res.dontRun,
+      fn = null, match = null
   ;
   if((l.saved[id]||"")[cmd] || (l.log[id]||"")[cmd]) {
      // --cmd so that !1 runs the 0'th command.

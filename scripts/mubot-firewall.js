@@ -191,8 +191,9 @@ l.utils.createLayer = (opts = {}) => {
 }
 ;
 l.utils.addLayer = (layer, index) => {
-  let insert_at = index != null ? index : l.config.router.insert_at;
-  layers = bot.router._router.stack;
+  let insert_at = index != null ? index : l.config.router.insert_at,
+      layers = bot.router._router.stack
+  ;
   layers.splice(insert_at, 0, layer);
   return index ?
     "Inserted layer at " + index + "."

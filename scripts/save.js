@@ -12,6 +12,7 @@
   const fs = require('fs'), Path = require('path');
   const path = Path.join(__dirname, '/../brain.json');
   const write = data => {
+debugger;
     try {
       fs.writeFile(path, circularJSON.parse(data), 'utf-8', _=>0)
     } catch(e) {
@@ -20,13 +21,13 @@
     ;
   }
   module.exports = bot => {
+    
     bot.respond(/save$/i, res => {
       bot.brain.save();
       res.send("Database saved to disk.")
     })
     bot.brain.setAutoSave && bot.brain.setAutoSave(false);
     //bot.brain.on("connected", ()=> {
-debugger;
       try {
         var data = fs.readFileSync(path, 'utf-8');
         data && bot.brain.mergeData(JSON.parse(data));

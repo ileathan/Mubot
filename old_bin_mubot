@@ -1,0 +1,52 @@
+#!/bin/sh
+adapter=$1
+seconds=$2
+
+if [[ ! $seconds ]]; then seconds=0; fi
+
+sleep $2
+
+otherAdapter=""
+if [[ $adapter == "discord" ]]; then otherAdapter="slack"; fi
+if [[ $adapter == "slack" ]]; then otherAdapter="discord"; fi
+if [[ ! $adapter ]]; then adapter="discord"; otherAdapter="slack"; fi
+
+set -e
+#npm install
+export MUBOT_SLACK_TOKEN="xoxb-3547094061-auQ8rtm6DKDXaTqGWCDaS2hL"
+export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
+export EXPRESS_USER=leathan 
+export EXPRESS_PASSWORD=AxE
+export MUBOT_GITHUB_USER=ileathan
+export MUBOT_GITHUB_TOKEN=b579af97b1895eca4f564fb31cbe5176ad19dbc3
+export MUBOT_LOG_LEVEL=debug
+export MUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAM"
+export MUBOT_MAX_MESSAGE_LENGTH="20000"
+export BIND_ADDRESS="47.202.94.121"
+export WORDNIK_API_KEY=5e767b8c90278abebf00f0df96500abdc5524244f97e3d3a5
+
+debug=$2
+if [[ $debug ]]; then export DEBUG=$debug; fi
+
+export ENCRYPTION_KEY="a0sn9df72m43vuc46dbp1293m80adsp0n7sdi5v123n07DOS5v12i734An08976i65315109n7";
+export SECRET='16x536x3524631542n0sdfp7g97n9e8rsdfmlpp3281230asgd6asd7t13g2ksdbasdv76523csd';
+
+
+# Mubot = require('hubot'); robot = Mubot.loadBot(process.cwd()+'/node_modules/', 'discord', true, 'Mubot', 'Mubot');
+# robot.loadHubotScripts(process.cwd()+'/scripts', fs.readdirSync(process.cwd()+'/scripts/')); 
+# robot.loadExternalScripts(fs.readFileSync(process.cwd()+'/external-scripts.json').toString().slice(5,-4).split("\",\n  \"")); robot.run(); 1
+
+
+if [ "$EUID" -eq 0 ]
+  then echo "rdr pass inet proto tcp from any to any port 443 -> 127.0.0.1 port 4343" | sudo pfctl -ef -
+  echo "rdr pass inet proto tcp from any to any port 80 -> 127.0.0.1 port 8080" | sudo pfctl -ef -
+fi
+
+#echo /Users/leathan/Mubot/node_modules/.bin/hubot.js -a $adapter --name "Mubot" "$@"
+# node --inspect /Users/leathan/Mubot/node_modules/.bin/hubot.js -a $adapter --name "Mubot" "$@"
+path="/Users/leathan/Mubot/"
+#nodemon --watch "$path"scripts --inspect=localhost:9230 /Users/leathan/Mubot/node_modules/.bin/mubot.js -a $otherAdapter --name "Mubot" "$@" &
+#nodemon --watch "$path"scripts --inspect /Users/leathan/Mubot/node_modules/.bin/mubot.js -a $adapter --name "Mubot" "$@"
+
+node --inspect=localhost:9230 /Users/leathan/Mubot/node_modules/.bin/mubot.js -a $otherAdapter --name "Mubot" "$@" &
+node --inspect /Users/leathan/Mubot/node_modules/.bin/mubot.js -a $adapter --name "Mubot" "$@"

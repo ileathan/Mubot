@@ -19,25 +19,7 @@
 //   Project Bitmark
 //
 (function() {
-  module.exports = bot => {
-    let adapter = bot.adapterName;
-    // Emitted by Mubot/scripts/leat-server.js.
-    bot.on("leat.io loaded", l.load);
-    // All adapters.
-    bot.respond(/.*withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
-    bot.respond(/.*\s+balances?(?:\s+(.*))?$/i, l.balance);
-    //
-    if(adapter === 'discord') { void 0;
-      bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>$/i, l.balance);
-      bot.hear(/\+(\d+)\s+<@?!?(\d+)>(?:\s+(.+))?$/i, l.transfer);
-      bot.hear(/\+(\d+)\s+@ (.*)#(\d{4})(?:\s+(.+))?$/i, l.transferDiscordFuzzy);
-    }
-    else {
-      bot.respond(/bal(?:ances?)?\s+@?\s*(\w+)(?: (.+))?$/i, l.balanceByName);
-      bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
-      adapter === 'slack' && bot.react(l.transferSlackReaction);
-    }
-  }
+  const {exec} = require('child_process');
   /************************
   *    _    Mubot   _     *
   *   | |          | |    *
@@ -169,13 +151,13 @@
     res.send(res.message.user.name + msg + " " + recipientName + " " + amount + symbol + '. ( ' + context + ' )')
   }
   ;
-  l.updateBalance = (id, amount) => {
+  l.updateBalance = (id, amount, coin) => {
     let recipientAcnt = l.idToAccount(id);
-    let res = recipientAcnt[coin] || 0;
-    if(res += amount < 0) {
+    let newBalance = recipientAcnt[coin] ? recipientAcnt[coin] + amount : amount
+    if(newBalance < 0) {;
       return false;
     }
-    recipientAcnt[coin] = res;
+    recipientAcnt[coin] = newBalance;
     return true;
   }
   ;
@@ -185,12 +167,37 @@
         userId = res.message.user.id
     ;
     if(l.updateBalance(userId, amount)) {
-      let exec = require('child_process').exec;
       let command = 'bitmarkd sendtoaddress ' + address + ' ' + parseFloat(amount / 1000);
       exec(command, (error, stdout) => res.send(stdout));
     } else {
       res.send("Sorry, you don't have enough marks.");
     }
   }
+  ;
+  l.imports = {exec};
+  Object.defineProperty(l, 'imports', {enumerable: false})
+  l.exports = bot => {
+    let adapter = bot.adapterName;
+    global[adapter+"Bot"] = bot;
+    // Emitted by Mubot/scripts/leat-server.js.
+    bot.on("leat.io loaded", l.load);
+    // All adapters.
+    bot.respond(/.*withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
+    bot.respond(/.*\s+balances?(?:\s+(.*))?$/i, l.balance);
+    //
+    if(adapter === 'discord') {
+      bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>$/i, l.balance);
+      bot.hear(/\+(\d+)\s+<@?!?(\d+)>(?:\s+(.+))?$/i, l.transfer);
+      bot.hear(/\+(\d+)\s+@ (.*)#(\d{4})(?:\s+(.+))?$/i, l.transferDiscordFuzzy);
+    }
+    else {
+      bot.respond(/bal(?:ances?)?\s+@?\s*(\w+)(?: (.+))?$/i, l.balanceByName);
+      bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
+      adapter === 'slack' && bot.react(l.transferSlackReaction);
+    }
+  }
+  Object.defineProperty(l, 'exports', { enumerable: false })
+  ;
+  module.exports = l.exports
   ;
 }).call(this);

@@ -8,13 +8,14 @@
 //   leathan
 //
 ;(function() {
-  const Fs = require('fs'),
-        Path = require('path')
+  const fs = require('fs'),
+        path = require('path'),
+        l = {}
   ;
   let bot = null,
       reloadMode = "all"
   ;
-  module.exports = _bot => {
+  l.exports = _bot => {
     bot = _bot;
     bot.respond(/reload(?: (.+))?$/i, l.reload)
     bot.respond(/set (?:reload|load)(?: modes?)?(?: me)?(?: (.+))?/i, res => {
@@ -29,9 +30,9 @@
     Object.assign(bot.mubot, l)
   }
   ;
-  const l = {}
+  l.imports = {fs, path}
   ;
-  const Reload =  (res = {send: _=>_}) => {
+  const Reload = function(res = {send: _=>_}) {
     let modes = (res.match||"")[1] ? res.match[1].split(' ') : [].slice.call(arguments, 1)
     ;
     try {
@@ -52,17 +53,17 @@
     }
     // modes is [filepath]
     if(modes && !modes.filter(_=>/src|scripts|external|all/i.test(_)).length) {
-      bot.load(Path.resolve(".", modes[0]));
+      bot.load(path.resolve(".", modes[0]));
     }
     if(!modes || modes.includes("scripts")) {
-      bot.load(Path.resolve(".", "scripts"));
+      bot.load(path.resolve(".", "scripts"));
     }
     if(!modes || modes.includes("src")) {
-      bot.load(Path.resolve(".", "src", "scripts"));
+      bot.load(path.resolve(".", "src", "scripts"));
     }
     if(!modes || modes.includes("external")) {
       try {
-        Fs.readFile(Path.resolve(".", "external-scripts.json"), (err, res) => {
+        fs.readFile(path.resolve(".", "external-scripts.json"), (err, res) => {
           bot.loadExternalScripts(JSON.parse(res))
         })
       } catch(e) {
@@ -71,12 +72,23 @@
     }
     res.send("Reloaded `" + (modes ? modes.join(", ") : "all") + "` code.")
   }
-  Object.defineProperty(l, 'reload', {value: Reload, enumerable: true})
-  ;
-  Object.defineProperty(l.reload, 'modes', {
-    set(n){ reloadMode = n },
-    get(){ return reloadMode },
+  //Object.defineProperty(l, 'reload', {value: Reload, enumerable: true})
+  //;
+  Object.defineProperty(l, 'reload', {
+    value: Reload,
     enumerable: true
   })
+  ;
+  Object.defineProperties(l.reload, {
+    imports: {enumerable: false},
+    exports: {enumerable: false},
+    modes: {
+      set(n) {reloadMode = n},
+      get() {return reloadMode},
+      enumerable: true
+    }
+  })
+  ;
+  module.exports = l.exports
   ;
 }).call(this);
