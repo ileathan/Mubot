@@ -10,13 +10,28 @@
 let bot = null;
 const l = {};
 // Imports.
-const _eval = require('eval');
+const myEval = require('eval'); // '_' just to not overwrite this.eval.
 const {inspect} = require('util');
 // Show our imports.
 Object.defineProperty(l, 'imports', {
   enumerable: false,
-  value: { _eval, inspect }
+  value: { myEval, inspect }
 })
+;
+// Default config (Change sudoers to YOUR user IDs!!)
+l.config = {
+  _load: (res = {send: _=>_}) => {
+    Object.assign(l, bot.brain.data.eval || (
+      bot.brain.data.eval = {
+        log: {},
+        saved: {},
+        always: {},
+        config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
+      }
+    ));
+    return res.send("Merged eval config to brain.");
+  }
+}
 ;
 // Exports.
 Object.defineProperty(l, 'exports', {
@@ -26,7 +41,8 @@ Object.defineProperty(l, 'exports', {
     l.utils.preventHacks();
     // Load evals and config from brain.
     bot.brain.on('loaded', () => {
-      l.config.save();
+debugger;
+      l.config._load();
       // Export to mubot.
       Object.assign(bot.mubot, {eval: l});
     });
@@ -36,33 +52,18 @@ Object.defineProperty(l, 'exports', {
       l.utils.processMessage
     );
     bot.respond(/```((?:.|\n)+)\n?```/i, res => {
-      l.config.alwaysEval[res.message.user.id] ||
+      l.always[res.message.user.id] ||
         l.create(res)
       ;
     });
     bot.hear(/^(?:[^!]|).*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
       res.match[1] = res.match[1] || res.match[2];
-      l.config.alwaysEval[res.message.user.id] &&
+      l.always[res.message.user.id] &&
         l.create(res)
       ;
     });
   }
 })
-;
-// Default config.
-l.log = {};
-l.saved = {};
-l.config = {};
-l.config.sudoers = ['183771581829480448', 'U02JGQLSQ']; // CHANGE THESE TO YOUR ID'S!!
-l.config.alwaysEval = {};
-l.config.maxCmdLen = 17;
-l.config.maxMsgLen = 1917;
-l.config.save = (res = {send: _=>_}) => {
-  l.log = bot.brain.data.log || (bot.brain.data.log = {});
-  l.saved = bot.brain.data.savedEvals || (bot.brain.data.savedEvals = {});
-  l.config.alwaysEval = bot.brain.data.alwaysEval || (bot.brain.data.alwaysEval = {});
-  res.send("Merged eval config to brain.");
-}
 ;
 // API
 l.create = (res = {send: _=>_}) => {
@@ -87,9 +88,9 @@ l.create = (res = {send: _=>_}) => {
   }
   // filename is the second param.
   try {
-    o = _eval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
+    o = myEval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
   } catch(e) {
-    e.stack = e.stack.split('\n').slice(0, 7).join('\n');
+    e.stack = e.stack.split('\n').slice(1, 7).join('\n');
     o = e;
   }
   // Reuse opts variable for the formating options.
@@ -113,10 +114,10 @@ l.list = (res = {send: _=>_}) => {
   let mode = res.match[1];
       id = res.message.user.id, r = ""
   ;
-  mode && !/all/i.test(mode) ?
-    r += format(l.utils.isModeSave(mode))
+  r += mode && !/all/i.test(mode) ?
+    format(l.utils.isModeSave(mode))
   :
-    r += format(1) + ' ' + format(0)
+    format(1) + ' ' + format(0)
   ;
   return res.send(r);
   //
@@ -232,7 +233,6 @@ l.delete = (res = {send: _=>_}) => {
 }
 ;
 l.runLast = res => {
-debugger;
   let id = res.message.user.id,
       [mode, userOpts = ""] = (res.match[1]||"").split(' ');
   ;
@@ -248,7 +248,7 @@ debugger;
   l.create(res);
 }
 ;
-l.run = res => {
+l.run = (res = {send: _=>_}) => {
   let id = res.message.user.id,
       tag = res.match[1],
       cmd = "",
@@ -266,7 +266,7 @@ l.run = res => {
   if(!cmd)
     return res.send("Command not found.")
   ;
-  res.match[1] = cmd;
+  (res.match||"")[1] = cmd;
   l.create(res);
 }
 ;
@@ -331,11 +331,11 @@ l.view = (res = {send: _=>_}) => {
 }
 ;
 l.setAlways = (res = {send: _=>_}) => {
-  let isAlways = !/off|false|0|no|x/i.test(res.match[1]),
+  let isSettingAlways = !/off|false|0|no|x/i.test(res.match[1]),
       id = res.message.user.id,
-      always = l.config.alwaysEval
+      always = l.always
   ;
-  isAlways ?
+  isSettingAlways ?
     always[id] ?
       res.send("Eval mode already set to always.")
     :
@@ -374,12 +374,12 @@ l.utils.preventHacks = (res = {send: _=>_}) => {
     secure: { enumerable: false },
     cookieToUsername: { enumerable: false }
   });
-  res.send("Sucess.")
+  return res.send("Sucess.")
 }
 ;
 l.utils.processMessage = (res = {send: _=>_}, cmd) => {
   // ||"" throughout so we dont undefined vars for props.
-  if(!(cmd = ((res.match||"")[1])))
+  if(!cmd && !(cmd = ((res.match||"")[1])))
     return "No message to process."
   ;
   let id = res.message.user.id,
@@ -394,17 +394,18 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
   }
   else if(match = cmd.match(/```((?:.|\n)+)\n?```/i)) {
     // We capture always ussers with a different listener regexp.
-    if(l.config.alwaysEval[id]) { return; }
+      if(l.always[id]) { return; }
     fn = 'create';
   }
   else if(match = cmd.match(/^`((?:\\.|[^`])+)`/i)) {
     // Likewhie.
-    if(l.config.alwaysEval[id]) { return; }
+    if(l.always[id]) { return; }
     fn = 'create';
   }
-  //else if(match = cmd.match(/^coins/i)) {
-  //  fn = '';
-  //}
+  // Hack to ensure that mubot-coins (!coins .*) commands dont get processed.
+  else if(match = cmd.match(/^coins/i)) {
+    fn = '';
+  }
   else if(match = cmd.match(/^(?:[!]|last)(?: (.+))?/i)) {
     fn = 'runLast';
   }
@@ -434,25 +435,42 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
 }
 ;
 l.utils.formatCmd = cmd => {
-  return cmd ? '`' + cmd + (cmd.length > l.config.maxCmdLen ? '..' : '') + '`' : null;
+  let maxLen = l.config.maxCmdLen
+  ;
+  if(cmd) {
+    return "`" +
+      (cmd.length > maxLen ?
+        cmd.slice(0, (maxLen / 2) - 2) + " .. " + cmd.slice(-((maxLen / 2 - 2)))
+      :
+        cmd
+      )
+     + "`";
+  }
+  return null;
 }
 ;
 l.utils.isModeSave = str => {
   /\s*-?(s(aved?)|tag(ged|s)?|recorded)\s*/.test(str);
 }
 ;
-l.utils.addToLog = res => {
-  let id = res.message.user.id,
-      cmd = res.cmd,
-      log = l.log[id] || (l.log[id] = {})
-  ;
-  // We want our object to be ordered, but numbers are automatically first in js obj enumeration.
-  if(Number.isInteger(cmd)) {
-    cmd = ' ' + cmd
+l.utils.addToLog = (res = {send: _=>_}) => {
+  try {
+    let id = res.message.user.id,
+        cmd = res.cmd,
+        log = l.log[id] || (l.log[id] = {})
+    ;
+    // We want our object to be ordered, but numbers are automatically first in js obj enumeration.
+    if(Number.isInteger(cmd)) {
+      cmd = ' ' + cmd
+    }
+    delete log[cmd];
+    log[cmd] = res.o;
+    bot.brain.save();
+  } catch(e) {
+    return res.send(
+      "Parameter must look like {message:{user:{id: <USER_ID>}}, cmd: <COMMAND>, o: <OUTPUT>}"
+    )
   }
-  delete log[cmd];
-  log[cmd] = res.o;
-  bot.brain.save();
 }
 ;
 // Export.

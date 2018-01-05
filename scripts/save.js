@@ -26,6 +26,7 @@
     })
     bot.brain.setAutoSave && bot.brain.setAutoSave(false);
     //bot.brain.on("connected", ()=> {
+debugger;
       try {
         var data = fs.readFileSync(path, 'utf-8');
         data && bot.brain.mergeData(JSON.parse(data));
