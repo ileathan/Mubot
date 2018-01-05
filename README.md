@@ -65,8 +65,9 @@ Mubot = require('mubot')
 
 3.) 
 ```javascript
+// These are obviously not valid anymore, replace with your own.
 process.env.HUBOT_DISCORD_TOKEN="MzI5NjEyNTk2Mzk3MzQyNzIx.DDU_LA.D8jneOVTr-M_yIIfjQ-IJ9-QsAm"
-// or for slack process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-9j1Ujh3YhaZ7TShV7YkaHxbK"
+process.env.HUBOT_SLACK_TOKEN="xoxb-3547094061-9j1Ujh3YhaZ7TShV7YkaHxbK"
 ```
 
 4.) 
