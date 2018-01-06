@@ -726,33 +726,37 @@
           ;
           // The message is a server command, handle with mubot & relayed back privately.
           if(message[0] === '/') {
-          debugger;
- 
-
-
+            // Its not a special trigger command.
+            if(message[1] !== "!") {
+              message = message.replace(/^\/(mubot )?/, "mubot ");
+            } else {
+              message = message.slice(1);
+            }
             const serverRes = function(){
               let message = [].slice.call(arguments).join("  -  ")
-              l.emitToUserSockets(username || guest, "lS.newChatMessage", {
+              //l.emitToUserSockets(username || guest, 
+              socket.emit("lS.newChatMessage", {
                 username: l.hostname,
                 message, date
               })
               ;
             }
             ;
-            let id = l.users[username || guest].id || guest;
+            let id = l.users[username || guest].id;
+            if(id == null) id = guest;
             let msg = new l.imports.TextMessage(username, message, id);
             msg.send = serverRes;
-            msg.message = {user:{id}};
+            msg.isLeatServer = true;
+            msg.message = {room:id, user:{id, name: username}, text: message};
             for(let _ of bot.listeners) {
-              match = _.regex.exec(msg.text.slice(1));
+              match = _.regex.exec(msg.text);
               if(match) {
                 msg.match = match;
                 _.callback(msg);
               } 
             }
+            return;
           }
-
-
           l.io.emit("lS.newChatMessage", {username: username || guest, message, date})
           l.db.ChatMessages.create({username: username || guest, message}, _=>0)
         })

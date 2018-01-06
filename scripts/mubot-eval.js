@@ -80,7 +80,7 @@ l.create = (res = {send: _=>_}) => {
   }
   // filename is the second param.
   try {
-    o = myEval(evalCmd, res.bot.name + "_" + res.message.user.name, ...opts);
+    o = myEval(evalCmd, bot.name + "_" + res.message.user.name, ...opts);
   } catch(e) {
     e.stack = e.stack.split('\n').slice(1, 7).join('\n');
     o = e;
