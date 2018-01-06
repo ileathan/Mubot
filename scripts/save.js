@@ -13,14 +13,14 @@
   const path = Path.join(__dirname, '/../brain.json');
   const write = data => {
     try {
-      fs.writeFile(path, JSON.parse(data), 'utf-8', _=>0)
+      fs.writeFile(path, JSON.stringify(data), 'utf8', _=>0);
     } catch(e) {
-      //debugger;
+      console.log("Mubot-save: Error: Saving brain.")
     }
     ;
   }
   module.exports = bot => {
-    
+
     bot.respond(/save$/i, res => {
       bot.brain.save();
       res.send("Database saved to disk.")

@@ -26,7 +26,7 @@
   l.utils.returnMode = {json: 1, raw: 1, raw: 1, r: 1, name: 2, view: 2, list: 2, names: 2, n: 2};
 
   l.utils.stringToCmdRe = string => {
-    for(let cmd of commands) {
+    for(let cmd of l.commands) {
       if(RegExp(l.utils.cmdToStringArray(cmd).join('|'), 'i').test(string))
         return '(' + l.utils.cmdToStringArray(cmd).join('|') + ')'
       ;
@@ -34,7 +34,7 @@
   }
   ;
   l.utils.stringToCmd = string => {
-    for(let cmd of commands) {
+    for(let cmd of l.commands) {
       if(RegExp('^('+l.utils.cmdToStringArray(cmd).join('|')+')$', 'i').test(string))
         return cmd
       ;
