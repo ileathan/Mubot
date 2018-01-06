@@ -15,19 +15,18 @@ const {inspect} = require('util');
 // Show our imports.
 l.exports = _bot => {
   bot = _bot;
-  Object.assign(l, bot.brain.data.eval || (
-    bot.brain.data.eval = {
-      log: {},
-      saved: {},
-      always: {},
-      config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
-    }
-  ))
-  ;
   l.utils.preventHacks();
   // Load evals and config from brain.
   bot.brain.on('loaded', () => {
-    l.config._load();
+    Object.assign(l, bot.brain.data.eval || (
+      bot.brain.data.eval = {
+        log: {},
+        saved: {},
+        always: {},
+        config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
+      }
+    ))
+    ;
     // Export to mubot.
     Object.assign(bot.mubot, {eval: l});
   });
@@ -68,9 +67,9 @@ l.create = (res = {send: _=>_}) => {
   ;
   // Set command options.
   if(l.config.sudoers.includes(id)) {
-     opts = [{bot, res, http: bot.http, mubot: bot.mubot, leat: bot.leat, bitmark: bot.bitmark}, true]
+     opts = [{bot, res, http: bot.http, mubot: bot.mubot, leat: bot.leat, bitmark: bot.bitmark}, true];
   } else {
-     opts = [{http: bot.http}, false]
+     opts = [{http: bot.http}, false];
   }
   // Sanitize the command. 
   if(!/module[.]exports\s*=/.test(cmd)) {

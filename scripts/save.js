@@ -8,13 +8,12 @@
 //   leathan
 //
 (function() {
-  const circularJSON = require('circular-json');
+  //const circularJSON = require('circular-json');
   const fs = require('fs'), Path = require('path');
   const path = Path.join(__dirname, '/../brain.json');
   const write = data => {
-debugger;
     try {
-      fs.writeFile(path, circularJSON.parse(data), 'utf-8', _=>0)
+      fs.writeFile(path, JSON.parse(data), 'utf-8', _=>0)
     } catch(e) {
       //debugger;
     }

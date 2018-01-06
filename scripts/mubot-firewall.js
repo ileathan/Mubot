@@ -32,29 +32,18 @@ l.config = {
   cache_size: 1000
 }
 ;
-l.seen.persist = () => {
+l.seen.save = () => {
   bot.brain.data.seen || (bot.brain.data.seen = {});
 
   for(let seen in l.seen) {
-    if(seen === "last") break;
-    if(seen === "persist") break;
-    if(seen === "load") break;
-    delete l.seen[seen].reqs;
-
+    if(seen === "last") {
+      delete l.seen[seen].req;
+      break;
+    }
     Object.assign(bot.brain.data.seen, l.seen[seen])
   }
   bot.brain.save()
 }
-;
-l.seen.persist = () => {
-  bot.brain.data.seen || (bot.brain.data.seen = {});
-
-  for(let seen in l.bot.brain.data.seen) {
-    Object.assign(l.seen[seen], bot.brain.data.seen)
-  }
-  bot.brain.save()
-}
-;
 Object.defineProperty(l, 'exports', {
   enumerable: false,
   value: _bot => {

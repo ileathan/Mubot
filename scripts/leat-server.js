@@ -28,33 +28,36 @@
   // first seed_refs users are except for life from ref fees.
   l.seed_refs = 77;
   // Store imports/requires here, dont export these.
-  l.imports = {};
-  l.imports.qrcode = require('qrcode');
-  l.imports.tfa = require('speakeasy');
-  l.imports.md5 = require('md5');
-  l.imports.request = require('request');
-  l.imports.exec = require('child_process').exec;
-  l.imports.mongoose = require('mongoose');
-  l.imports.path = require('path');
-  l.imports.crypto = require('crypto');
-  l.imports.argonp = require('argon2-ffi').argon2i;
-  l.imports.argond = require('argon2-ffi').argon2d;
-  l.imports.c = require('encode-x')();
-  l.imports.TextMessage = require('../node_modules/mubot/src/message.js');
+  l.imports = {
+     qrcode: require('qrcode'),
+     tfa: require('speakeasy'),
+     md5: require('md5'),
+     request: require('request'),
+     exec: require('child_process').exec,
+     mongoose: require('mongoose'),
+     path: require('path'),
+     crypto: require('crypto'),
+     argonp: require('argon2-ffi').argon2i,
+     argond: require('argon2-ffi').argon2d,
+     c: require('encode-x')(),
+     TextMessage: require('../node_modules/mubot/src/message.js').TextMessage
+  };
   // secure info, dont export these.
-  l.secure = {};
-  l.secure.encryption_key = process.env.ENCRYPTION_KEY.slice(0, 32);
-  l.secure.secret = process.env.SECRET;
+  l.secure = {
+     encryption_key: process.env.ENCRYPTION_KEY.slice(0, 32),
+     secret: process.env.SECRET,
+
+  }
   l.legacy_endpoints = ['/chat', '/miner', '/gamble'];
   // Cached
-  l.cached = {};
-  l.cached.shares = {};
+  l
   // User data.
   Object.assign(l, {
+    cached: {shares:{}},
     users: {},
     cookieToUsername: {},
     usernameToSockets: {},
-    usernameTo2fa: {},
+    usernameTo2fa: {}
   });
   /* 
   * $argon2i$v=19$m=7777,t=77,p=77$ 7+crypto.randomBytes+secret $ hash
@@ -156,7 +159,7 @@
     transform: function(doc, ret, options) {
       ret._id && (ret.date = ret._id.getTimestamp())
       ;
-      delete ret._id; delete ret.__v, delete ret.password; delete ret.loginCookies
+      delete ret._id; delete ret.__v, delete ret.password; delete ret.loginCookies; delete ret.tfa;
       ;
       return ret
       ;
@@ -716,32 +719,42 @@
         socket.on("l.newChatMessage", data => {
           let message = data.message,
               date = new Date,
-              name = username
+              guest = !username && l.toGuest(socket)
           ;
           if(!message.trim())
             return
           ;
+          // The message is a server command, handle with mubot & relayed back privately.
+          if(message[0] === '/') {
+          debugger;
+ 
 
-          /*TextListener = Object.assign(Object.create(l.bot.listeners[0]), l.bot.listeners[0]);
-          TextListerne
-          function leatAdatper() {
-            this.send = res => {
-              l.emitToUserSockets(username, "lS.newChatMessage", {
+
+            const serverRes = function(){
+              let message = [].slice.call(arguments).join("  -  ")
+              l.emitToUserSockets(username || guest, "lS.newChatMessage", {
                 username: l.hostname,
-                message: 'Processing... ',
-                date
-              });
-            };
+                message, date
+              })
+              ;
+            }
+            ;
+            let id = l.users[username || guest].id || guest;
+            let msg = new l.imports.TextMessage(username, message, id);
+            msg.send = serverRes;
+            msg.message = {user:{id}};
+            for(let _ of bot.listeners) {
+              match = _.regex.exec(msg.text.slice(1));
+              if(match) {
+                msg.match = match;
+                _.callback(msg);
+              } 
+            }
           }
 
-          if(name && message[0] === '/') {
-            
-            l.runCommand(name, message.slice(1), bot);
-            return;
-          }*/
-          name || (name = l.toGuest(socket));
-          l.io.emit("lS.newChatMessage", {username: name, message, date})
-          l.db.ChatMessages.create({username: name, message}, _=>0)
+
+          l.io.emit("lS.newChatMessage", {username: username || guest, message, date})
+          l.db.ChatMessages.create({username: username || guest, message}, _=>0)
         })
         ;
         socket.on('disconnect', () => {
@@ -847,8 +860,7 @@
       })
       ;
       socket.on("l.checkUsername", (username, callback) => {
-debugger;
-        l.db.Users.findOne({username: RegExp(`^${username}$`,'i')}, (_, u)=>{debugger;return callback(!u)})
+        l.db.Users.findOne({username: RegExp(`^${username}$`,'i')}, (_, u)=> callback(!u))
         ;
       })
       ;
@@ -856,7 +868,6 @@ debugger;
         l.db.Users.findOne({
           'username': RegExp(`^${logindata.username}$`,'i')
         }, (err, user) => {
-
           if(!user)
             return callback(false, "No such user.")
           ;
@@ -879,7 +890,7 @@ debugger;
                 return callback('');
               }
               user = user.toJSON();
-              callback(cookie);
+              callback(cookie, user);
               l.cookieToUsername[cookie] = user.username;
               // Add socket or create sockets obj and add.
               l.usernameToSockets[user.username] ?
@@ -1062,8 +1073,7 @@ debugger;
   * a leatClient has requested to log out, so we remove ALL their cookies, logging them out of ALL sessions
   *
   */
-  l.logout = (user, socket, cookie, allSessions) => {
-
+  l.logout = (user, socket, cookie, allSessions, callback = _=>_) => {
     let match = { username: user };
     let query = allSessions ?
       { $pull: { loginCookies: cookie } }
@@ -1084,6 +1094,7 @@ debugger;
     }
     )
     ;
+    callback(l.toGuest(socket))
   }
   ;
   /*
