@@ -2,12 +2,16 @@
 //   Allow Mubot to commit code to gihubt.
 //
 ;(function(){
+  // Imports
   const path = require('path');
   const exec = require('child_process').exec;
   const l = {};
-  Object.defineProperties(l, {
-    commit: {value: Commit, enumerable: true},
-  })
+  
+  let commit_msg = "Mubot auto commit.",
+      project_dir = path.resolve(`${__dirname}/../`);
+     var commit_files = "."
+  ;
+  Object.defineProperty(l, 'commit', {value: Commit, enumerable: true})
   ;
   l.commit.exports = bot => {
     // purposely capture commit pointlessly so we can call the command outside
@@ -22,13 +26,11 @@
     path: require('path')
   }
   ;
-  let commit_msg = "Mubot auto commit.",
-      project_dir = path.resolve(`${__dirname}/../`);
-     var commit_files = "."
-  ;
+
   function Commit(res) {
     exec(
-      `git add "${project_dir}/${res.match[3]||commit_files}"; git commit -m "${res.match[4]||commit_msg}"; git push;`,
+        `git add "${project_dir}/${res.match[3]||commit_files}";`
+      + `git commit -m "${res.match[4]||commit_msg}"; git push;`,
       (err, stderr, stdout)=>res.send(stdout)
     );
   }

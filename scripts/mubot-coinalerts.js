@@ -5,102 +5,117 @@
 //   Mubot start|stop scanner alert - manually start/stops the scanners useful for custom delays.
 //   Mubot alert me <coin> <condition> <price> - creates an alert, you may create as many as you'd like.
 // . Mubot alerts [raw] - display the current alerts.
-(function(){
+;(function(){
   const http = require("request");
-  const delay = 120000; // 2 mins.
-  var allRequests = [];
-  var interval;
-  module.exports = bot => {
-    bot.respond(/stop scanner(?:s| alerts)/i, res => {
-      res.send("Stopping alert scanner.")
-    })
-    bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, res => {
-      if(allRequests.length)
-        return res.send("No alerts created.")
-      ;
-      var time = res.match[1] || 120;
-      res.send("Starting alert scanner every " + time + " seconds.")
-      delay = parseInt(time * 1000);
-      startInterval();
-    })
-    bot.respond(/alert (?:me )?(.*)/i, res => {
-      var request = res.match[1];
-      if(/me /i.test(request))
-        return res.send("Specify a price.")
-      ;
-      allRequests.push(new Request(res, request))
-      interval || startInterval(); // Every 2 mins.
-      res.send("Alert(s) created.")
-    })
-    bot.respond(/alerts$/i, res => {
-      res.send("There are " + allRequests.length + " alerts.")
-    })
-    bot.respond(/alerts raw$/i, res => {
-      // Structure is recurssive, so map it first.
-      res.send(allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
-    })
+  const l = {};
+
+  l.delay = 120000 // 2 mins
+  ;
+  l.coinsObj = {}
+  ;
+  l.coinsArray = []
+  ;
+  l.imports = {http}
+  ;
+  l.exports = bot => {
+    bot.respond(/stop scanner(?:s| alerts)/i, l.stop);
+    bot.respond(/alert (?:me )?(.*)/i, l.create); 
+    bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, l.start);
+    bot.respond(/alerts$/i, l.length);
+    bot.respond(/alerts view/i, l.view);
+    Object.assign(bot.mubot, {coinalert: l});
   }
-  function alertMe(coinsObj) {
+  ;
+  Object.defineProperties(l, {
+    imports: {enumerable: false},
+    exports: {enumerable: false}
+  })
+  ;
+  l.stop = res => {
+    res.send("Stopping alert scanner.");
+    clearInterval(l.interval);
+  }
+  ;
+  l.start = res => {
+    if(!l.allRequests.length)
+      return res.send("No alerts created.")
+    ;
+    let time = res.match[1] || 240;
+    l.delay = parseInt(time * 1000);
+    res.send("Starting alert scanner every " + time + " seconds.")
+
+    clearInterval(l.interval);
+    l.interval = setInterval(()=>l.makeCoins(l.check), l.delay)
+  }
+  l.create = res => {
+    var request = res.match[1];
+    if(/me /i.test(request))
+      return res.send("Specify a price.")
+    ;
+    l.allRequests.push(new l.Request(res, request))
+    l.interval || l.startInterval(); // Every 2 mins.
+    res.send("Alert(s) created.")
+  }
+  l.length = res => {
+    res.send("There are " + l.allRequests.length + " alerts.")
+  }
+  ;
+  l.view = res => {
+    res.send(l.allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
+  }
+  l.check = coinsObj => {
     // store allRequests that arnt undef.
-    var result = [], resIndex = 0;
-    for(let i = 0, l = allRequests.length; i < l; ++i) {
-      if(allRequests[i].alerts.length === 0)
+    var results = [], resIndex = 0;
+    for(let i = 0, len = l.allRequests.length; i < len; ++i) {
+      if(l.allRequests[i].alerts.length === 0)
         continue
       ;
-      result.push(allRequest[i]);
-      let areTrue = allRequests[i].areTrue(coinsObj);
-      if(areTrue.length > 0) allRequests[i].res.reply("Alert(s) triggered -> [" + areTrue.join("][ ") + "].")
+      results.push(l.allRequest[i]);
+      let areTrue = l.allRequests[i].areTrue(l.coinsObj);
+      if(areTrue.length > 0) l.allRequests[i].res.reply("Alert(s) triggered -> [" + areTrue.join("][ ") + "].")
     }
-    allRequests = result;
+    l.allRequests = results;
   }
-  function startInterval() {
-    clearInterval(interval);
-    interval = setInterval(()=> {
-      if(allRequests.length === 0) {
-        return clearInterval(interval);
+  l.makeCoins = callback => {
+    if(allRequests.length === 0) {
+      return clearInterval(l.interval);
+    }
+    // API Endpoint, comment out to switch.
+    http('https://api.coinmarketcap.com/v1/ticker?limit=0', (err, res, body) => {
+      l.coinsArray = JSON.parse(body);
+      for(let coin of l.coinsArray) {
+        l.coinsObj[coin.symbol] = coin;
       }
-      // API Endpoint, comment out to switch.
-      http('https://api.coinmarketcap.com/v1/ticker?limit=0', (err, res, body) => {
-        const coinsObj = {};
-        const coinsArray = JSON.parse(body);
-        for(let coin of coinsArray) {
-          coinsObj[coin.symbol] = coin;
-        }
-        alertMe(coinsObj);
-      });
-      // old API endpoint. (Poloniex).
-      //http('https://poloniex.com/public?command=returnTicker', (err, ress, body) => alertMe(delay, JSON.parse(body)) )
-    }, delay);
+      callback(l.coinsObj);
+    })
   }
-
-  function Request(res, alerts) {
+  ;
+  l.Request = function(res, alerts) {
     this.alerts = alerts.split(/,\s*/);
     this.res = res
   }
-  Request.prototype.compact = function() {
-    var index = 0, result = [];
+  l.Request.prototype.compact = function() {
+    let index = 0, result = [];
     for(let value of this.alerts) if(value) result[index++] = value;
     this.alerts = result;
   }
-  Request.prototype.areTrue = function(compareObj) {
-    const results = [];
-    var type = 'price_';
+  l.Request.prototype.areTrue = function(coinsObj) {
+    let results = [], type = 'price_';
     for(let i = 0, l = this.alerts.length; i < l; ++i) {
       let [match, coin, condition, price] = this.alerts[i].match(/([^ ]*) (<|>) ([^ ]*)/);
-      coin = coin.toUpperCase();
-      coin === 'BTC' ?
+      coin = coin.toUpperCase() === 'BTC' ?
         type += 'usd'
       :
         type += price.slice(-1) === '$' ? 'usd' : 'btc'
       ;
       if(condition === '>') {
-        if(parseFloat(compareObj[coin][type]) > parseFloat(price)) {
+        if(parseFloat(l.coinsObj[coin][type]) > parseFloat(price)) {
           results.push(match);
           delete this.alerts[i];
         }
       }
       if(condition === '<') {
-        if(parseFloat(compareObj[coin][type]) < parseFloat(price)) {
+        if(parseFloat(l.coinsObj[coin][type]) < parseFloat(price)) {
           results.push(match);
           delete this.alerts[i];
         }
@@ -109,4 +124,6 @@
     this.compact();
     return results;
   }
+
+  module.exports = l.exports;
 }).call(this);

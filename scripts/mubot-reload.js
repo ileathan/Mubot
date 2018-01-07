@@ -15,7 +15,9 @@
   let bot = null,
       reloadMode = "all"
   ;
-  l.exports = _bot => {
+  Object.defineProperty(l, 'reload', {value: Reload, enumerable: true})
+  ;
+  l.reload.exports = _bot => {
     bot = _bot;
     bot.respond(/reload(?: (.+))?$/i, l.reload)
     bot.respond(/set (?:reload|load)(?: modes?)?(?: me)?(?: (.+))?/i, res => {
@@ -30,9 +32,9 @@
     Object.assign(bot.mubot, l)
   }
   ;
-  l.imports = {fs, path}
+  l.reload.imports = {fs, path}
   ;
-  const Reload = function(res = {send: _=>_}) {
+  function Reload(res) {
     let modes = (res.match||"")[1] ? res.match[1].split(' ') : [].slice.call(arguments, 1)
     ;
     try {
@@ -73,13 +75,10 @@
     }
     res.send("Reloaded `" + (modes ? modes.join(", ") : "all") + "` code.")
   }
-  Object.defineProperties(l, {
-    reload: {value: Reload, enumerable: true},
-    imports: {enumerable: false},
-    exports: {enumerable: false}
-  })
-  ;
+
   Object.defineProperties(l.reload, {
+    imports: {enumerable: false},
+    exports: {enumerable: false},
     modes: {
       set(n) {reloadMode = n},
       get() {return reloadMode},
@@ -87,6 +86,6 @@
     }
   })
   ;
-  module.exports = l.exports
+  module.exports = l.reload.exports
   ;
 }).call(this);
