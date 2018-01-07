@@ -46,7 +46,7 @@
           chunkAndQue(++i)
         } else {
           context.strings[i].split('```').length > 1 || 
-            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].trim().replace(/\n./g, '*$&*'));
+            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].trim().replace(/\n/g, '*$&*'));
           ;
           context.strings[0] = fpad + context.strings[0] + epad
         }
