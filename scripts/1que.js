@@ -22,7 +22,7 @@
         // Pad the start of the message, and the end of the message.
         var fpad, epad;
         fpad = ADAPTER === 'discord' ? "**" : "*";
-        epad = ADAPTER === 'discord' ? " **" : " *";
+        epad = ADAPTER === 'discord' ? " **" : "*";
         // our msg chunk
         var chunk;
         // only proceed if we need to break msg down to chunks.
@@ -45,9 +45,8 @@
           context.strings[i] = context.strings[i].slice(0, chunk[0].length) + epad;
           chunkAndQue(++i)
         } else {
-debugger;
           context.strings[i].split('```').length > 1 || 
-            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].trim().replace(/\n/g, '*$&*'));
+            ADAPTER === 'slack' && (context.strings[i] = context.strings[i].trim().replace(/\n/g, ' *$&*'));
           ;
           context.strings[0] = fpad + context.strings[0] + epad
         }
