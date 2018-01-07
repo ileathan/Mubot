@@ -658,13 +658,17 @@ debugger;
     ;
     // #Load logged in users into memory.
     l.guests = 0;
-    l.io.on('connection', l.connection.bind(null/*, socket*/));
-    l.onConnection = socket => {
+    l.io.on('connection', l.io.connection.bind(null/*, socket*/));
+    l.io.connection = socket => {
       l.isSocketLoggedIn(socket, (username, cookie) => {
         // Public API
         socket.on('l.load', l.load.bind(null, username/*,null, callback*/));
-        socket.on("l.newChatMessage", l.newChatMessage.bind(null, socket, username)) 
+        socket.on("l.newChatMessage", l.newChatMessage.bind(null, socket, username/*, data*/));
         socket.on('disconnect', l.disconnect.bind(null, socket, username));
+        socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
+        socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
+        socket.on("l.createAccount", l.createAccount.bind(null, socket/*acntdata, callback*/));
+        socket.on('l.refreshStats', l.refreshStats.bind(null/*, null, callback*/))
 
         // Error handlers
         socket.on('connect_error', _=>l.debug(`Socket connect error ${_}`))
@@ -683,10 +687,6 @@ debugger;
         socket.on("l.logout", l.logout.bind(null, username, socket, cookie/*, allSessions, callback*/));
         socket.on("l.enable2fa", l.enable2fa.bind(null/*, null, callback*/));
         socket.on("l.verify2fa", l.verify2fa.bind(null, username));
-        socket.on('l.refreshStats', l.refreshStats.bind(null/*, null, callback*/))
-        socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
-        socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
-        socket.on("l.createAccount", l.createAccount.bind(null, socket/*acntdata, callback*/));
       })
       ;
     }
