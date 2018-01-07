@@ -4,7 +4,10 @@
 ;(function(){
   const l = {};
   l.exports = bot => {
-    bot.respond(/commit(?: (.+))?(?: (.+))?/i, l.commit)
+    // purposely capture commit pointlessly so we can call the command outside
+    // of natural context in the sense we can do `mubot.commit(res)` with another
+    // res that wont have higher capture groups set.
+    bot.respond(/((commit))(?: (.+))?(?: (.+))?/i, l.commit)
     Object.assign(bot.mubot, {commit: l.commit})
   }
   ;
@@ -18,8 +21,10 @@
      var commit_files = "."
   ;
   const Commit = res => {
-    res.send("Commiting to master.");
-    l.imports.exec(`git add "${project_dir}/${res.match[1]||commit_files}"; git commit -m "${res.match[2]||commit_msg}"; git push;`, (_, er, o)=>{/**/debugger;});
+    l.imports.exec(
+      `git add "${project_dir}/${res.match[3]||commit_files}"; git commit -m "${res.match[4]||commit_msg}"; git push;`,
+      (_, err, out)=>res.send(out)
+    );
   }
   ;
   Object.defineProperties(l, {
