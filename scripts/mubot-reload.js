@@ -45,6 +45,7 @@
       bot.brain._events = {};
       bot.events._events = {}
       bot.leat.io._events = {};
+      bot.server._events = {};
       bot.bitmark.io._events = {};
     } catch(e){}
 

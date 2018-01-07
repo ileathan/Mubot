@@ -374,7 +374,6 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
   if(!cmd && !(cmd = ((res.match||"")[1])))
     return "No message to process."
   ;
-debugger;
   let id = res.message.user.id,
       dontRun = res.dontRun,
       fn = null, match = null

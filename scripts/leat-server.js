@@ -481,8 +481,6 @@
   }
   )
   ;
-  l.proxy = {}
-  ;
   /*
   *  Since we allow multiple logins per acnt to mine for 1 account.
   */
@@ -507,64 +505,48 @@
   }
   ;
   l.verifyPassword = (username, password, callback) => {
-    l.db.Users.findOne({
-      'username': RegExp('^' + logindata.username + '$','i')
-    }, (err, user) => {
+    l.db.Users.findOne({username}, (err, user) => {
       if(!user)
        return callback(false, "No such user.")
       ;
       l.imports.argonp.verify(
         l.decrypt(l.decode(user.password)),
-        l.ssalt(logindata.password),
+        l.ssalt(password),
         l.ARGON_PCONF
-      ).then(_=>_&&callback(username));
+      ).then(_=>callback(_ ? username : false));
     })
     ;
   }
   ;
-  l.verified = {};
   // Commands are just verify for now.
   l.linkWithMubot = (username, command, bot) => {
+    let [server, id, password ] = command.split(' '), message = "";
+    const sendMsg = () => l.emitToUserSockets(username, "lS.newChatMessage", { username: l.hostname, message, date: new Date() });
     if(/^(slack|discord)/i.test(command)) {
-      let [server, id, password ] = command.split(' ')
-      l.verifyPassword(username, password, username => {
-        //let user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
-        
-        l.db.Users.findOneAndUpdate({username}, {$set: {['alt_ids.' + server]: id} }, (err, user)=>{
-debugger;
-        })
-
-        l.users[username][server] = id;
-
-        let message = "Successfully verified " + server + " as " + username + "@leat.io.";
-
-        l.emitToUserSockets(username, "lS.newChatMessage", { username: l.hostname, message, date: new Date() });
-
-        try {
-          bot.adapter.send({room: id}, res)
-        } catch(e){}
+      l.verifyPassword(username, password, correct => {
+        if(!correct) {
+          message = "Invalid password, try again."
+          sendMsg();
+        } else {
+          l.db.Users.findOneAndUpdate({username}, {$set: {[`${alt_ids}.${server}`]: id} }, (err, user)=>{debugger;})
+          message = `Linked ${username}@leat.io with ${id}@${server}.`;
+          l.users[username][server] = id;
+          sendMsg();
+          try {
+            bot.adapter.send({room: id}, message);
+          } catch(e){}
+        }
       });
     } else if(/^(unverify)/i.test(command)) {
-      let [, server, id, password ] = command.split(' ')
-      l.verifyPassword(username, password, username => {
-        let user = bot.brain.verified[username] || (bot.brain.verified[username] = {});
-        Object.assign(user, l.users[username]);
-
-        if(user[id]) {
-          delete user[id];
-          delete l.verified[username][id]
-        }
-
-        bot.brain.save();
-        try {
-          bot.adapter.send({room: id}, "Successfully unverified " + server + " as " + username + "@" + l.hostname)
-        } catch(e){}
-      });
+      delete l.users[username][server]
+      message = `Unlinked ${username}@leat.io with ${id}@${server}.`;
+      sendMsg();
     }
   }
   l.imports.proxy = require('leat-stratum-proxy');
   //l.imports.fs = require('fs');
   l.loadProxy = () => {
+
     l.proxy = new l.imports.proxy({
       server: bot.server,
       host: 'pool.supportxmr.com',
@@ -593,9 +575,11 @@ debugger;
       );
     })
     l.proxy.on('found', data => {
+      var [, user] = data.login.split('.');
+      var [user = "_anon"] = user.split('+');
       l.db.SharesFound.create({
         workerId: data.id,
-        username: data.login.split('.')[1] || '_anon',
+        username: user,
         result: data.result,
         nonce: data.nonce,
         jobid: data.job_id
@@ -606,6 +590,7 @@ debugger;
     l.proxy.listen()
     ;
   }
+  ;
   l.loadUsers = () => {
     l.db.Users.find().then(users => {
       for(let user of users) {
@@ -653,7 +638,7 @@ debugger;
     l.io.on('connection', socket => {
       l.isSocketLoggedIn(socket, (username, cookie) => {
         // Public API
-        socket.on('l.load', l.load.bind(null, username/*,null, callback*/));
+        socket.on('l.load', l.load.bind(null, socket, username/*,null, callback*/));
         socket.on("l.newChatMessage", l.newChatMessage.bind(null, socket, username/*, data*/));
         socket.on('disconnect', l.disconnect.bind(null, socket, username));
         socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
@@ -687,7 +672,7 @@ debugger;
     Object.assign(bot.leat, l)
   }
   ;
-  l.load = (username, _, callback) => {
+  l.load = (socket, username, _, callback) => {
     l.db.ChatMessages.find().sort({ _id: -1}).limit(20).exec((err, chatMsgs) => {
       if(username) {
         l.db.Transactions.find({$or: [{ from: username }, { to: username }]}, { __v: 0 })
@@ -1226,7 +1211,7 @@ debugger;
     if(message[0] === '/') {
       // Its a special verification/deverification command.
       if(/^\/(slack|discord|unverify)/i.test(message)) {
-        return l.linkWithMubot(message.slice(1));
+        return l.linkWithMubot(username, message.slice(1), bot);
       }
       // Its not a special trigger command.
       if(message[1] !== "!") {
