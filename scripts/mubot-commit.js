@@ -19,7 +19,7 @@
   ;
   const Commit = res => {
     res.send("Commiting to master.");
-    l.imports.exec(`git add "${project_dir}/${res.match[1]||commit_files}"; git commit -m "${res.match[2]||commit_msg}"; git push;`, (_, er, o)=>{debugger;});
+    l.imports.exec(`git add "${project_dir}/${res.match[1]||commit_files}"; git commit -m "${res.match[2]||commit_msg}"; git push;`, (_, er, o)=>{/**/debugger;});
   }
   ;
   Object.defineProperties(l, {
