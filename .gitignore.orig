@@ -1,4 +1,0 @@
-node_modules/hubot-server/credentials/*
-.gitignore
-.gitattributes
-brain.json
