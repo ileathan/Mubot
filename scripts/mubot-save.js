@@ -14,8 +14,19 @@
   const path = Path.join(__dirname, '/../brain.json');
   const rjson = require("relaxed-json");
 
+  const l = {};
 
   l.imports = {fs, path, rjson};
+
+  l.exports = bot => {
+    bot.respond(/save brain$/i, l.save);
+    bot.respond(/(set|write) brain (.+)/i, l.easyWrite);
+ 
+    bot.brain.on('save', l.write);
+    bot.brain.on('close', l.write);
+    bot.brain.on('shutdown', l.write);
+  }
+  ;
 
   l.write = (res = {send: _=>_}) => {
     let data = res.data || res;
@@ -47,7 +58,7 @@
   }
   ;
   l.easyWrite = (res = {send: _=>_}) => {
-    data = rjson.parse((res.match||"")[1]);
+    let data = rjson.parse((res.match||"")[1]);
     if(!data) {
       return res.send("No write data provided.");
     }
@@ -55,15 +66,6 @@
       data = "{" + data + "}";
     }
     l.write(rjson.parse(data))
-  }
-  ;
-  l.exports = bot => {
-    bot.respond(/save brain$/i, l.save);
-    bot.respond(/(set|write) brain (.+)/i, l.easyWrite);
- 
-    bot.brain.on('save', write);
-    bot.brain.on('close', write);
-    bot.brain.on('shutdown', write);
   }
   ;
   Object.defineProperties(l, {

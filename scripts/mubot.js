@@ -34,13 +34,13 @@
   ;
   l.load = bot => {
     // Import from scripts/leat-server.js
-    Object.assign(l, bot.leat);
-    l.verifiedNameById = {};
-    for(let name in l.verifiedAcnts) {
-      for(let id in l.verifiedAcnts[name].ids) {
-        l.verifiedNameById[id] = name;
-      }
-    }
+    //Object.assign(l, bot.leat);
+//     l.verifiedNameById = {};
+//     for(let name in l.verifiedAcnts) {
+//       for(let id in l.verifiedAcnts[name].ids) {
+//         l.verifiedNameById[id] = name;
+//       }
+//     }
   }
   ;
   l.idToName = id => l.verifiedNameById[id] || l.bot.brain.userForId(id).name || "_unverified";
@@ -175,28 +175,30 @@
   }
   ;
   l.imports = {exec};
-  Object.defineProperty(l, 'imports', {enumerable: false})
   l.exports = bot => {
     let adapter = bot.adapterName;
-    global[adapter+"Bot"] = bot;
+    //global[adapter+"Bot"] = bot;
     // Emitted by Mubot/scripts/leat-server.js.
     bot.on("leat.io loaded", l.load);
     // All adapters.
-    bot.respond(/.*withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
-    bot.respond(/.*\s+balances?(?:\s+(.*))?$/i, l.balance);
-    //
+    bot.respond(/withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
+    bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);
     if(adapter === 'discord') {
-      bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>$/i, l.balance);
+      bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>(?:\s+(.+))?$/i, l.balance);
       bot.hear(/\+(\d+)\s+<@?!?(\d+)>(?:\s+(.+))?$/i, l.transfer);
       bot.hear(/\+(\d+)\s+@ (.*)#(\d{4})(?:\s+(.+))?$/i, l.transferDiscordFuzzy);
     }
     else {
+      adapter === 'slack' && bot.react(l.transferSlackReaction);
+
       bot.respond(/bal(?:ances?)?\s+@?\s*(\w+)(?: (.+))?$/i, l.balanceByName);
       bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
-      adapter === 'slack' && bot.react(l.transferSlackReaction);
     }
   }
-  Object.defineProperty(l, 'exports', { enumerable: false })
+  Object.defineProperties(l, {
+    exports: { enumerable: false },
+    imports: { enumerable: false }
+  })
   ;
   module.exports = l.exports
   ;
