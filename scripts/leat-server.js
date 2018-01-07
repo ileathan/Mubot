@@ -649,7 +649,8 @@ debugger;
     ;
     // #Load logged in users into memory.
     l.guests = 0;
-    l.io.connection = socket => {
+    //l.io.connection = socket => {
+    l.io.on('connection', socket => {
       l.isSocketLoggedIn(socket, (username, cookie) => {
         // Public API
         socket.on('l.load', l.load.bind(null, username/*,null, callback*/));
@@ -659,7 +660,6 @@ debugger;
         socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
         socket.on("l.createAccount", l.createAccount.bind(null, socket/*acntdata, callback*/));
         socket.on('l.refreshStats', l.refreshStats.bind(null/*, null, callback*/))
-
         // Error handlers
         socket.on('connect_error', _=>l.debug(`Socket connect error ${_}`))
         socket.on('connect_timeout', _=>l.debug(`Socket timed out ${_}`));
@@ -669,7 +669,6 @@ debugger;
         socket.on('reconnecting', _=> l.debug(`Socket reconnecting. ${_}`));
         socket.on('reconnect_error', _=>l.debug("Socket reconnect error."));
         socket.on('reconnect_failed', ()=>l.debug("Socket reconnect attempt failure."));
-
         // Logged in users only API
         if(!username) return;
         socket.on("l.isMiningFor", l.isMiningFor.bind(null, username/*, toUsername, callback*/));
@@ -679,10 +678,12 @@ debugger;
         socket.on("l.verify2fa", l.verify2fa.bind(null, username));
       })
       ;
-    }
+    })
+//    }
     ;
-    l.io.on('connection', l.io.connection.bind(null/*, socket*/));
+    //l.io.on('connection', l.io.connection.bind(null/*, socket*/));
     l.loadUsers();
+    l.loadProxy();
     Object.assign(bot.leat, l)
   }
   ;

@@ -374,11 +374,12 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
   if(!cmd && !(cmd = ((res.match||"")[1])))
     return "No message to process."
   ;
+debugger;
   let id = res.message.user.id,
       dontRun = res.dontRun,
       fn = null, match = null
   ;
-  if((l.saved[id]||"")[cmd] || (l.log[id]||"")[cmd]) {
+  if(l.saved[id] != null && l.saved[id][cmd] || l.log[id] != null && l.log[id][cmd]) {
      // --cmd so that !1 runs the 0'th command.
      match = Number.isInteger(cmd) ? --cmd : cmd;
      // format it asif it had ben RegExp.exec()'d.

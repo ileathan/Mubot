@@ -25,6 +25,7 @@
     bot.brain.on('save', l.write);
     bot.brain.on('close', l.write);
     bot.brain.on('shutdown', l.write);
+    l.load({bot});
   }
   ;
 
@@ -47,6 +48,7 @@
   }
   ;
   l.load = (res = {send: _=>_}) => {
+   let bot = res.bot;
    res.path || (res.path = Path.join(__dirname, '/../brain.json'));
    try {
      let data = fs.readFileSync(res.path, 'utf-8');
