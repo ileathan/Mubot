@@ -50,7 +50,7 @@ Object.defineProperty(l, 'exports', {
 })
 ;
 // Main
-l.run = (res = {send: _=>_, o: res}) => {
+l.run = res => {
   let maxLen = l.config.maxMessageLength,
       opts = Object.assign({}, l.config, res.opts),
       o = res.o, oLen = 0
@@ -88,7 +88,7 @@ l.run = (res = {send: _=>_, o: res}) => {
     o = inspect(e);
   }
   o !== "null" && res.send(
-    '# Output ['+(oLen||o.length)+'] ```'+o.slice(0, maxLen)+'```'
+    '# Output ['+(oLen||o.length)+'] `'+'`'+'`'+o.slice(0, maxLen)+'`'+'`'+'`'
   );
 }
 ;

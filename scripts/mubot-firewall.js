@@ -63,6 +63,7 @@ Object.defineProperty(l, 'exports', {
     bot.respond(/router (on|start|1)/i, l.router.start);
     bot.respond(/router (off|stop|0)/i, l.router.stop);
     bot.respond(/router re(load|fresh)/i, ()=>l.router.stop && l.router.start);
+    Object.assign(bot.mubot, {firewall: l})
   }
 })
 ;

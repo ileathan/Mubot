@@ -35,7 +35,7 @@
       return res.send("No write data provided.")
     }
     try {
-      fs.writeFile(path, rjson.stringify(data), 'utf8', _=>0);
+      fs.writeFile(path, JSON.stringify(data), 'utf8', _=>0);
     } catch(e) {
       bot.logger.debug("Mubot-save: Error: Saving brain.")
     }
