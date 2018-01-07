@@ -8,15 +8,6 @@
   // Define.
   const l = {}
   ;
-  // Export.
-  module.exports = bot => {
-    // Import.
-    Object.assign(bot.leat, l)
-    // Load.
-    l.load(bot)
-    ;
-  }
-  ;
   l.hostname = 'leat.io'
   ;
   l.path = '/../node_modules/mubot-server/public/'
@@ -615,7 +606,7 @@ debugger;
     l.proxy.listen()
     ;
   }
-  l.loadLoggedIn = () => {
+  l.loadUsers = () => {
     l.db.Users.find().then(users => {
       for(let user of users) {
         for(let cookie of user.loginCookies) {
@@ -658,7 +649,6 @@ debugger;
     ;
     // #Load logged in users into memory.
     l.guests = 0;
-    l.io.on('connection', l.io.connection.bind(null/*, socket*/));
     l.io.connection = socket => {
       l.isSocketLoggedIn(socket, (username, cookie) => {
         // Public API
@@ -691,7 +681,9 @@ debugger;
       ;
     }
     ;
+    l.io.on('connection', l.io.connection.bind(null/*, socket*/));
     l.loadUsers();
+    Object.assign(bot.leat, l)
   }
   ;
   l.load = (username, _, callback) => {
@@ -1265,12 +1257,7 @@ debugger;
     l.db.ChatMessages.create({username: username || guest, message}, _=>0)
   }
   ;
-
-
-
-
-
-
-
+  // Export.
+  module.exports = l.exports;
   // End of file.
 })();
