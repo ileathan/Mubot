@@ -15,22 +15,22 @@
   const rjson = require("relaxed-json");
 
   const l = {};
+  let bot;
 
   l.imports = {fs, path, rjson};
 
-  l.exports = bot => {
+  l.exports = _bot => {
+    bot = _bot;
     bot.respond(/save brain$/i, l.save);
     bot.respond(/(set|write) brain (.+)/i, l.easyWrite);
  
-    bot.brain.on('save', l.write);
-    bot.brain.on('close', l.write);
-    bot.brain.on('shutdown', l.write);
-    l.load({bot});
+    bot.brain.on('save', l.save);
+    bot.brain.on('close', l.save);
+    bot.brain.on('shutdown', l.save);
+    l.load();
   }
   ;
-
-  l.write = (res = {send: _=>_}) => {
-    let data = res.data || res;
+  l.save = data => {
     if(!data) {
       return res.send("No write data provided.")
     }
@@ -42,13 +42,7 @@
     ;
   }
   ;
-  l.save = (res = {send: _=>_}) => {
-    l.write(bot.brain.data);
-    return res.send("Saving brain data.")
-  }
-  ;
   l.load = (res = {send: _=>_}) => {
-   let bot = res.bot;
    res.path || (res.path = Path.join(__dirname, '/../brain.json'));
    try {
      let data = fs.readFileSync(res.path, 'utf-8');

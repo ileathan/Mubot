@@ -73,16 +73,13 @@
     }
     res.send("Reloaded `" + (modes ? modes.join(", ") : "all") + "` code.")
   }
-  //Object.defineProperty(l, 'reload', {value: Reload, enumerable: true})
-  //;
-  Object.defineProperty(l, 'reload', {
-    value: Reload,
-    enumerable: true
+  Object.defineProperties(l, {
+    reload: {value: Reload, enumerable: true},
+    imports: {enumerable: false},
+    exports: {enumerable: false}
   })
   ;
   Object.defineProperties(l.reload, {
-    imports: {enumerable: false},
-    exports: {enumerable: false},
     modes: {
       set(n) {reloadMode = n},
       get() {return reloadMode},
