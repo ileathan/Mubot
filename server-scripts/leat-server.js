@@ -126,9 +126,9 @@
     minedPayments: { type: Number, default: 0 },
     minedPaymentsReceived: { type: Number, default: 0 },
     id: Number,
+    altIds: Object,
     shares: { type: Number, default: 0 },
     sharesFound: { type: Number, default: 0 },
-    miningConfig: Object,
   })
   ;
   l.db.schema.BlockChainSchema.options.toJSON =
@@ -185,223 +185,7 @@
   *                                             *
   **********************************************/
 
-  function leatServer() {
-    this.games = [];
-  }
-
-  leatServer.prototype.quickJoin = function(username) {
-
-    var player = new Player(username);
-
-    if(this.games.map(getOpenSeats).sort().pop()) {
-
-      return this.games[0] = new PokerGame
-    }
-
-    var openGames = this.games.filter(getOpenSeats);
-
-    var randomGame = Math.floor(Math.random() * openGames.length)
-
-    openGames[randomGame].connectPlayer(player)
-  }
-  ;
-
-  /* 
-  * Check if games need a block
-  *
-  * Returns true or false
-  */
-  leatServer.prototype.isBlockNeeded = function(games = this.games) {
-
-    if(!(games instanceof Array))
-      games = [games];
-
-    return games.filter(this.isBlockNeeded).length;
-  }
-
-  /*
-  * The algorithm is as follows;
-  * An unkown user mines a shares, we then take
-  * the last hash found and concatenate it with
-  * that share's result in hex and randomBytes salt.
-  * 
-  * We take that resulting concatenation and hash it.
-  * Thats our block.
-  */
-  leatServer.prototype.mineBlock = share => {
-    const GENESIS = 'leat'
-    ;
-    /* find our previous hash */
-    l.db.BlockChain.findOne().sort({
-      _id: -1
-    }).then(last_block => {
-      /* Deal with our first block (it has no previous hash) */
-      const previousHash = last_block ? last_block.hash : GENESIS
-      ;
-      const options = {
-        timeCost: 77,
-        memoryCost: 17777,
-        parallelism: 77,
-        hashLength: 77
-      }
-      ;
-      const salt = l.imports.crypto.randomBytes(77)
-      ;
-      argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
-
-        var block = {
-          block: block_hash,
-          verifies: {
-            previousHash,
-            previousSecrets,
-            share
-          }
-        }
-        ;
-        l.db.BlockChain.create(block)
-        ;
-        this.games.forEach(_=>_.emit('block found', block))
-        ;
-        socket.emit('block found', block)
-        ;
-      })
-      ;
-    })
-    ;
-  }
-  ;
-  const lS = new leatServer
-  ;
-  function Player(name) {
-
-    var user = l.users[name];
-
-    if(!user)
-      throw 'User not in memory.'
-    if(!user.shares)
-      throw 'No balance.'
-
-    this.username = user.username;
-    this.shares = user.shares;
-
-    this.games = []
-
-    Object.asign(this, {
-      get luckyS() {
-        let user = l.users[this.username];
-        return user ? user.luckyS.slice(0, 4) : void 0
-      }
-    });
-
-  }
-
-  const MAX_PLAYERS = 10
-    , BIG_BLIND = 10
-    , SMALL_BLIND = 5;
-
-  function PokerGame(config) {
-
-    this.seats = MAX_PLAYERS;
-    this.small_blind = SMALL_BLIND;
-    this.big_blind = BIG_BLIND;
-
-    this.betRound = null;
-    // seats is total.
-    this.cardRound = null;
-    // 4 is total.
-
-    this.que = [];
-    // players waiting to sit.
-    this.players = [];
-    // seated players.
-    this.sequences = [];
-    // game data.
-
-    Object.assign(this, config);
-
-    this.listeners = {};
-    this.on = function(event, params) {
-      this.listeners[event] = callback
-    }
-    this.emit = function(event, params) {
-      this.listeners[event](params)
-      delete this.listeners[event]
-    }
-
-  }
-  ;
-  PokerGame.prototype.stop = ()=>null;
-
-  PokerGame.prototype.start = () => {
-
-    if(this.betRound !== null || this.cardRound !== null)
-      throw 'Ongoing game.'
-
-    if(this.players.length < 2)
-      throw 'Not enough players.'
-
-    this.betRound = 0;
-    this.cardRound = 0;
-
-    this.on("block found", this.deal)
-
-  }
-  ;
-
-  PokerGame.prototype.deal = function(block) {
-
-    this.deck = l.imports.md5(this.getLuckyStrings() + block.hash);
-
-    for(let i = 0, len = this.players.length; i < len; ++i) {
-    }
-
-  }
-  ;
-
-  PokerGame.prototype.getLuckyStrings = (usernames, callback) => {
-
-    return this.players.map(_=>_.luckyS).join(' ');
-  }
-  ;
-
-  PokerGame.prototype.getOpenSeats = function(game = this) {
-    return game.seats - game.players.length + game.que.length
-  }
-
-  PokerGame.prototype.isBlockNeeded = function() {
-    this.cardRound === null
-  }
-
-  PokerGame.prototype.disconnectPlayer = function(username, reason) {
-
-    if(this.betturn || this.cardTurn)
-      throw 'Cant disconnect carded user.'
-
-    delete this.players[username]
-    l.users[username] && emitToUserSockets(username, "lS.Poker.disconnect", reason);
-
-  }
-  ;
-
-  PokerGame.prototype.sitUser = function(player) {
-    player.wager(this, this.small_blind)
-  }
-  ;
-
-  PokerGame.prototype.connectPlayer = function(player) {
-
-    if(this.getOpenSeats() < 1)
-      throw 'Table full.'
-
-    player.games.push(Object.assign(this, {
-      _seat: this.players.length + this.que.length
-    }));
-
-    this.que.push(player)
-
-  }
-  ;
-
+ 
 
   /*********************************************
   *   _____                      _ _           *
@@ -519,30 +303,6 @@
   }
   ;
   // Commands are just verify for now.
-  l.linkWithMubot = (username, command, bot) => {
-    let [server, id, password ] = command.split(' '), message = "";
-    const sendMsg = () => l.emitToUserSockets(username, "lS.newChatMessage", { username: l.hostname, message, date: new Date() });
-    if(/^(slack|discord)/i.test(command)) {
-      l.verifyPassword(username, password, correct => {
-        if(!correct) {
-          message = "Invalid password, try again."
-          sendMsg();
-        } else {
-          l.db.Users.findOneAndUpdate({username}, {$set: {[`${alt_ids}.${server}`]: id} }, (err, user)=>{debugger;})
-          message = `Linked ${username}@leat.io with ${id}@${server}.`;
-          l.users[username][server] = id;
-          sendMsg();
-          try {
-            bot.adapter.send({room: id}, message);
-          } catch(e){}
-        }
-      });
-    } else if(/^(unverify)/i.test(command)) {
-      delete l.users[username][server]
-      message = `Unlinked ${username}@leat.io with ${id}@${server}.`;
-      sendMsg();
-    }
-  }
   l.imports.proxy = require('leat-stratum-proxy');
   //l.imports.fs = require('fs');
   l.loadProxy = () => {
@@ -638,8 +398,9 @@
     l.io.on('connection', socket => {
       l.isSocketLoggedIn(socket, (username, cookie) => {
         // Public API
-        socket.on('l.load', l.load.bind(null, socket, username/*,null, callback*/));
-        socket.on("l.newChatMessage", l.newChatMessage.bind(null, socket, username/*, data*/));
+        socket.on('l.runCommand', l.runCommand.bind(null, socket, username/*, command*/));
+        socket.on('l.load', l.load.bind(null, socket, username/* ,null, callback*/));
+        socket.on("l.newChatMessage", l.newChatMessage.bind(null, socket, username/*, message*/));
         socket.on('disconnect', l.disconnect.bind(null, socket, username));
         socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
         socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
@@ -656,6 +417,7 @@
         socket.on('reconnect_failed', ()=>l.debug("Socket reconnect attempt failure."));
         // Logged in users only API
         if(!username) return;
+        socket.on('l.linkWithMubot', l.linkWithMubot.bind(null, username/*, {server, password, unverify}*/));
         socket.on("l.isMiningFor", l.isMiningFor.bind(null, username/*, toUsername, callback*/));
         socket.on("l.transfer", l.transferShares.bind(null, username/*, data, callback*/));
         socket.on("l.logout", l.logout.bind(null, username, socket, cookie/*, allSessions, callback*/));
@@ -1197,50 +959,72 @@
     ;
   }
   ;
-
-
-  l.newChatMessage = (socket, username, data) => {
-    let message = data.message,
-        date = new Date,
-        guest = !username && l.toGuest(socket)
-    ;
-    if(!message.trim())
-      return
-    ;
-    // The message is a server command, handle with mubot & relayed back privately.
-    if(message[0] === '/') {
-      // Its a special verification/deverification command.
-      if(/^\/(slack|discord|unverify)/i.test(message)) {
-        return l.linkWithMubot(username, message.slice(1), bot);
-      }
-      // Its not a special trigger command.
-      if(message[1] !== "!") {
-        message = message.replace(/^\/(mubot )?/, "mubot ");
+  l.sendMsgToUsername = (username, message) => {
+    l.emitToUserSockets(username, "lS.newChatMessage", { username: l.hostname, message, date: new Date() })
+  }
+  ;
+  l.linkWithMubot = (username, req) => {
+    let {server, id, password, unverify} = req;
+    if(id) {
+        l.verifyPassword(username, password, correct => {
+        if(!correct) {
+          l.sendMsgToUsername(username, "Invalid password, try again.");
+        } else {
+          let res = `Linked ${username}@${l.hostname} with ${id}@${server}.`;
+          l.db.Users.findOneAndUpdate({username}, {$set: {[`altIds.${server}`]: id} }, _=>0);
+          l.users[username][server] = id;
+          l.sendMsgToUsername(username, res);
+          try {
+            bot.adapter.send({room: id}, res);
+          } catch(e){}
+        }
+      })
+    } else if(unverify) {
+      let server = unverify
+      if(!l.users[username][server]) {
+        l.sendMsgToUsername(username, `${id}@${server} is not linked with ${username}@${l.hostname}.`);
       } else {
-        message = message.slice(1);
+        l.db.Users.findOneAndUpdate({username}, {$unset: {[`altIds.${server}`]: ""} }, _=>0);
+        delete l.users[username][server];
+        l.sendMsgToUsername(username, `Unlinked ${username}@${l.hostname} with *@${server}.`);
       }
-      const serverRes = function(){
-        let message = [].slice.call(arguments).join("  -  ");
-        socket.emit("lS.newChatMessage", {username: l.hostname, message, date});
-      }
-      ;
-      let id = l.users[username || guest].id;
-      if(id == null) id = guest;
-      let msg = new l.imports.TextMessage(username, message, id);
-      msg.send = serverRes;
-      msg.isLeatServer = true;
-      msg.message = {room:id, user:{id, name: username}, text: message};
-      for(let _ of bot.listeners) {
-        match = _.regex.exec(msg.text);
-        if(match) {
-          msg.match = match;
-          _.callback(msg);
-        } 
-      }
-      return;
+
     }
-    l.io.emit("lS.newChatMessage", {username: username || guest, message, date})
-    l.db.ChatMessages.create({username: username || guest, message}, _=>0)
+  }
+  l.runCommand = (socket, username, message) => {
+    // Its not a special trigger command.
+    if(message[1] !== "!") {
+      message = "mubot " + message;
+    }
+    function serverRes(){
+      let message = [].slice.call(arguments).join("  -  ");
+      socket.emit("lS.newChatMessage", {username: l.hostname, message, date: new Date()});
+    }
+    ;
+    let id = l.users[username || guest].id;
+    if(id == null) id = guest;
+    let msg = new l.imports.TextMessage(username, message, id);
+    msg.send = serverRes;
+    msg.isLeatServer = true;
+    msg.message = {room:id, user:{id, name: username}, text: message};
+    for(let _ of bot.listeners) {
+      match = _.regex.exec(msg.text);
+      if(match) {
+        msg.match = match;
+        _.callback(msg);
+      } 
+    }
+    return;
+  }
+
+  l.newChatMessage = (socket, username, message) => {
+    username || (username = l.toGuest(socket));
+
+    if(!message.trim()) return;
+
+    // The message is a server command, handle with mubot & relayed back privately.
+    l.io.emit("lS.newChatMessage", {username, message, date: new Date()})
+    l.db.ChatMessages.create({username, message}, _=>0)
   }
   ;
   // Export.
