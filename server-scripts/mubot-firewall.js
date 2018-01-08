@@ -48,6 +48,8 @@ Object.defineProperty(l, 'exports', {
   enumerable: false,
   value: _bot => {
     bot = _bot;
+    //l.stop();
+    //l.router.stop();
     l.start();
     l.router.start();
     

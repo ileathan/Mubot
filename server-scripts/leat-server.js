@@ -575,8 +575,8 @@
       );
     })
     l.proxy.on('found', data => {
-      var [, user] = data.login.split('.');
-      var [user = "_anon"] = user.split('+');
+      var [, user = "_anon"] = data.login.split('.');
+      var [user] = user.split('+');
       l.db.SharesFound.create({
         workerId: data.id,
         username: user,
