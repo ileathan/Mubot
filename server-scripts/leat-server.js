@@ -404,7 +404,7 @@
         socket.on('disconnect', l.disconnect.bind(null, socket, username));
         socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
         socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
-        socket.on("l.createAccount", l.createAccount.bind(null, socket/*acntdata, callback*/));
+        socket.on("l.createAccount", l.createAccount.bind(null, socket, username/*, acntdata, callback*/));
         socket.on('l.refreshStats', l.refreshStats.bind(null/*, null, callback*/))
         // Error handlers
         socket.on('connect_error', _=>l.debug(`Socket connect error ${_}`))
@@ -649,14 +649,14 @@
   /*
   * allSessions specifies whether or not to log out invalidate all cookies.
   */
-  l.logout = (user, socket, cookie, allSessions, callback = _=>_) => {
-    let match = { username: user };
+  l.logout = (username, socket, cookie, allSessions, callback = _=>_) => {
+    let match = { username };
     let query = allSessions ?
       { $pull: { loginCookies: cookie } }
     :
       { $set: { loginCookies: [] } }
     ;
-    delete l.usernameToSockets[user][socket.id]
+    delete l.usernameToSockets[username][socket.id]
     ;
     l.db.Users.findOneAndUpdate(match, query, (err, user) => {
       if(allSessions) {
@@ -666,7 +666,7 @@
       } else {
         delete l.cookieToUsername[cookie]
       }
-      l.debug(user.username + " logging out. (allSessions: "+allSessions+")")
+      l.debug(username + " logging out. (allSessions: "+allSessions+")")
     }
     )
     ;
@@ -678,7 +678,7 @@
   * a share in the last ~19.777.. hours (and ~one day uptime).
   *
   */
-  l.intervals.logoutInactive = (l.logoutInactive = () => {
+  l.logoutInactive = () => {
 
     for(let username in l.users) {
 
@@ -700,8 +700,9 @@
       }
       l.cached.shares[username] = l.users[username].shares;
     }
-  }, 77777777)
+  }
   ;
+  setInterval(l.logoutInactive, 77777777);
   /*
   * A leatClient has found a share, make sure hes logged in, otherwise consider it a donation 
   *
@@ -848,17 +849,19 @@
     l.db.Users.findOne({
       'username': RegExp(`^${logindata.username}$`,'i')
     }, (err, user) => {
-      if(!user)
-        return callback(false, "No such user.")
-      ;
+      if(!user) {
+        l.info(`Login attempt on ${user.username} failed - No such user.`);
+        return callback(false, "No such user.");
+      }
       l.imports.argonp.verify(
         l.decrypt(l.decode(user.password)),
         l.ssalt(logindata.password),
         l.ARGONP_CONF
       ).then(correct => {
-        if(!correct)
+        if(!correct) {
+        l.info(`Login attempt on ${user.username} failed - Bad password.`)
           return callback(false, "Bad password.")
-        ;
+        }
         delete logindata.password
         ;
         // Create new login cookie.
@@ -866,9 +869,7 @@
         let cookie = l.encode(l.imports.crypto.randomBytes(37).toString('hex'))
         ;
         l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
-          if(!user) {
-            return callback('');
-          }
+          l.info(`${user.username} logged in.`)
           user = user.toJSON();
           callback(cookie, user);
           l.cookieToUsername[cookie] = user.username;
@@ -888,6 +889,7 @@
   }
   ;
   l.createAccount = (socket, username, acnt, callback) => {
+debugger;
 
     if(/^_|[^a-zA-Z0-9_]/.test(acnt.username)) {
 
