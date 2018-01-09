@@ -77,6 +77,9 @@
       } catch(e) {
        res.send("Error loading server-scripts.json " + e)
       }
+    } else {
+debugger;
+      bot.emit("leat.io loaded", bot)
     }
     if(modes.includes("all") || modes.includes("external")) {
       try {

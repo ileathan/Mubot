@@ -15,9 +15,12 @@
   ;
   l.coinsArray = []
   ;
+  l.allRequests = []
+  ;
   l.imports = {http}
   ;
   l.exports = bot => {
+    l.start();
     bot.respond(/stop scanner(?:s| alerts)/i, l.stop);
     bot.respond(/alert (?:me )?(.*)/i, l.create); 
     bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, l.start);
@@ -31,20 +34,23 @@
     exports: {enumerable: false}
   })
   ;
-  l.stop = res => {
+  l.stop = (res = {send: _=>_}) => {
     res.send("Stopping alert scanner.");
     clearInterval(l.interval);
+    delete a.interval;
   }
   ;
-  l.start = res => {
+  l.start = (res = {send: _=>_}) => {
     if(!l.allRequests.length)
       return res.send("No alerts created.")
     ;
-    let time = res.match[1] || 240;
+    if(l.interval)
+      return res.send("Already started.")
+    ;
+    let time = (res.match||"")[1] || 240;
     l.delay = parseInt(time * 1000);
-    res.send("Starting alert scanner every " + time + " seconds.")
+    return res.send("Starting alert scanner every " + time + " seconds.")
 
-    clearInterval(l.interval);
     l.interval = setInterval(()=>l.makeCoins(l.check), l.delay)
   }
   l.create = res => {
@@ -53,15 +59,15 @@
       return res.send("Specify a price.")
     ;
     l.allRequests.push(new l.Request(res, request))
-    l.interval || l.startInterval(); // Every 2 mins.
+    l.interval || l.start(); // Every 2 mins.
     res.send("Alert(s) created.")
   }
   l.length = res => {
     res.send("There are " + l.allRequests.length + " alerts.")
   }
   ;
-  l.view = res => {
-    res.send(l.allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
+  l.view = (res = {send: _=>_}) => {
+    return res.send(l.allRequests.map(req => req.res.message.user.name + ": " + req.alerts.join(', ')).join(', '))
   }
   l.check = coinsObj => {
     // store allRequests that arnt undef.
@@ -76,7 +82,7 @@
     }
     l.allRequests = results;
   }
-  l.makeCoins = callback => {
+  l.makeCoins = (callback = _=>_) => {
     if(allRequests.length === 0) {
       return clearInterval(l.interval);
     }

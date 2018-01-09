@@ -54,7 +54,7 @@ debugger;
     const GENESIS = l.hostname
     ;
     /* find our previous hash */
-    l.db.BlockChain.findOne().sort({
+    l.BlockChain.findOne().sort({
       _id: -1
     }).then(last_block => {
       /* Deal with our first block (it has no previous hash) */
@@ -80,7 +80,7 @@ debugger;
           }
         }
         ;
-        l.db.BlockChain.create(block)
+        l.BlockChain.create(block)
         ;
         this.games.forEach(_=>_.emit('block found', block))
         ;
@@ -227,11 +227,11 @@ debugger;
   ;
   l.exports = _bot => {
     bot = _bot;
-    l.db = {};
+    l.BlockChain = {};
 
-    bot.on("leat.io loaded", ()=>{
-       l.db.BlockChain = bot.leat.db.BlockChain;
-
+    bot.on("leat.io loaded", bot=>{
+       l.users = bot.leat.users;
+       l.BlockChain = bot.leat.db.BlockChain;
     })
    
     bot.respond(/(play|join) poker/i, l.createUser)
@@ -239,9 +239,21 @@ debugger;
     Object.assign(bot.mubot, {poker: l})
   }
   ;
+
+  l.userForId = id => {
+debugger;
+    for(let username in l.users) {
+      var user = l.users[username];
+      if(id === user.id || Object.values(user.altIds).filter(_=>_===id)) {
+        return user;
+      }
+    }
+  }
+  ;
   l.createUser = res => {
-    let player = new l.Player(username);
-    debugger;
+debugger;
+    let user = l.userForId(res.message.user.id)
+    let player = new bot.mubot.poker.Player(user.username);
   }
   ;
 
