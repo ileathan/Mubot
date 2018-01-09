@@ -6,6 +6,7 @@
 
   const l = {};
   const argond = require('argon2-ffi').argon2d;
+  const crypto = require('crypto');
 
   l.Engine = function(){
     this.games = [];
@@ -16,23 +17,16 @@
 
   l.Engine.prototype.quickJoin = function(username) {
 debugger;
-    var player = new Player(username);
-
-    if(this.games.map(getOpenSeats).pop()) {
-
-      return this.games[0] = new l.Table
+    let player = new l.Player(username),
+        openGames = this.games.filter(getOpenSeats),
+        randomGame = Math.floor(Math.random() * openGames.length)
+    ;
+    if(openGames.length === 0) {
+      return this.games[0] = new l.Table;
     }
-
-    var openGames = this.games.filter(getOpenSeats);
-
-    var randomGame = Math.floor(Math.random() * openGames.length)
-
-    openGames[randomGame].connectPlayer(player)
+    return openGames[randomGame].connectPlayer(player);
   }
   ;
-
-
-debugger;
   /* 
   * Check if games need a block
   *
@@ -229,18 +223,13 @@ debugger;
 
   }
   ;
-
-
-
-
-  l.imports = {argond}
-
+  l.imports = {argond, crypto}
+  ;
   l.exports = _bot => {
     bot = _bot;
     l.db = {};
 
     bot.on("leat.io loaded", ()=>{
-debugger;
        l.db.BlockChain = bot.leat.db.BlockChain;
 
     })

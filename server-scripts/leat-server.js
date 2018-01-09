@@ -16,6 +16,8 @@
   ;
   l.intervals = {}
   ;
+  l.users = {}
+  ;
   // first seed_refs users are except for life from ref fees.
   l.seed_refs = 77;
   // Store imports/requires here, dont export these.
@@ -361,8 +363,8 @@
         l.users[user.username].loggedIn = user.loginCookies.length;
         ;
       }
-      Object.assign(bot.leat, l); // export
-      bot.emit("leat.io loaded", bot);
+      //Object.assign(bot.leat, l); // export
+      bot.emit(`${l.hostname} loaded`, bot);
     });
   }
   let bot;
@@ -666,7 +668,7 @@
       } else {
         delete l.cookieToUsername[cookie]
       }
-      l.debug(username + " logging out. (allSessions: "+allSessions+")")
+      l.info(username + " logging out. (allSessions: "+allSessions+")")
     }
     )
     ;
@@ -681,7 +683,7 @@
   l.logoutInactive = () => {
 
     for(let username in l.users) {
-
+      l.info("Logging out inactive users.")
       if(l.cached.shares[username] === l.users[username].shares) {
         l.db.Users.findOneAndUpdate({username}, {$set: {loginCookies: []}}, (err, user) => {
 
@@ -694,7 +696,7 @@
           delete l.usernameToSockets[user.username];
           delete l.users[user.username]
           ;
-          l.debug("Automagically logged " + user.username + " out.")
+          l.info("Automagically logged " + user.username + " out.")
         })
         ;
       }
@@ -708,34 +710,23 @@
   *
   */
   l.shareFound = username => {
-    let needs_to_pay, myuser
+    let myuser = l.users[username]
     ;
     ++l.total_shares
-    ;
-    // Every 777 shares found, long out all inactive users
-    myuser = l.users[username]
     ;
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#") {
       l.db.Users.findOneAndUpdate({username: l.hostname}, {$inc: {'shares': 1}}, {upsert: true}, _=>0);
-      l.info("Server got +1'd by " + username + ".");
       return;
     }
     ++myuser.sharesFound
     ;
     l.emitToUserSockets(username, 'lS.shareAccepted')
     ;
-    needs_to_pay = false
-    ;
     myuser.lastFoundTime = new Date
     ;
-    if(myuser.ref != null && !myuser.refPayments)
-      needs_to_pay = true
-    ;
-    else if(myuser.ref != null && myuser.refPayments / myuser.sharesFound < .03)
-      needs_to_pay = true
-    ;
-    if(needs_to_pay) {
+    // User has a pending payment they need to fullfill
+    if(myuser.ref != null && (!myuser.refPayments || myuser.refPayments / myuser.sharesFound < .03)) {
       l.db.Users.findOneAndUpdate({
         'id': myuser.ref
       }, { 
@@ -765,9 +756,7 @@
       )
     } else if(myuser.isMiningFor) {
 
-      l.db.Users.findOneAndUpdate({
-        username: new RegExp('^' + username + '$','i')
-      }, {
+      l.db.Users.findOneAndUpdate({username}, {
         $inc: {'sharesFound': 1, 'minedPayments': 1}
       }, (err, user) => {
         if(!user)
