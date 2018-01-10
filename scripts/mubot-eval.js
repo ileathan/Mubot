@@ -35,7 +35,8 @@ l.exports = _bot => {
     RegExp('^(?:[!]|(?:[@]?'+(bot.name||bot.alias)+'\s*[:,]?\s*[!]))(.+)', 'i'),
     l.utils.processMessage
   );
-  bot.respond(/```((?:.|\n)+)\n?```/i, res => {
+  bot.respond(/`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```/i, res => {
+    res.match[1] = res.match[1] || res.match[2];
     l.always[res.message.user.id] ||
       l.create(res)
     ;

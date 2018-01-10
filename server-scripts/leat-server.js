@@ -339,7 +339,7 @@
         socket.on('reconnect_failed', ()=>l.utils.debug("Socket reconnect attempt failure."));
         // Logged in users only API
         if(!username) return;
-        socket.on('l.linkWithMubot', l.utils.linkWithMubot.bind(null, username/*, {server, password, unverify}*/));
+        socket.on('l.linkWithMubot', l.utils.linkWithMubot.bind(null, username/*, {server, id, password, unverify}*/));
         socket.on("l.isMiningFor", l.utils.setMiningFor.bind(null, username/*, toUsername, callback*/));
         socket.on("l.transfer", l.transferShares.bind(null, username/*, data, callback*/));
         socket.on("l.logout", l.logout.bind(null, username, socket, cookie/*, allSessions, callback*/));
@@ -898,6 +898,7 @@
     }
   }
   l.runCommand = (socket, username, bot, message) => {
+    username = username || l.toGuest(socket);
     // Its not a special trigger command.
     if(message[1] !== "!") {
       message = "mubot " + message;
@@ -907,8 +908,7 @@
       socket.emit("lS.newChatMessage", {username: l.hostname, message, date: new Date()});
     }
     ;
-    let id = l.users[username || guest].id;
-    if(id == null) id = guest;
+    let id = l.users[username] ? l.users[username].id : username
     let msg = new l.imports.TextMessage(username, message, id);
     msg.send = serverRes;
     msg.isLeatServer = true;
