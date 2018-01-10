@@ -361,12 +361,13 @@ l.utils.preventHacks = (res = {send: _=>_}) => {
     cert: { enumerable: false },
     key: { enumerable: false },
     _sharedCreds: { enumerable: false }
-  })
-  Object.defineProperties(bot.leat, {
-    secure: { enumerable: false },
-    cookieToUsername: { enumerable: false }
   });
-  return res.send("Sucess.")
+  Object.defineProperty(bot.leat, 'cookieToUsername', {enumerable: false});
+  Object.defineProperties(bot.leat.config, {
+    secret: { enumerable: false },
+    encryption_key: { enumerable: false }
+  });
+  return res.send("Sucess.");
 }
 ;
 l.utils.processMessage = (res = {send: _=>_}, cmd) => {
