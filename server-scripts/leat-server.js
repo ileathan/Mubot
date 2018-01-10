@@ -611,7 +611,7 @@
           }
 
           delete l.usernameToSockets[user.username];
-          delete l.users[user.username]
+          l.users[user.username].loggedIn = 0;
           ;
           l.utils.info("Automagically logged " + user.username + " out.")
         })
