@@ -23,7 +23,7 @@
         for(let i = 0, l = data.length; i < l; ++i)
           total += +data[i][type]
         ;
-        type = type === "vol" ? "volume" : "market cap";
+        type = type === "24h_volume_usd" ? "volume" : "market cap";
         total = numeral(total).format('(0.00a)').toUpperCase();
         res.send((ignore ? "Ignoreing ranks " : "Including ranks ") + (++startAt || 0) + " - " + (endAt || data.length) + "\n" + "Total " + type + " is " + total + ".")
       })

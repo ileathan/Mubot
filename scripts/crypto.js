@@ -84,7 +84,7 @@
     var marketLink;
     if(market === "b") marketLink = "https://bittrex.com/api/v1.1/public/getorderbook?market=BTC-" + ticker + "&type=both&depth=" + depth;
     else marketLink = "https://poloniex.com/public?command=returnOrderBook&currencyPair=BTC_" + ticker + "&depth=" + depth;
-    bot.http(marketLink).get()((err, resp, body) => {
+    bot.http(marketLink, (err, resp, body) => {
       var orderBook;
       if(err) return msg.send("Error with http call.");
       if(market === "b") {
