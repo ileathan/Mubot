@@ -21,11 +21,11 @@
   ;
   l.exports = bot => {
     l.start();
-    bot.respond(/stop scanner(?:s| alerts)/i, l.stop);
-    bot.respond(/alert (?:me )?(.*)/i, l.create); 
-    bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, l.start);
-    bot.respond(/alerts$/i, l.length);
-    bot.respond(/alerts view/i, l.view);
+    bot.respond(/stop scanner(?:s| alerts)/i, _=>l.stop(_));
+    bot.respond(/alert (?:me )?(.*)/i, _=>l.create(_));
+    bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, _=>l.start(_));
+    bot.respond(/alerts$/i, _=>l.length(_));
+    bot.respond(/alerts view/i, _=>l.view(_));
     bot.mubot.coinalert = l;
   }
   ;

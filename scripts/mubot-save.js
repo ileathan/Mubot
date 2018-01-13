@@ -21,12 +21,12 @@
 
   l.exports = _bot => {
     bot = _bot;
-    bot.respond(/save brain$/i, l.save);
-    bot.respond(/(set|write) brain (.+)/i, l.easyWrite);
+    bot.respond(/save brain$/i, _=>l.save(_));
+    bot.respond(/(set|write) brain (.+)/i, _=>l.easyWrite(_));
  
-    bot.brain.on('save', l.save);
-    bot.brain.on('close', l.save);
-    bot.brain.on('shutdown', l.save);
+    bot.brain.on('save', _=>l.save(_));
+    bot.brain.on('close', _=>l.save(_));
+    bot.brain.on('shutdown', _=>l.save(_));
     l.load();
     bot.mubot.save = l;
   }

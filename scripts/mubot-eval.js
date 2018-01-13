@@ -33,7 +33,7 @@ l.exports = _bot => {
   // Capture all markdown formatted code.
   bot.hear(
     RegExp('^(?:[!]|(?:[@]?'+(bot.name||bot.alias)+'\s*[:,]?\s*[!]))(.+)', 'i'),
-    l.utils.processMessage
+    _=>l.utils.processMessage(_)
   );
   bot.respond(/`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```/i, res => {
     res.match[1] = res.match[1] || res.match[2];

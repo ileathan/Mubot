@@ -17,7 +17,7 @@
     // purposely capture commit pointlessly so we can call the command outside
     // of natural context in the sense we can do `mubot.commit(res)` with another
     // res that wont have higher capture groups set.
-    bot.respond(/((commit))(?: ([\S]+))?(?: (.+))?/i, l.commit)
+    bot.respond(/((commit))(?: ([\S]+))?(?: (.+))?/i, _=>l.commit(_))
     bot.mubot.commit = l.commit;
   }
   ;

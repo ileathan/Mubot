@@ -19,8 +19,8 @@
   ;
   l.reload.exports = _bot => {
     bot = _bot;
-    bot.respond(/reload(?: (.+))?$/i, l.reload)
-    bot.respond(/set (?:reload|load)(?: modes?)?(?: me)?(?: (.+))?/i, l.reload.setModes)
+    bot.respond(/reload(?: (.+))?$/i, _=>l.reload(_))
+    bot.respond(/set (?:reload|load)(?: modes?)?(?: me)?(?: (.+))?/i, _=>l.reload.setModes(_));
     bot.mubot.reload = l.reload;
   }
   ;

@@ -12,7 +12,7 @@
       bot.mubot.coins = l;
     });
     l.refresh({bot});
-    bot.hear(/^!coins( (load|build|ref(resh)?))? build$/, l.refresh)
+    bot.hear(/^!coins( (load|build|ref(resh)?))? build$/, _=>l.refresh(_))
     ;
   }
   ;
@@ -112,7 +112,7 @@
       l.commands = Object.keys(l.asArray[0]);
       ;
       for(let cmd of l.commands)
-        res.bot.hear(l.utils.buildRegex(cmd), l.getMatches)
+        res.bot.hear(l.utils.buildRegex(cmd), _=>l.getMatches(_))
       ;
     }
     res.send && res.send(l.asArray.length + " processed.")

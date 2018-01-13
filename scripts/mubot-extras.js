@@ -7,16 +7,17 @@ let bot
 ;
 l.exports = _bot => {
   bot = _bot;
-  bot.respond(/.*view brain(?: (.+))?i/, l.viewBrain);
-  bot.respond(/.*ping(?: me)?/i, l.ping);
-  bot.respond(/.*time(?: me)?/i, l.time);
-  bot.respond(/.*date(?: me)?/i, l.date);
-  bot.respond(/.*command count(?: me)?/i, l.commandCount);
-  bot.respond(/adapter$/i, l.adapter);
-  bot.respond(/echo ((?:\n|.)*)$/i, l.echo);
-  bot.respond(/set alarm (\d+)(?: (.*))?/i, l.setAlarm);
-  // Export
   bot.mubot.extras = l;
+
+  bot.respond(/.*view brain(?: (.+))?i/, _=>l.viewBrain(_));
+  bot.respond(/.*ping(?: me)?/i, _=>l.ping(_));
+  bot.respond(/.*time(?: me)?/i, _=>l.time(_));
+  bot.respond(/.*date(?: me)?/i, _=>l.date(_));
+  bot.respond(/.*command count(?: me)?/i, _=>l.commandCount(_));
+  bot.respond(/adapter$/i, _=>l.adapter(_));
+  bot.respond(/echo ((?:\n|.)*)$/i, _=>l.echo(_));
+  bot.respond(/set alarm (\d+)(?: (.*))?/i, _=>l.setAlarm(_));
+  // Export
 }
 ;
 l.setAlarm = res=> {
@@ -27,6 +28,7 @@ l.setAlarm = res=> {
 }
 ;
 l.echo = res => {
+debugger;
   if(res) { 
     if(!res.match) { res.send = _=>_; res.match = [, res]}
   }
