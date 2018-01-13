@@ -28,11 +28,10 @@ l.setAlarm = res=> {
 }
 ;
 l.echo = res => {
-debugger;
   if(res) { 
-    if(!res.match) { res.send = _=>_; res.match = [, res]}
+    if(!res.match[1]) res = {send: _=>_, match: [, res]};
   }
-  res.send(res.match[1])
+  return res.send(res.match[1])
 }
 ;
 l.adapter = (res = {send: _=>_}) => 
