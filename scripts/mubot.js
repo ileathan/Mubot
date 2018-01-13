@@ -74,8 +74,23 @@
   }
   ;
   l.balanceByName = res => {
-    let [, name, coins] = res.match,
-        userId = l.bot.brain.userForName(name).id
+    let [, name, coins] = res.match
+    ;
+    if(!name) name = res.message.user.name
+    ;
+    let userId = l.bot.brain.userForName(name).id
+    ;
+    if(!userId) {
+      return res.send("Sorry but I cant find that user.");
+    }
+    res.match = [, userId, coins]
+    l.balance(res);
+  }
+  ;
+  l.balanceByLeatName = res => {
+    let [, name, coins] = res.match
+    ;
+    if(!name) name = res.message.user.name
     ;
     if(!userId) {
       return res.send("Sorry but I cant find that user.");
@@ -85,8 +100,11 @@
   }
   ;
   l.transferByName = res => {
-    let [, amount, name, context] = res.match,
-        recipientId = l.bot.brain.userForName(name).id
+    let [, amount, name, context] = res.match;
+    ;
+    if(!name) name = res.message.user.name
+    ;
+    let recipientId = l.bot.brain.userForName(name).id
     ;
     if(!recipientId) {
        return res.send("Sorry but I cant find that user.");
@@ -193,14 +211,17 @@
     bot.respond(/withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
     //bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);
     if(adapter === 'discord') {
-      bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>(?:\s+(.+))?$/i, l.balance);
+      bot.respond(/bal(?:ances?)?(?:\s+<@?!?(\d+)>)?(?:\s+(shares|bits|marks))?$/i, l.balance);
+      bot.respond(/bal(?:ances?)?\s+([\S]+)(?:@leat.io)(?:\s+(shares|bits|marks))?$/i, l.balanceByLeatName);
+
       bot.hear(/\+(\d+)\s+<@?!?(\d+)>(?:\s+(.+))?$/i, l.transfer);
       bot.hear(/\+(\d+)\s+@ (.*)#(\d{4})(?:\s+(.+))?$/i, l.transferDiscordFuzzy);
     }
     else {
       adapter === 'slack' && bot.react(l.transferSlackReaction);
 
-      bot.respond(/bal(?:ances?)?\s+@?\s*(\w+)(?: (.+))?$/i, l.balanceByName);
+      bot.respond(/bal(?:ances?)?(?:\s+@?\s*([\S]+))?(?: (shares|bits|marks))?$/i, l.balanceByName);
+      bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?@leat\.io(?:\s+(shares|bits|marks))?$/i, l.balanceByLeatName);
       bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
     }
   }
