@@ -47,9 +47,9 @@ l.ping =  (res = {send: _=>_}) =>
   res.send(res.bot.client.pings[0] + 'ms.');
 ;
 l.time = (res = {send: _=>_}) =>
-  "Server time is: " + new Date().toLocaleTimeString()
+  res.send("Server time is: " + new Date().toLocaleTimeString())
 ;
 l.date = (res = {send: _=>_}) =>
-  "Server date is: " + new Date().toLocaleDateString()
+  res.send("Server date is: " + new Date().toLocaleDateString())
 ;
 module.exports = l.exports;
