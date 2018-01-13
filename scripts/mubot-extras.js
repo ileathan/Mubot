@@ -16,14 +16,13 @@ l.exports = _bot => {
   bot.respond(/.*command count(?: me)?/i, _=>l.commandCount(_));
   bot.respond(/adapter$/i, _=>l.adapter(_));
   bot.respond(/echo ((?:\n|.)*)$/i, _=>l.echo(_));
-  bot.respond(/set alarm (\d+)(?: (.*))?/i, _=>l.setAlarm(_));
+  bot.respond(/set alarm (\d+)(?: (.*))?/i, _=>l.alarm(_));
   // Export
 }
 ;
-l.setAlarm = res=> {
-  let [, delay, msg = "Alarm triggered!!!"] = res.match;
+l.alarm = res => {
+  let [, delay = 7, msg = "Alarm triggered!!!"] = res.match;
 
-  res.send("Alarm set for " + delay + " seconds.");
   setTimeout(()=>res.reply(msg), delay*1000);
 }
 ;
