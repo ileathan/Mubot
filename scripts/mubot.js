@@ -34,7 +34,7 @@
   ;
   let bot
   ;
-  l.idToName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop()
+  l.idToName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop() || `##${id}`
   ;
   l.symbols = {marks: '₥', bits: 'ɱɃits', shares: ' shares'}
   ;
@@ -42,8 +42,10 @@
   ;
   // Returns: balance object containing every coin specified.
   l.idToBalances = (id, coins) => {
-    const name = l.idToName(id);
-    const account = l.idToAccount(id);
+    let username = l.idToName(id);
+
+    let account = l.idToAccount(id);
+
     coins || (coins = Object.keys(l.symbols));
     let res = {};
     for(let coin of coins) {
@@ -144,7 +146,6 @@
   }
   ;
   l.transfer = res => {
-debugger;
     let senderId = res.message.user.id;
     let coin = l.getCoin(res);
     let symbol = l.symbols[coin];
@@ -204,6 +205,7 @@ debugger;
   l.imports = {exec};
   l.exports = _bot => {
     bot = _bot;
+    if(bot.adapterName === "discord") bot.client.users.every(_=>bot.brain.data.users[_.id]=_)
     // All adapters.
     bot.respond(/withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
     //bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);

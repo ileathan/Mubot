@@ -5,6 +5,7 @@
 ;(function(){
 
   const l = {};
+  var bot = null;
   const argond = require('argon2-ffi').argon2d;
   const crypto = require('crypto');
 
