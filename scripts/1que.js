@@ -26,6 +26,7 @@
         // our msg chunk
         var chunk;
         // only proceed if we need to break msg down to chunks.
+
         if(context.strings[i] && context.strings[i].length > 2000) {
           if(/view|search/i.test(context.response.match[0].split(' ')[1])) {
             // The command is a view or code command, so pad it with code markdown.

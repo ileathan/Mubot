@@ -15,19 +15,13 @@ module.exports = bot => {
   bot.respond(/(get )?(user |my )?id$/i, msg => msg.send("Your user id: " + msg.message.user.id));
 
   bot.respond(/(get )?(user )?id (.+)$/i, msg => {
-    var name = msg.match[3];
-    var user = bot.brain.userForName(name);
-    user ?
-      msg.send(name + " user id: " +  user.id)
-    :
-      msg.send("No user found.");
+    if(msg.match[3][0] === "<") {
+      msg.send(msg.match[3].slice(2, -1))
+    } else {
+      let user = bot.brain.userForName(msg.match[3]);
+      msg.send(user ? user.id : "No user found.");
+    }
   })
-  ;
-  bot.respond(/(get )?(user )? id <@?!?(\d+)>$/i, msg => msg.send(
-    bot.brain.userForId(msg.match[3]).name
-    + "user id: " +
-    msg.match[3]
-  ))
   ;
   bot.respond(/(get )?(user )?ids (.+)$/i, msg => msg.send(
     msg.match[3]

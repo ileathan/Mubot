@@ -25,6 +25,7 @@
      c: require('encode-x')(),
      TextMessage: require('../node_modules/mubot/src/message.js').TextMessage
   };
+  l.imports.mongoose.Promise = global.Promise;
   /*if(!l.config.secret) {
     throw new Error("Need to pass in a SECRET `export SECRET=\"someverylongsafesecret\" mubot`")
   }
@@ -240,8 +241,8 @@
         }
         if(bot) bot.emit(`${l.hostname} loaded`, bot);
       })
-      l.db.SharesFound.count({}, (err, count)=> l.total_shares = count);
-      l.db.Users.count({}, (err, count)=>l.total_users = count);
+      l.db.SharesFound.count({}, (err, count)=> l.stats.total_shares = count);
+      l.db.Users.count({}, (err, count)=>l.stats.total_users = count);
     }
   }
   /*

@@ -43,11 +43,11 @@
 //     }
   }
   ;
-  l.idToName = id => l.verifiedNameById[id] || l.bot.brain.userForId(id).name || "_unverified";
+  l.idToName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop() || "_unverified";
   ;
   l.symbols = {marks: '₥', bits: 'ɱɃbits', shares: 'shares'}
   ;
-  l.idToAccount = id => l.users[l.idToName(id)] || (l.users[l.idToName(id)] = {})
+  l.idToAccount = id => bot.leat.users[l.idToName(id)] || {}
   ;
   // Returns: balance object containing every coin specified.
   l.idToBalances = (id, coins) => {
@@ -126,8 +126,17 @@
     l.transfer(res);
   }
   ;
+  l.getCoin = res => {
+    return "shares";
+  }
+  ;
+  l.setCoin = res => {
+    void 0; // Allow user to set shares or XMR or BTM.
+  }
+  ;
   l.transfer = res => {
     let senderId = res.message.user.id;
+    let coin = l.getCoin(res);
     // recipient may contain ID or username.
     let [, amount, recipientId, context ] = res.match;
     if(!l.updateBalance(senderId, -amount)) {
@@ -182,7 +191,7 @@
     bot.on("leat.io loaded", l.load);
     // All adapters.
     bot.respond(/withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
-    bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);
+    //bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);
     if(adapter === 'discord') {
       bot.respond(/bal(?:ances?)?\s+<@?!?(\d+)(?:\s+(.+))?>(?:\s+(.+))?$/i, l.balance);
       bot.hear(/\+(\d+)\s+<@?!?(\d+)>(?:\s+(.+))?$/i, l.transfer);

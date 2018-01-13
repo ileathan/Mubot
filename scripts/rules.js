@@ -21,15 +21,6 @@
       if(res.match[1]) res.send("RULES WITH THE DEVIL?!?!? NO, Kill them, make sure the bloody *nix thieves burn!")
       else res.send(rules.join('\n'));
     });
-    bot.respond(/adapter$/i, res => {
-      res.send(bot.adapterName);
-    });
-    bot.respond(/echo (.*)$/i, res => {
-      res.send(res.match[1]);
-    });
-    bot.respond(/time$/i, res => {
-      res.send("Server time is: " + new Date);
-    });
   }
 }).call(this);
 

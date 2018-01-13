@@ -17,7 +17,7 @@ l.exports = _bot => {
   bot = _bot;
   l.utils.preventHacks();
   // Load evals and config from brain.
-  bot.brain.on('loaded', () => {
+  bot.brain.on('all loaded', () => {
     Object.assign(l, bot.brain.data.eval || (
       bot.brain.data.eval = {
         log: {},
@@ -93,8 +93,8 @@ l.create = (res = {send: _=>_}) => {
       let rjson = require('relaxed-json');
       try { userOpts = rjson.parse('{'+userOpts+'}') }
       catch(e) {
-        try { userOptsrjson.parse(userOpts) }
-        catch(e) { return res.send("Error parsing JSON.") }
+        try { userOpts = rjson.parse(userOpts) }
+        catch(e) { userOpts = "" }
       }
     }
   }

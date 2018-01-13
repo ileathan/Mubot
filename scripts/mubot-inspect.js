@@ -87,6 +87,7 @@ l.run = res => {
   } catch(e) {
     o = inspect(e);
   }
+  o = o.replace(/```/g, '\\`\\`\\`');
   o !== "null" && res.send(
     '# Output ['+(oLen||o.length)+'] `'+'`'+'`'+o.slice(0, maxLen)+'`'+'`'+'`'
   );

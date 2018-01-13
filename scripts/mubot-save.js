@@ -47,7 +47,7 @@
    try {
      let data = fs.readFileSync(res.path, 'utf-8');
      bot.brain.mergeData(JSON.parse(data));
-     bot.brain.emit('loaded');
+     bot.brain.emit('all loaded');
     } catch(err) {
       bot.logger.debug("Mubot-save: Error: Loading brain.");
     }
