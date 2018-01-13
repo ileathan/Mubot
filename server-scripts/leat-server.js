@@ -137,8 +137,7 @@
   l.config.db.BlockChainSchema.options.toJSON =
   l.config.db.PokerGamesSchema.options.toJSON =
   l.config.db.TransactionsSchema.options.toJSON =
-  l.config.db.ChatMessagesSchema.options.toJSON =
-  l.config.db.DeletedContentSchema.options.toJSON = {
+  l.config.db.ChatMessagesSchema.options.toJSON = {
     transform: function(doc, ret, options) {
       ret.date = ret._id.getTimestamp()
       ;
@@ -230,6 +229,7 @@
   l.stats = {
     total_shares: 0,
     total_users: 0,
+    deleted_ids: [],
     load: bot => {
       l.db.Users.find().then(users => {
         for(let user of users) {
@@ -243,6 +243,7 @@
       })
       l.db.SharesFound.count({}, (err, count)=> l.stats.total_shares = count);
       l.db.Users.count({}, (err, count)=>l.stats.total_users = count);
+      l.db.DeletedContent.find({}, (err, ids)=>l.stats.deleted_ids = ids.map(_=>_.id));
     }
   }
   /*
@@ -327,7 +328,7 @@
         socket.on('disconnect', l.disconnect.bind(null, socket, username));
         socket.on("l.checkUsername", l.checkUsername.bind(null/*, username, callback*/));
         socket.on("l.login", l.login.bind(null, socket/*, logindata, callback*/));
-        socket.on("l.createAccount", l.createAccount.bind(null, socket, username/*, acntdata, callback*/));
+        socket.on("l.createAccount", l.createAccount.bind(null, socket/*, acntdata, callback*/));
         socket.on('l.refreshStats', l.refreshStats.bind(null/*, null, callback*/))
         // Error handlers
         socket.on('connect_error', _=>l.utils.debug(`Socket connect error ${_}`))
@@ -481,15 +482,15 @@
     ;
   }
   ;
-  l.deletedIds = [];
+
   l.deleteUser = username => {
     let id = l.users[username].id;
-    l.deletedIds.push(l.users[username].id);
+    l.stats.deleted_ids.push(l.users[username].id);
     l.db.DeletedContent.create({id}, _=>0);
     l.db.Users.remove({username}, 1);
   }
   l.getNewId = () => {
-    return l.deletedIds.pop() || l.total_users
+    return l.stats.deleted_ids.pop() || l.total_users
   }
   ;
   l.setUserPass = (user, pass, callback) => {
@@ -560,10 +561,6 @@
   ;
   l.toGuest = socket =>
     "#" + l.imports.md5(l.config.secret + socket.handshake.address).slice(0, 8)
-  ;
-  l.updateBalance = (username, type = 'shares', amount = 1, callback = _=>0) => {
-    l.db.Users.findOneAndUpdate({username}, {$inc: {type: amount}}, {upsert: true}, callback)
-  }
   ;
   /*
   * allSessions specifies whether or not to log out invalidate all cookies.
@@ -794,7 +791,7 @@
     ;
   }
   ;
-  l.createAccount = (socket, username, acnt, callback) => {
+  l.createAccount = (socket, acnt, callback) => {
 
     if(/^_|[^a-zA-Z0-9_]/.test(acnt.username)) {
 
@@ -856,7 +853,6 @@
               callback(cookie)
               ;
             })
-            ;
             ;
           })
           ;

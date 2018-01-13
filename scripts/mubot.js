@@ -32,20 +32,11 @@
   ************************/
   const l = {}
   ;
-  l.load = bot => {
-    // Import from scripts/leat-server.js
-    //Object.assign(l, bot.leat);
-//     l.verifiedNameById = {};
-//     for(let name in l.verifiedAcnts) {
-//       for(let id in l.verifiedAcnts[name].ids) {
-//         l.verifiedNameById[id] = name;
-//       }
-//     }
-  }
+  let bot
   ;
-  l.idToName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop() || "_unverified";
+  l.idToName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop()
   ;
-  l.symbols = {marks: '₥', bits: 'ɱɃbits', shares: 'shares'}
+  l.symbols = {marks: '₥', bits: 'ɱɃits', shares: ' shares'}
   ;
   l.idToAccount = id => bot.leat.users[l.idToName(id)] || {}
   ;
@@ -78,7 +69,7 @@
     ;
     if(!name) name = res.message.user.name
     ;
-    let userId = l.bot.brain.userForName(name).id
+    let userId = bot.brain.userForName(name).id
     ;
     if(!userId) {
       return res.send("Sorry but I cant find that user.");
@@ -104,7 +95,7 @@
     ;
     if(!name) name = res.message.user.name
     ;
-    let recipientId = l.bot.brain.userForName(name).id
+    let recipientId = bot.brain.userForName(name).id
     ;
     if(!recipientId) {
        return res.send("Sorry but I cant find that user.");
@@ -127,7 +118,7 @@
   l.transferDiscordFuzzy = res => {
     let recipientId = null,
         [, amount, recipientName, discriminator, context ] = res.match,
-        matchedUsers = l.bot.brain.usersForFuzzyName(recipientName)
+        matchedUsers = bot.brain.usersForFuzzyName(recipientName)
     ;
     if(matchedUsers.length === 1) {
       recipientId = matchedUsers[0].id;
@@ -153,20 +144,21 @@
   }
   ;
   l.transfer = res => {
+debugger;
     let senderId = res.message.user.id;
     let coin = l.getCoin(res);
+    let symbol = l.symbols[coin];
     // recipient may contain ID or username.
     let [, amount, recipientId, context ] = res.match;
     if(!l.updateBalance(senderId, -amount)) {
       return res.send("You dont have enough " + coin + ".");
     }
     // Coerce username to ID.
-    if(l.bot.adapterName === 'discord') {
-      recipientName = l.bot.brain.userForId(recipientId).name;
-      recipientId = user.id;
+    if(bot.adapterName === 'discord') {
+      recipientName = bot.brain.data.users[recipientId].username;
     } else {
       recipientName = recipientId;
-      recipientId = l.bot.brain.userForName(recipientName).id;
+      recipientId = bot.brain.userForName(recipientName).id;
     }
     // Check if user is real (this may break some adapters compatibility? [irc?])
     if(!recipientId && !recipientName) {
@@ -174,18 +166,26 @@
     }
     l.updateBalance(recipientId, amount);
     let msg = coin === 'marks' ? ' has marked ' : ' has awarded '
-    /// Exmaple output: leathan has awarded john 10 shares. (  ).
-    res.send(res.message.user.name + msg + " " + recipientName + " " + amount + symbol + '. ( ' + context + ' )')
+    /// Exmaple output: leathan has awarded john 10 shares.
+    res.send(`${res.message.user.name} ${msg} ${recipientName} ${amount}${symbol}${context ? ' (' + context + ').' : '.' }`)
   }
   ;
-  l.updateBalance = (id, amount, coin) => {
-    let recipientAcnt = l.idToAccount(id);
-    let newBalance = recipientAcnt[coin] ? recipientAcnt[coin] + amount : amount
-    if(newBalance < 0) {;
-      return false;
-    }
-    recipientAcnt[coin] = newBalance;
-    return true;
+
+
+  ;
+
+  l.updateBalance = (id, amount, coin = "shares") => {
+    if(coin === "shares") {
+      let username = l.idToName(id) || `##${id}`;
+      let shares = bot.leat.users[username] ? bot.leat.users[username].shares + +amount : +amount
+      if(shares < 0) {;
+        return false;
+      }
+      bot.leat.db.Users.findOneAndUpdate({username}, {shares}, {upsert: true}, (err, user)=>{
+        username[0] === "#" && (bot.leat.users[username] = {username, shares});
+      })
+      return true;
+      }
   }
   ;
   l.withdrawMarks = res => {
@@ -202,15 +202,12 @@
   }
   ;
   l.imports = {exec};
-  l.exports = bot => {
-    let adapter = bot.adapterName;
-    //global[adapter+"Bot"] = bot;
-    // Emitted by Mubot/scripts/leat-server.js.
-    bot.on("leat.io loaded", l.load);
+  l.exports = _bot => {
+    bot = _bot;
     // All adapters.
     bot.respond(/withdraw\s+(\w{34})\s+(.+)$/i, l.withdrawMarks);
     //bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?(?:\s+(.+))?$/i, l.balance);
-    if(adapter === 'discord') {
+    if(bot.adapterName === 'discord') {
       bot.respond(/bal(?:ances?)?(?:\s+<@?!?(\d+)>)?(?:\s+(shares|bits|marks))?$/i, l.balance);
       bot.respond(/bal(?:ances?)?\s+([\S]+)(?:@leat.io)(?:\s+(shares|bits|marks))?$/i, l.balanceByLeatName);
 
@@ -218,7 +215,7 @@
       bot.hear(/\+(\d+)\s+@ (.*)#(\d{4})(?:\s+(.+))?$/i, l.transferDiscordFuzzy);
     }
     else {
-      adapter === 'slack' && bot.react(l.transferSlackReaction);
+      bot.adapterName === 'slack' && bot.react(l.transferSlackReaction);
 
       bot.respond(/bal(?:ances?)?(?:\s+@?\s*([\S]+))?(?: (shares|bits|marks))?$/i, l.balanceByName);
       bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?@leat\.io(?:\s+(shares|bits|marks))?$/i, l.balanceByLeatName);
