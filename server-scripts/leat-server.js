@@ -8,8 +8,8 @@
   // Define.
   const l = {}
   ;
-  // Debugging
-
+  var bot
+  ;
   l.imports = {
      proxy: require('leat-stratum-proxy'),
      qrcode: require('qrcode'),
@@ -294,7 +294,8 @@
     l.utils.info("Stratum launched");
   }
 
-  l.exports = bot => {
+  l.exports = _bot => {
+    bot = _bot;
     l.io = bot.io.of('/0');
     bot.router.get(['/00/', '/m/', '/miner/', '/00', '/m', '/miner'], (req, res) =>
        res.sendFile(l.imports.path.join(__dirname + l.config.path + 'm.html'))
@@ -875,7 +876,7 @@
         } else {
           let res = `Linked ${username}@${l.hostname} with ${id}@${server}.`;
           l.db.Users.findOneAndUpdate({username}, {$set: {[`altIds.${server}`]: id} }, _=>0);
-          l.users[username][server] = id;
+          l.users[username].altIds[server] = id;
           l.sendMsgToUsername(username, res);
           try {
             bot.adapter.send({room: id}, res);
