@@ -21,7 +21,7 @@
     bot = _bot;
     bot.respond(/reload(?: (.+))?$/i, l.reload)
     bot.respond(/set (?:reload|load)(?: modes?)?(?: me)?(?: (.+))?/i, l.reload.setModes)
-    Object.assign(bot.mubot, l)
+    bot.mubot.reload = l.reload;
   }
   ;
   l.reload.imports = {fs, path}

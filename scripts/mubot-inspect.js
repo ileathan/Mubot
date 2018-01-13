@@ -45,7 +45,7 @@ Object.defineProperty(l, 'exports', {
       ;
     });
     // Export
-    Object.assign(bot.mubot, {inspect: l});
+    bot.mubot.inspect = l;
   }
 })
 ;

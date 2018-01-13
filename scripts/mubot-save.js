@@ -28,6 +28,7 @@
     bot.brain.on('close', l.save);
     bot.brain.on('shutdown', l.save);
     l.load();
+    bot.mubot.save = l;
   }
   ;
   l.save = data => {

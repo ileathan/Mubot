@@ -26,7 +26,7 @@
     bot.respond(/start scanner(?:s| alerts) ?(\d+)?/i, l.start);
     bot.respond(/alerts$/i, l.length);
     bot.respond(/alerts view/i, l.view);
-    Object.assign(bot.mubot, {coinalert: l});
+    bot.mubot.coinalert = l;
   }
   ;
   Object.defineProperties(l, {

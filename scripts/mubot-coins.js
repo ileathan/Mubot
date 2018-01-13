@@ -9,7 +9,7 @@
   module.exports = bot => {
     bot.brain.on('loaded', () => {
       // Export module.
-      Object.assign(bot.mubot, {coins: l});
+      bot.mubot.coins = l;
     });
     l.refresh({bot});
     bot.hear(/^!coins( (load|build|ref(resh)?))? build$/, l.refresh)

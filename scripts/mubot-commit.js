@@ -18,7 +18,7 @@
     // of natural context in the sense we can do `mubot.commit(res)` with another
     // res that wont have higher capture groups set.
     bot.respond(/((commit))(?: ([\S]+))?(?: (.+))?/i, l.commit)
-    Object.assign(bot.mubot, {commit: l.commit})
+    bot.mubot.commit = l.commit;
   }
   ;
   l.commit.imports = {

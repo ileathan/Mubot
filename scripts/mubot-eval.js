@@ -28,7 +28,7 @@ l.exports = _bot => {
     ))
     ;
     // Export to mubot.
-    Object.assign(bot.mubot, {eval: l});
+    bot.mubot.eval = l;
   });
   // Capture all markdown formatted code.
   bot.hear(

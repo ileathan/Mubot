@@ -16,13 +16,13 @@ l.exports = _bot => {
   bot.respond(/echo ((?:\n|.)*)$/i, l.echo);
   bot.respond(/set alarm (\d+)(?: (.*))?/i, l.setAlarm);
   // Export
-  Object.assign(bot.mubot, {extras: l});
+  bot.mubot.extras = l;
 }
 ;
 l.setAlarm = res=> {
   let [, delay, msg = "Alarm triggered!!!"] = res.match;
 
-  res.send("Alarm set for " + delay);
+  res.send("Alarm set for " + delay + " seconds.");
   setTimeout(()=>res.reply(msg), delay*1000);
 }
 ;
