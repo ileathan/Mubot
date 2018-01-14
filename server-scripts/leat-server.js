@@ -266,9 +266,12 @@
         l.utils.info("Unique addrress detected " + addr + ".");
         return;
       }
+<<<<<<< HEAD
       if(!user && l.cookieToUsername[data.cookie]) {
         user = l.cookieToUsername[data.cookie]
       }
+=======
+>>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
       if(user && user.substr(0, 2) === '_#') {
         l.utils.idToUsername(user.substr(2), l.shareFound);
       } else {

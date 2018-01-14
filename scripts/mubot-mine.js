@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Description:
 //  Mines for your leat.io user account.
 //
@@ -126,6 +127,8 @@ l.config.load = async (que, users) => {
   });
   return miner;
 =======
+=======
+>>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
 const log = console.log;
 const mubotMine = require('mubot-mine');
 const defaults = require('../node_modules/leat-mine/config/defaults');
@@ -161,6 +164,9 @@ const readline = require('readline');
     log(data);
   });
 
+<<<<<<< HEAD
+>>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
+=======
 >>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
   //const running = await miner.rpc('isRunning');
   //await miner.rpc('setAutoThreadsEnabled', [!auto]);
@@ -170,9 +176,13 @@ const readline = require('readline');
   //await miner.rpc('getTotalHashes'),
   //await miner.rpc('getAcceptedHashes')
 <<<<<<< HEAD
+<<<<<<< HEAD
 };
 
 }).call(this);
+=======
+})();
+>>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
 =======
 })();
 >>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
