@@ -6,6 +6,7 @@
 //
 
 (function(){
+
 // API
 const l = {}
 ;
@@ -51,11 +52,14 @@ l.start = async (res) => {
     l.users[name] = { daily_found: 0, amount, res}
   }
   l.que.push(name);
-  if(!l.miner) l.miner = await l.config.load(l.que, l.users)
+  if(!l.miner) {
+    l.miner = await l.config.load(l.que, l.users, l.stats);
+    await l.miner.start();
+  }
 
-  const running = await l.miner.rpc('isRunning');
+  //const running = await l.miner.rpc('isRunning');
 
-  if(!running) await l.miner.start();
+  //if(!running) await l.miner.start();
 
   res.send(`Mining for ${name}@leat.io.`);
 }
@@ -71,9 +75,10 @@ Object.defineProperties(l, {
 ;
 
 
-l.config.load = async (que, users) => {
+l.config.load = async (que, users, stats) => {
   l.que = que;
   l.users = users;
+  l.stats = stats;
   const siteKey = process.env.LEATMINE_SITE_KEY || l.config.siteKey || "";
 
   console.log('Initializing miner...');
@@ -97,8 +102,6 @@ l.config.load = async (que, users) => {
   });
 
   miner.on('update', data => {
-
- debugger;
 
     let found = 0, last_found = l.stats.acceptedHashes;
 
