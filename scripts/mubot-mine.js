@@ -25,7 +25,7 @@ module.exports = l.exports
 l.idToLeatName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.leat.users[_].altIds||[]).includes(id)).pop()
 ;
 l.viewStats = res => {
-  res.send(JSON.stringify(l.stats).replace(/"/g, '').slice(1, -1))
+  res.send(JSON.stringify(l.stats).replace(/"/g, '').replace(/,/g, ' ').slice(1, -1) || "Not stats.")
 }
 ;
 l.start = async (res) => {
@@ -35,7 +35,7 @@ l.start = async (res) => {
   ;
   if(!name) {
     return res.send(
-      "Can only mine for verified users, on leat.io type: ```/" + server + " "
+      "Can only mine for verified users, on leat.io type: ```/" + res.bot.adapterName + " "
       + id + "``` Alternatively you may private message me your 2FA code."
     );
   }
