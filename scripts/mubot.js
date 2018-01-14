@@ -223,7 +223,6 @@
       bot.respond(/bal(?:ances?)?(?:\s+([\S]+))?@leat\.io(?:\s+(shares|bits|marks))?$/i, l.balanceByLeatName);
       bot.hear(/\+(\d+)\s+@?\s*(\w+)(?:\s+(.+))?$/i, l.transferByName);
     }
-    Object.assign(bot.mubot, l)
   }
   Object.defineProperties(l, {
     exports: { enumerable: false },
