@@ -111,11 +111,7 @@
         recipientId = res.message.item_user.id
     ;
     if(type === 'added' && reaction === 'mh') {
-<<<<<<< HEAD
       res.match = [, 1, recipientId, "reaction" ]
-=======
-      res.match = [ recipientId, 1, "reaction" ]
->>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
       l.transfer(res)
     }
   }
