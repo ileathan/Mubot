@@ -111,7 +111,7 @@
         recipientId = res.message.item_user.id
     ;
     if(type === 'added' && reaction === 'mh') {
-      res.match = [ recipientId, 1, "reaction" ]
+      res.match = [, 1, recipientId, "reaction" ]
       l.transfer(res)
     }
   }
