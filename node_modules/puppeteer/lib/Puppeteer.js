@@ -13,24 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const helper = require('./helper');
+const {helper} = require('./helper');
 const Launcher = require('./Launcher');
 
 class Puppeteer {
   /**
    * @param {!Object=} options
-   * @return {!Promise<!Browser>}
+   * @return {!Promise<!Puppeteer.Browser>}
    */
   static launch(options) {
     return Launcher.launch(options);
   }
 
   /**
-   * @param {string} options
-   * @return {!Promise<!Browser>}
+   * @param {{browserWSEndpoint: string, ignoreHTTPSErrors: boolean}} options
+   * @return {!Promise<!Puppeteer.Browser>}
    */
   static connect(options) {
     return Launcher.connect(options);
+  }
+
+  /**
+   * @return {string}
+   */
+  static executablePath() {
+    return Launcher.executablePath();
+  }
+
+  /**
+   * @return {!Array<string>}
+   */
+  static defaultArgs() {
+    return Launcher.defaultArgs();
   }
 }
 
