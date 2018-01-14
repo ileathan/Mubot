@@ -2,7 +2,7 @@
   "name": "Mubot",
   "version": "1.4.1",
   "private": true,
-  "author": "leathan <1@leathan.xyz>",
+  "author": "leathan",
   "description": "A Marking U Bot, on crack!",
   "dependencies": {
     "1337": "^1.0.1",
@@ -48,27 +48,13 @@
     "mathjs": "^3.18.0",
     "mongoose": "^4.11.1",
     "morgan": "^1.8.2",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    "mubot": "^3.0.0",
->>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
-=======
-    "mubot": "^3.0.0",
->>>>>>> parent of a5a2c1ed... work on mubot-mine
     "mubot-bustabit": "^1.0.0",
     "mubot-calculator": "^0.4.0",
     "mubot-discord": "^1.3.0",
     "mubot-flatten": "^1.0.1",
     "mubot-google-translate": "^0.2.1",
     "mubot-maps": "0.0.3",
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "mubot-mine": "^1.2.0",
-=======
->>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
-=======
->>>>>>> parent of a5a2c1ed... work on mubot-mine
+    "mubot-mine": "^1.2.1",
     "mubot-mubot": "0.0.12",
     "mubot-redis-brain": "0.0.4",
     "mubot-scripts": "^2.17.2",
@@ -82,13 +68,7 @@
     "optparse": "^1.0.5",
     "opusscript": "0.0.3",
     "parent-require": "^1.0.0",
-<<<<<<< HEAD
-<<<<<<< HEAD
     "puppeteer": "^1.0.0",
-=======
->>>>>>> 38ba4631804437dec45c8c48256d340dc04531dc
-=======
->>>>>>> parent of a5a2c1ed... work on mubot-mine
     "qrcode": "^1.0.0",
     "ramda": "^0.25.0",
     "ramda-fantasy": "^0.8.0",
