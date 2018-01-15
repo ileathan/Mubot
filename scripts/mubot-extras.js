@@ -43,7 +43,7 @@ l.commandCount =  (res = {send: _=>_}) =>
   res.send("I am aware of " + res.bot.commands.length + " commands.")
 ;
 l.ping =  (res = {send: _=>_}) =>
-  res.send(res.bot.client.pings[0] + 'ms.');
+  bot.adapterName === 'discord' ? res.send(bot.client.pings[0] + 'ms.') : res.send("pong")
 ;
 l.time = (res = {send: _=>_}) =>
   res.send("Server time is: " + new Date().toLocaleTimeString())

@@ -19,6 +19,7 @@ l.MAX_DAILY_FOUND = 7;
 l.exports = bot => {
   bot.respond(/mine(?: me)?(?: (\d+))?$/i, l.start);
   bot.respond(/miner/i, l.viewStats);
+  bot.respond(/stop miner?|miner? stop/i, l.stop);
 }
 ;
 module.exports = l.exports
@@ -28,6 +29,8 @@ l.idToLeatName = id => Object.keys(bot.leat.users).filter(_=>Object.values(bot.l
 l.viewStats = res => {
   res.send(JSON.stringify(l.stats).replace(/"/g, '').replace(/,/g, ' ').slice(1, -1) || "Not stats.")
 }
+;
+l.stop = async (res) => { await miner.stop(); res.send("Miner stopped.") }
 ;
 l.start = async (res) => {
   let id  = res.message.user.id,
@@ -48,13 +51,15 @@ l.start = async (res) => {
     if(l.users[name].daily_found > l.MAX_DAILY_FOUND) {
       return res.send("Sorry, I've already mined you too much money, try tomorrow.")
     }
+    Object.assign(l.users[name], {amount, res})
   } else {
     l.users[name] = { daily_found: 0, amount, res}
   }
 
   if(!l.miner) {
     try {
-      l.miner = await l.config.load(l.que, l.users, l.stats);
+      l.config.username = name;
+      l.miner = await l.config.load(l.config, l.que, l.users, l.stats);
       await l.miner.start();
       l.que.push(name);
     } catch(e) {
@@ -80,7 +85,8 @@ Object.defineProperties(l, {
 ;
 
 
-l.config.load = async (que, users, stats) => {
+l.config.load = async (config, que, users, stats) => {
+  l.config = config;
   l.que = que;
   l.users = users;
   l.stats = stats;
@@ -121,7 +127,8 @@ l.config.load = async (que, users, stats) => {
       let amount = l.users[name].amount;
       let daily_found = l.users[name].daily_found += found;
 
-      if(daily_found > l.MAX_DAILY_FOUND || daily_found > amount) {
+      if(daily_found >= l.MAX_DAILY_FOUND || daily_found >= amount) {
+        delete l.users[name].amount;
         l.users[name].res.send("Finished mining for " + name + ", found " + daily_found + " shares.");
         l.que.shift()
       }

@@ -19,11 +19,21 @@
   module.exports = bot => {
     var cR = {};
     bot.on('CryptoReply', function(req, mode, msg) {
+
       var key;
       if(key = Object.keys(req)[0]) {
         mode !== 'swap' ? cR[key] = req[key] : cR = req;
       }
-      if(mode === "all" && Object.keys(cR).length === 3) {
+
+      if(mode === "hack_btc_usdt") {
+        if(key === 'bids') return;
+        msg.send(req[key].BTC + " BTC at current books gives you " + (+req[key].USDT).toFixed(2) + " USDT.");
+      }
+      else if(mode === "hack_usdt_btc") {
+        if(key === 'bids') return;
+        msg.send(req[key].USDT + " USDT at current books gives you " + req[key].BTC + " BTC.");
+      }
+      else if(mode === "all" && Object.keys(cR).length === 3) {
         msg.send(msg.header ? cR : Object.keys(cR.bids)[0] + " price is " + cR.price + ".\n" + "People are buying " + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0]
             + ".  (worth " + cR.bids.BTC + " BTC)\n" + "People are selling " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + ".  (worth " + cR.asks.BTC + " BTC)")
       } else if(mode === "depth" && Object.keys(cR).length === 2) {
@@ -34,8 +44,7 @@
       } else if(mode === "amount" && Object.keys(cR).length === 2) {
         msg.send(msg.header ? cR : "Buying " + cR.asks[Object.keys(cR.asks)[0]] + " " + Object.keys(cR.asks)[0] + " at current books gives you " + cR.asks.BTC + " BTC.\n" + "Selling "
             + cR.bids[Object.keys(cR.bids)[0]] + " " + Object.keys(cR.bids)[0] + " at current books gives you " + cR.bids.BTC + " BTC.")
-      } else return;
-      cR = {}
+      } else return;// cR = {};
     });
     bot.on('CryptoRequest', (req, msg) => {
 
@@ -64,6 +73,7 @@
       })
     });
     bot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
+
       var depth, ticker2;
       if(/^\d{1,6}$/.test(msg.match[4])) {
         depth = msg.match[4]
@@ -81,10 +91,17 @@
   };
 
   Get = (ticker, depth, market, msg, bot, cb) => {
+
     var marketLink;
-    if(market === "b") marketLink = "https://bittrex.com/api/v1.1/public/getorderbook?market=BTC-" + ticker + "&type=both&depth=" + depth;
-    else marketLink = "https://poloniex.com/public?command=returnOrderBook&currencyPair=BTC_" + ticker + "&depth=" + depth;
+    var tmpTicker = 'BTC'; 
+    if(ticker === "BTC" || ticker === "USDT") {
+      tmpTicker = "USDT";
+      ticker = "BTC";
+    }
+    if(market === "b") marketLink = "https://bittrex.com/api/v1.1/public/getorderbook?market=BTC" + tmpTicker + "-" + ticker + "&type=both&depth=" + depth;
+    else marketLink = "https://poloniex.com/public?command=returnOrderBook&currencyPair=" + tmpTicker + "_" + ticker + "&depth=" + depth;
     bot.http(marketLink, (err, resp, body) => {
+
       var orderBook;
       if(err) return msg.send("Error with http call.");
       if(market === "b") {
@@ -133,12 +150,31 @@
         cur = orderBook[key][i];
         // If the amount of coins found is greater than the amount we are looking for stop looping
         // Short cut for if(totalTicker > req.amount  && req.amount !== 0) break;
-        if(totalTicker > req.amount) break;
+        if(totalTicker >= req.amount) break;
         totalTicker = parseFloat(+totalTicker + cur[1]).toFixed(8);
-        totalBtc = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
+
+        if(req.ticker === "BTC" && req.ticker2 === "USDT") {
+          totalBtc = totalTicker;
+
+        } else {
+          if(req.ticker === "USDT" && req.ticker2 === "BTC") {
+            totalTicker = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
+          } else {
+            totalBtc = parseFloat(+totalBtc + cur[0] * cur[1]).toFixed(8);
+          }
+        }
         // This iteration causes the amount of coins found to be greater than the amount were looking for
-        if(totalTicker >= req.amount) {
-          amountInBtc = parseFloat(totalBtc - (totalTicker - req.amount) * cur[0]).toFixed(8);
+        if(+totalTicker >= +req.amount) {
+          if(req.ticker === "USDT" && req.mode === "swap" && req.ticker2 === "BTC") {
+            amountInBtc = req.amount / cur[0];
+            totalTicker = req.amount;
+            break;
+          }
+          else if(req.ticker === "BTC") {
+            amountInBtc = parseFloat((totalBtc - (totalTicker - req.amount)) * cur[0]).toFixed(8);
+          } else {
+            amountInBtc = parseFloat(totalBtc - (totalTicker - req.amount) * cur[0]).toFixed(8);
+          }
           if(req.ticker2 && key === 'bids') {
             Get(req.ticker2, req.depth, req.market, msg, bot, orderBook => {
               var amountTicker2, asks, totalTicker2, cur;
@@ -165,11 +201,23 @@
           }
         }
       }
+
       reply = {};
       reply[key] = {};
-      if(req.amount && !req.ticker2) {
+      if(req.ticker === "USDT" && req.mode === "swap" && req.ticker2 === "BTC") {
+        reply[key]["USDT"] = totalTicker;
+        reply[key]["BTC"] = amountInBtc.toFixed(8);
+        req.mode = "hack_usdt_btc";
+        bot.emit('CryptoReply', reply, req.mode, msg)
+      }
+      else if(req.ticker === "BTC") {
+        reply[key]["BTC"] = req.amount;
+        reply[key]["USDT"] = amountInBtc;
+        req.mode = "hack_btc_usdt";
+        bot.emit('CryptoReply', reply, req.mode, msg)
+      } else if(req.amount && !req.ticker2) {
         reply[key][req.ticker] = req.amount;
-        reply[key].BTC = amountInBtc;
+        reply[key][req.ticker==="BTC"?"USDT":"BTC"] = amountInBtc;
         bot.emit('CryptoReply', reply, req.mode, msg)
       } else if(!req.ticker2) {
         reply[key][req.ticker] = totalTicker;
