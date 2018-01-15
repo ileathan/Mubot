@@ -15,7 +15,7 @@
 //
 (function() {
   module.exports = bot => {
-    bot.respond(/(?:abs|abstract) (.+)/i, msg => {
+    bot.respond(/(?:abstract) (.+)/i, msg => {
       var abstract_url = "http://api.duckduckgo.com/?format=json&q=" + encodeURIComponent(msg.match[1]);
       msg.send(abstract_url);
       msg.http(abstract_url).header('User-Agent', 'Hubot Abstract Script').get()((err, req, body) => {

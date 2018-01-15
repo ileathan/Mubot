@@ -21,22 +21,22 @@
 
   l.exports = _bot => {
     bot = _bot;
-    bot.respond(/save brain$/i, _=>l.save(_));
+    bot.respond(/save brain$/i, _=>l.save());
     bot.respond(/(set|write) brain (.+)/i, _=>l.easyWrite(_));
  
-    bot.brain.on('save', _=>l.save(_));
-    bot.brain.on('close', _=>l.save(_));
-    bot.brain.on('shutdown', _=>l.save(_));
+    bot.brain.on('save', _=>l.save());
+    bot.brain.on('close', _=>l.save());
+    bot.brain.on('shutdown', _=>l.save());
     l.load();
     bot.mubot.save = l;
   }
   ;
   l.save = data => {
     if(!data) {
-      return res.send("No write data provided.")
+      data = Object.assign({}, bot.brain.data, {users: {}})
     }
     try {
-      fs.writeFile(path, JSON.stringify(Object.assign({}, data, {users: {}})), 'utf8', _=>0);
+      fs.writeFile(path, JSON.stringify(data), 'utf8', _=>0);
     } catch(e) {
       bot.logger.debug("Mubot-save: Error: Saving brain.")
     }

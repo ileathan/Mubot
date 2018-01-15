@@ -41,7 +41,8 @@ l.exports = _bot => {
       l.create(res)
     ;
   });
-  bot.hear(/^(?:[^!]|).*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
+
+  bot.hear(/^(?![!])[^!]*?(?:`((?:\\.|[^`])+)`|```((?:.|\n)+)\n?```)/i, res => {
     res.match[1] = res.match[1] || res.match[2];
     l.always[res.message.user.id] &&
       l.create(res)
@@ -156,7 +157,6 @@ l.deleteAll = (res = {send: _=>_}) => {
 }
 ;
 l.delete = (res = {send: _=>_}) => {
-debugger;
   let id = res.message.user.id,
       [saved, log] = [l.saved[id]||"", l.log[id]||""]
   ;
@@ -266,7 +266,8 @@ l.run = (res = {send: _=>_}) => {
 ;
 l.save = (res = {send: _=>_}) => {
   let id = res.message.user.id,
-      log = l.log[id]
+      log = l.log[id],
+      saved = l.saved[id] || (l.saved[id] = {})
   ;
   if(!log) {
     return res.send("No log found")
@@ -275,23 +276,26 @@ l.save = (res = {send: _=>_}) => {
   if(!cmdIndx) {
     cmdIndx = Object.keys(log).length - 1;
   }
-  res.match = [, tag];
-  if(l.utils.processMessage(res))
-    return res.send("Cannot save, your name is a reserved command.")
-  ;
+
   const cmd = Object.keys(log)[cmdIndx];
    ;
   if(!cmd)
     return res.send("No command found.")
   ;
-  l.saved[id] || (l.saved[id] = {});
-  l.saved[id][tag] = cmd;
+
+  res.match = [, tag];
+
+  delete saved[tag]; // in case its already saved (to not match the saved command)
+  if(l.utils.processMessage(res))
+    return res.send("Cannot save, your name is a reserved command.")
+  ;
+
+  saved[tag] = cmd;
   bot.brain.save();
   res.send("Saved " + l.utils.formatCmd(cmd) + ' as ' + tag + '.');
 }
 ;
 l.view = (res = {send: _=>_}) => {
-debugger;
   let id = res.message.user.id,
       [, mode, values, ignore, indexes = ""] = res.match,
       [startAt, endAt] = indexes.split(/\s*[-]\s*/).map(_=>_|0)
@@ -323,8 +327,8 @@ debugger;
   let viewLen = cmds.length;
 
   cmds = cmds.slice(-l.config.maxCmdLen);
-  res.send(`(${allLen}/${viewLen}) ` + cmds.map((_,i)=>
-    `${i+1}: ` + l.utils.formatCmd(_).replace('\n','')
+  res.send(`(${allLen}/${viewLen}) ` + cmds.map(_=>
+    `${mode?Object.keys(l.saved[id]||{})[oldCmds.indexOf(_)]:oldCmds.indexOf(_)}: ` + l.utils.formatCmd(_).replace('\n','')
   ).join(', '))
 }
 ;
@@ -394,8 +398,8 @@ l.utils.processMessage = res => {
      fn = 'run';
   }
   else if(match = cmd.match(/```((?:.|\n)+)\n?```/i)) {
-    // We capture always ussers with a different listener regexp.
-      if(l.always[id]) { return; }
+    // We capture always users with a different listener regexp.
+    if(l.always[id]) { return; }
     fn = 'create';
   }
   else if(match = cmd.match(/^`((?:\\.|[^`])+)`/i)) {
@@ -413,7 +417,7 @@ l.utils.processMessage = res => {
   else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
     fn = 'length';
   }
-  else if(match = cmd.match(/^(list|view|tags?|saved?|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
+  else if(match = cmd.match(/^(list|view|tags?|saved|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
     fn = 'view';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {
@@ -422,7 +426,7 @@ l.utils.processMessage = res => {
   else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: (saved?|evals?|logs?))?(?: -?(i(?:gnore)?))?(?: (.+))?$/i)) {
     fn = 'delete';
   }
-  else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
+  else if(match = cmd.match(/^(?:save|rec(?:ord)?|preserve|tag)(?: (\d+))?(?: (.+))?/i)) {
     fn = 'save';
   }
   else if(match = cmd.match(/^(?:set )?always(?: (.*))?/i)) {
