@@ -23,7 +23,7 @@ l.exports = _bot => {
         log: {},
         saved: {},
         always: {},
-        config: { maxCmdLen: 1917, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
+        config: { maxCmdLen: 20, maxMsgLen: 1917, sudoers: ['183771581829480448', 'U02JGQLSQ'] }
       }
     ))
     ;
@@ -62,7 +62,7 @@ module.exports = l.exports
 l.create = (res = {send: _=>_}) => {
   let cmd = res.match[1], evalCmd = cmd,
       id = res.message.user.id,
-      userOpts = res.match.input.split('`').pop() || "",
+      userOpts = (res.match.input||"").split('`').pop(),
       // Remove sensitive data from bot.
       opts = [], o = ""
   ;
@@ -103,7 +103,7 @@ l.create = (res = {send: _=>_}) => {
   l.utils.addToLog(res);
 }
 ;
-l.list = (res = {send: _=>_}) => {
+l.length = (res = {send: _=>_}) => {
   let mode = res.match[1];
       id = res.message.user.id, r = ""
   ;
@@ -156,10 +156,11 @@ l.deleteAll = (res = {send: _=>_}) => {
 }
 ;
 l.delete = (res = {send: _=>_}) => {
-  let id = res.message.user.id
-      [saved, log] = [l.saved[id], l.log[id]]
+debugger;
+  let id = res.message.user.id,
+      [saved, log] = [l.saved[id]||"", l.log[id]||""]
   ;
-  if(!saved || !log) {
+  if(!saved && !log) {
     return res.send("No log found");
   }
   let [, mode, ignore, cmd ] = res.match;
@@ -245,10 +246,10 @@ l.run = (res = {send: _=>_}) => {
   let id = res.message.user.id,
       tag = res.match[1],
       cmd = "",
-      log = l.log[id],
-      saved = l.saved[id]
+      log = l.log[id] || "",
+      saved = l.saved[id] || ""
   ;
-  if(!saved || !log) {
+  if(!saved && !log) {
     return res.send("No log found")
   }
   cmd = saved[tag] ?
@@ -264,38 +265,42 @@ l.run = (res = {send: _=>_}) => {
 }
 ;
 l.save = (res = {send: _=>_}) => {
-  const id = res.message.user.id;
+  let id = res.message.user.id,
+      log = l.log[id]
+  ;
   if(!log) {
     return res.send("No log found")
   }
   var [, cmdIndx, tag ] = res.match;
-  if(!tag) {
-    tag = cmdIndx;
+  if(!cmdIndx) {
     cmdIndx = Object.keys(log).length - 1;
   }
-  if(l.utils.processMessage(tag))
+  res.match = [, tag];
+  if(l.utils.processMessage(res))
     return res.send("Cannot save, your name is a reserved command.")
   ;
-  const cmd = Object.keys(log)[cmdIndex];
+  const cmd = Object.keys(log)[cmdIndx];
    ;
   if(!cmd)
     return res.send("No command found.")
   ;
-  saved[tag] = cmd;
+  l.saved[id] || (l.saved[id] = {});
+  l.saved[id][tag] = cmd;
   bot.brain.save();
   res.send("Saved " + l.utils.formatCmd(cmd) + ' as ' + tag + '.');
 }
 ;
 l.view = (res = {send: _=>_}) => {
+debugger;
   let id = res.message.user.id,
       [, mode, values, ignore, indexes = ""] = res.match,
       [startAt, endAt] = indexes.split(/\s*[-]\s*/).map(_=>_|0)
   ;
   mode = l.utils.isModeSave(mode);
   let cmds = values ?
-    Object.values((mode ? l.saved[id] : l.log[id]) || {})
+    (mode ? Object.keys(l.saved[id]) : Object.values(l.log[id]) || {})
   :
-    Object.keys((mode ? l.saved[id] : l.log[id]) || {})
+    (mode ? Object.values(l.saved[id]) : Object.keys(l.log[id]) || {})
   ;
   if(startAt === '!') {
     let remove = startAt.slice(1),
@@ -317,9 +322,9 @@ l.view = (res = {send: _=>_}) => {
 
   let viewLen = cmds.length;
 
-  cmds = cmds.slice(-l.utils.maxCmdLen);
+  cmds = cmds.slice(-l.config.maxCmdLen);
   res.send("("+allLen+'/'+viewLen+") " + cmds.map(_=>
-    oldCmds.indexOf(_) + ': ' + l.utils.formatCmd(_)
+    oldCmds.indexOf(_) + ': ' + l.utils.formatCmd(_).replace('\n','')
   ).join(', '))
 }
 ;
@@ -371,18 +376,19 @@ l.utils.preventHacks = (res = {send: _=>_}) => {
   return res.send("Sucess.");
 }
 ;
-l.utils.processMessage = (res = {send: _=>_}, cmd) => {
+l.utils.processMessage = res => {
+  let cmd = res.match[1];
   // ||"" throughout so we dont undefined vars for props.
-  if(!cmd && !(cmd = ((res.match||"")[1])))
+  if(!cmd)
     return "No message to process."
   ;
   let id = res.message.user.id,
       dontRun = res.dontRun,
       fn = null, match = null
   ;
-  if(l.saved[id] != null && l.saved[id][cmd] || l.log[id] != null && l.log[id][cmd]) {
+  if(l.saved[id] != null && l.saved[id][cmd] || /^\d+$/.test(cmd)) {
      // --cmd so that !1 runs the 0'th command.
-     match = Number.isInteger(cmd) ? --cmd : cmd;
+     match = /^\d+$/.test(cmd) ? --cmd : cmd;
      // format it asif it had ben RegExp.exec()'d.
      match = [, match];
      fn = 'run';
@@ -405,15 +411,15 @@ l.utils.processMessage = (res = {send: _=>_}, cmd) => {
     fn = 'runLast';
   }
   else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
-    fn = 'list';
+    fn = 'length';
   }
-  else if(match = cmd.match(/^(?:list|view|l|saved|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
+  else if(match = cmd.match(/^(list|view|tags?|saved?|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
     fn = 'view';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {
     fn = 'deleteAll';
   }
-  else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: ([\S]+))?(?: -?(i(?:gnore)?))?(.+)?$/i)) {
+  else if(match = cmd.match(/^(?:clear|del(?:ete)?)(?: (saved?|evals?|logs?))?(?: -?(i(?:gnore)?))?(?: (.+))?$/i)) {
     fn = 'delete';
   }
   else if(match = cmd.match(/^(?:save|rec?(:ord)?|preserve|tag) (.+)(?: (.+))?/i)) {
@@ -444,9 +450,8 @@ l.utils.formatCmd = cmd => {
   return null;
 }
 ;
-l.utils.isModeSave = str => {
-  /\s*-?(s(aved?)|tag(ged|s)?|recorded)\s*/.test(str);
-}
+l.utils.isModeSave = str =>
+  /\s*-?(s(aved?)|tag(ged|s)?|recorded)\s*/.test(str)
 ;
 l.utils.addToLog = (res = {send: _=>_}) => {
   try {

@@ -9,7 +9,7 @@
 //   leathan
 //
 ;(function() {
-  //const circularJSON = require('circular-json');
+  const circularJSON = require('circular-json');
   const fs = require('fs'), Path = require('path');
   const path = Path.join(__dirname, '/../brain.json');
   const rjson = require("relaxed-json");
@@ -36,7 +36,7 @@
       return res.send("No write data provided.")
     }
     try {
-      fs.writeFile(path, JSON.stringify(data), 'utf8', _=>0);
+      fs.writeFile(path, JSON.stringify(Object.assign({}, data, {users: {}})), 'utf8', _=>0);
     } catch(e) {
       bot.logger.debug("Mubot-save: Error: Saving brain.")
     }
