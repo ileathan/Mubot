@@ -323,8 +323,8 @@ debugger;
   let viewLen = cmds.length;
 
   cmds = cmds.slice(-l.config.maxCmdLen);
-  res.send("("+allLen+'/'+viewLen+") " + cmds.map(_=>
-    oldCmds.indexOf(_) + ': ' + l.utils.formatCmd(_).replace('\n','')
+  res.send(`(${allLen}/${viewLen}) ` + cmds.map((_,i)=>
+    `${i+1}: ` + l.utils.formatCmd(_).replace('\n','')
   ).join(', '))
 }
 ;
