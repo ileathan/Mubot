@@ -20,7 +20,7 @@
     })
   };
   function bingMe(msg, query) {
-    msg.http('http://www.bing.com/search').query({
+    require('http')('http://www.bing.com/search').query({
       q: query
     }).get()((err, res, body) => {
       msg.send((body = body.match(/<li class="b_algo"><h2><a href="([^"]*)"/)) ? body[1] : "Sorry, Bing had zero results for '" + query + "'")

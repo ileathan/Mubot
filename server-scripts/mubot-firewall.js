@@ -70,7 +70,7 @@ Object.defineProperty(l, 'exports', {
 })
 ;
 l.configure = (res = {send: _=>_}) => {
-  let [, mode, key, prop] = msg.match;
+  let [, mode, key, prop] = res.match;
 
   let obj = /^router$/i.test(mode) ? l.config[key] : l.config.router[key];
 

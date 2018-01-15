@@ -41,7 +41,7 @@
   wikiMe = function(bot, query, cb) {
     var articleURL;
     articleURL = makeArticleURL(makeTitleFromQuery(query));
-    return bot.http(articleURL).header('User-Agent', 'Hubot Wikipedia Script').get()(function(err, res, body) {
+    return bot.http(articleURL, (err, res, body) => {
       var bodyText, paragraphs;
       if (err) {
         return cb("Sorry, the tubes are broken.");

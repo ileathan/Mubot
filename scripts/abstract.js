@@ -18,7 +18,7 @@
     bot.respond(/(?:abstract) (.+)/i, msg => {
       var abstract_url = "http://api.duckduckgo.com/?format=json&q=" + encodeURIComponent(msg.match[1]);
       msg.send(abstract_url);
-      msg.http(abstract_url).header('User-Agent', 'Hubot Abstract Script').get()((err, req, body) => {
+      msg.http(abstract_url, (err, req, body) => {
         var data, topic;
         if(err) {
           return msg.send("Sorry, the tubes are broken.")

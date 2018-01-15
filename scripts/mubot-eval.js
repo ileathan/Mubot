@@ -115,7 +115,7 @@ l.length = (res = {send: _=>_}) => {
   ;
   return res.send(r);
   //
-  const format = mode => {
+  function format(mode) {
     let obj = mode ? l.saved[id] || {} : l.log[id] || {},
         cmds = mode ? Object.values(obj) : Object.keys(obj),
         amnt = cmds.length, last = cmds.pop()
@@ -296,6 +296,7 @@ l.save = (res = {send: _=>_}) => {
 }
 ;
 l.view = (res = {send: _=>_}) => {
+
   let id = res.message.user.id,
       [, mode, values, ignore, indexes = ""] = res.match,
       [startAt, endAt] = indexes.split(/\s*[-]\s*/).map(_=>_|0)
@@ -324,10 +325,10 @@ l.view = (res = {send: _=>_}) => {
 
   ignore ? cmds.splice(startAt, endAt) : cmds = cmds.slice(startAt, endAt);
 
-  let viewLen = cmds.length;
+  //let viewLen = cmds.length;
 
   cmds = cmds.slice(-l.config.maxCmdLen);
-  res.send(`(${allLen}/${viewLen}) ` + cmds.map(_=>
+  res.send(`(${cmds.length}/${allLen}) ` + cmds.map(_=>
     `${mode?Object.keys(l.saved[id]||{})[oldCmds.indexOf(_)]:oldCmds.indexOf(_)}: ` + l.utils.formatCmd(_).replace('\n','')
   ).join(', '))
 }
@@ -417,7 +418,8 @@ l.utils.processMessage = res => {
   else if(match = cmd.match(/^(?:length|amount|amnt) ?(.*)?/i)) {
     fn = 'length';
   }
-  else if(match = cmd.match(/^(list|view|tags?|saved|evals|log?)(?: logs?)?(?: ([\S]*))?(?: ([\S]*))?(?: ([\S]*))?([^-]+ [^-]+)?/)) {
+  else if(match = cmd.match(/^(list|view|tags?|saved|evals|log?)(?: logs?)?(?: (values?))?(?: (-?i(?:gnore)?))?(?: (.+))?/)) {
+      [, mode, values, ignore, indexes = ""] = res.match,
     fn = 'view';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {
