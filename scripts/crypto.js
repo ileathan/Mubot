@@ -26,11 +26,11 @@
       }
 
       if(mode === "hack_btc_usdt") {
-        if(key === 'bids') return;
+        if(key !== 'asks') return;
         msg.send(req[key].BTC + " BTC at current books gives you " + (+req[key].USDT).toFixed(2) + " USDT.");
       }
       else if(mode === "hack_usdt_btc") {
-        if(key === 'bids') return;
+        if(key !== 'asks') return;
         msg.send(req[key].USDT + " USDT at current books gives you " + req[key].BTC + " BTC.");
       }
       else if(mode === "all" && Object.keys(cR).length === 3) {
@@ -72,7 +72,7 @@
         Loop(orderBook, req, msg, bot)
       })
     });
-    bot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d+\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
+    bot.respond(/(?:crypto|c|swap) (?:-(b?p?|p?b?) )?(\d*\.?\d{0,8})? ?(\w{2,5}) ?(?:for)? ?(\d{1,6}|\w{2,5})? ?(.+)?/i, msg => {
 
       var depth, ticker2;
       if(/^\d{1,6}$/.test(msg.match[4])) {
