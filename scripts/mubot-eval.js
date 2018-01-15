@@ -226,6 +226,26 @@ l.delete = (res = {send: _=>_}) => {
   return res.send(r + "." || "No Command(s) found.");
 }
 ;
+l.viewFull = res => {
+  let id = res.message.user.id,
+      [, cmdIndxOrName] = res.match
+  ;
+
+  let cmd;
+
+  if((l.saved[id]||"")[cmdIndxOrName]) {
+    cmd = l.saved[id][cmdIndxOrName];
+  }
+  else if(Object.keys(l.log[id]||{})[cmdIndxOrName]) {
+    cmd = l.log[id][Object.keys(l.log[id]||{})[cmdIndxOrName]]
+  }
+  else {
+    cmd = Object.keys(l.log[id]).pop() || "No commands.";
+  }
+
+  res.send('Command ' + cmdIndxOrName + ': ```' + cmd + '```')
+}
+;
 l.runLast = res => {
   let id = res.message.user.id,
       [mode, userOpts = ""] = (res.match[1]||"").split(' ');
@@ -419,8 +439,10 @@ l.utils.processMessage = res => {
     fn = 'length';
   }
   else if(match = cmd.match(/^(list|view|tags?|saved|evals|log?)(?: logs?)?(?: (values?))?(?: (-?i(?:gnore)?))?(?: (.+))?/)) {
-      [, mode, values, ignore, indexes = ""] = res.match,
     fn = 'view';
+  }
+  else if(match = cmd.match(/^(?:view|show) full(?: (.+))?/)) {
+    fn = 'viewFull';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {
     fn = 'deleteAll';
