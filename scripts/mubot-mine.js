@@ -56,15 +56,17 @@ l.start = async (res) => {
     l.users[name] = { daily_found: 0, amount, res}
   }
 
-  if(!l.miner) {
-    try {
-      l.config.username = name;
-      l.miner = await l.config.load(l.config, l.que, l.users, l.stats);
-      await l.miner.start();
-      l.que.push(name);
-    } catch(e) {
-      return res.send("Error starting miner, try again.")
-    }
+  try {
+    if(!l.miner) l.miner = await l.config.load(l.config, l.que, l.users, l.stats);
+
+    const running = await l.miner.rpc('isRunning');
+
+    await l.miner.stop();
+    l.config.username = name;
+    await l.miner.start();
+    l.que.push(name);
+  } catch(e) {
+    return res.send("Error starting miner, try again.")
   }
 
   //const running = await l.miner.rpc('isRunning');

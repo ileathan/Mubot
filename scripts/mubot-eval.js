@@ -441,7 +441,7 @@ l.utils.processMessage = res => {
   else if(match = cmd.match(/^(list|view|tags?|saved|evals|log?)(?: logs?)?(?: (values?))?(?: (-?i(?:gnore)?))?(?: (.+))?/)) {
     fn = 'view';
   }
-  else if(match = cmd.match(/^(?:view|show) full(?: (.+))?/)) {
+  else if(match = cmd.match(/^full (?:view|show)(?: (.+))?/)) {
     fn = 'viewFull';
   }
   else if(match = cmd.match(/^(?:clear|del(?:ete)?) all(?: (.+))?/i)) {

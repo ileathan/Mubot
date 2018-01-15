@@ -477,8 +477,7 @@
       let stats = l.proxy.getStats();
       l.stats.uptime = stats.uptime;
       l.stats.clients = stats.miners.length;
-      l.stats.total_hashes = l.total_shares;
-      callback(users, {uptime: stats.uptime, clients: stats.miners.length, total_hashes: l.stats.total_hashes})
+      callback(users, {uptime: stats.uptime, clients: stats.miners.length, total_hashes: l.stats.total_shares})
     })
     ;
   }
@@ -628,7 +627,7 @@
   l.shareFound = username => {
     let myuser = l.users[username]
     ;
-    ++l.total_shares
+    ++l.stats.total_shares
     ;
     // Its a guest shares
     if(!myuser || myuser.username[0] === "#") {
