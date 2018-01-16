@@ -9,14 +9,14 @@ l.exports = _bot => {
   bot = _bot;
   bot.mubot.extras = l;
 
-  bot.respond(/view brain(?: (.+))?i/, _=>l.viewBrain(_));
-  bot.respond(/ping(?: me)?/i, _=>l.ping(_));
-  bot.respond(/time(?: me)?/i, _=>l.time(_));
-  bot.respond(/date(?: me)?/i, _=>l.date(_));
-  bot.respond(/command count(?: me)?/i, _=>l.commandCount(_));
+  bot.respond(/view brain(?: (.+))?$i/, _=>l.viewBrain(_));
+  bot.respond(/ping(?: me)?$/i, _=>l.ping(_));
+  bot.respond(/time(?: me)?$/i, _=>l.time(_));
+  bot.respond(/date(?: me)?$/i, _=>l.date(_));
+  bot.respond(/command count(?: me)?$/i, _=>l.commandCount(_));
   bot.respond(/adapter$/i, _=>l.adapter(_));
   bot.respond(/echo ((?:\n|.)*)$/i, _=>l.echo(_));
-  bot.respond(/set alarm (\d+)(?: (.*))?/i, _=>l.alarm(_));
+  bot.respond(/set alarm (\d+)(?: (.*))?$/i, _=>l.alarm(_));
   // Export
 }
 ;
@@ -27,13 +27,13 @@ l.alarm = res => {
 }
 ;
 l.echo = res => {
-  if(res) { 
+  if(res) {
     if(!res.match[1]) res = {send: _=>_, match: [, res]};
   }
   return res.send(res.match[1])
 }
 ;
-l.adapter = (res = {send: _=>_}) => 
+l.adapter = (res = {send: _=>_}) =>
   res.send(bot.adapterName)
 ;
 l.viewBrain = (res = {send: _=>_}) =>
