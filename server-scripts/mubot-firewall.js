@@ -126,6 +126,7 @@ l.start = (res = {send: _=>_}) => {
   let new_layer = l.utils.createLayer();
   new_layer.name = `${bot.name}_firewall`;
   new_layer.handle = (req, res, next)=> {
+//debugger;
     let ip = req.connection.remoteAddress.split(':').pop();
     if(l.seen[ip]) {
       let o = l.seen[ip];

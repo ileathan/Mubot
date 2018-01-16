@@ -80,16 +80,16 @@
     } else {
       bot.emit("leat.io loaded", bot)
     }
-    if(modes.includes("all") || modes.includes("external")) {
-      try {
-        fs.readFile(path.resolve(".", "external-scripts.json"), (err, res) => {
-          let files = JSON.parse(res);
-          bot.loadExternalScripts(files)
-        })
-      } catch(e) {
-       res.send("Error loading external-scripts.json " + e)
-      }
-    }
+    //if(modes.includes("all") || modes.includes("external")) {
+    //  try {
+    //    fs.readFile(path.resolve(".", "external-scripts.json"), (err, res) => {
+    //      let files = JSON.parse(res);
+    //      bot.loadExternalScripts(files)
+    //    })
+    //  } catch(e) {
+    //   res.send("Error loading external-scripts.json " + e)
+    //  }
+    //}
     res.send("Reloaded `" + (modes ? modes.join(", ") : "all") + "` code.")
   }
 
