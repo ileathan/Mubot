@@ -7,10 +7,11 @@
 (function(){
   // Exports
   module.exports = bot => {
-    bot.brain.on('loaded', () => {
-      // Export module.
-      bot.mubot.coins = l;
-    });
+//     bot.brain.on('all loaded', () => {
+//       // Export module.
+//       bot.mubot.coins = l;
+//     });
+    bot.mubot.coins = l;
     l.refresh({bot});
     bot.hear(/^!coins( (load|build|ref(resh)?))? build$/, _=>l.refresh(_))
     ;
@@ -46,25 +47,49 @@
       case 'name':
         return ['byname', 'bn', 'name', 'n']
         break;
-      case 'ticker':
+      case '24h_volume_usd':
+        return ['byvol', 'byvolume', 'volume', 'vol', '24h_volume_usd', 'by24h_volume_usd']
+        break;
+      case 'market_cap_usd':
+        return ['bycap', 'cap', 'marketcap', 'bymarketcap', 'market_cap_usd', 'bymarket_cap_usd']
+        break;
+      case 'available_supply':
+        return ['byavailable', 'available', 'available_supply', 'byavailable_supply']
+        break;
+      case 'total_supply':
+        return ['bysupply', 'supply', 'total_supply', 'bytotal_supply']
+        break;
+      case 'max_supply':
+        return ['bymax', 'max', 'max_supply', 'bymax_supply']
+        break;
+      case 'percent_change_1h':
+        return ['1h', 'by1h', 'bychange 1h', 'change 1h', 'percent_change_1h', 'bypercent_change_1h']
+        break;
+      case 'percent_change_24h':
+        return ['1d', 'by1d', 'bychange 1d', 'change 1d', 'percent_change_24h', 'bypercent_change_24h', 'percent_change_1d', 'bypercent_change_1d']
+        break;
+      case 'percent_change_7d':
+        return ['7d', 'by7d', 'bychange 7d', 'change 7d', 'percent_change_7d', 'bypercent_change_7d', 'percent', 'bypercent', 'change', 'bychange']
+        break;
+      case 'symbol':
         return ['bysymbol', 's', 'byticker', 'bt', 'ticker', 't']
         break;
       case 'rank':
         return ['byrank', 'br', 'rank', 'r']
         break;
-      case 'price':
-        return ['byprice', 'price']
+      case 'id':
+        return ['id', 'byid']
         break;
-      case 'percent':
-        return ['percent', '%', 'per']
+      case 'last_updated':
+        return ['updated', 'byupdated', 'last_updated', 'bylast_updated']
         break;
-      case 'supply':
-        return ['supply', 'sup']
+      case 'price_usd':
+        return ['byprice', 'price', 'price_usd']
         break;
-      case 'price':
-        return ['byprice', 'price']
+      case 'price_btc':
+        return ['bybtc', 'price_btc']
         break;
-      default: return [cmd];
+      default: return null;
     }
   }
   ;
@@ -82,8 +107,9 @@
   ;
   // const search = (coins, value) => coins.filter(_=>RegExp('^' + value + '$', 'i').test(_[cmdToKey[value]])
   l.getMatches = res => {
+
     let mode = l.utils.returnMode[res.match[1]] || 0,
-        cmd = l.utils.stringToCmd(res.match[2]),
+        key = l.utils.stringToCmd(res.match[2]),
         // Transform `\`Hello, World!\`` -> `Hello World`
         reStr = res.match[3].replace(/`((?:\\.|[^`])+)`/, '$1') || res.match[3],
         matches = [], re = {}
@@ -96,16 +122,16 @@
       re.flags = 'i';
       re.source = '^(' + reStr.trim().split(/[\W]/).join('|') + ')$';
     }
-    matches = asArray.filter(_=>
-      RegExp(re.source, re.flags).test(_[l.utils.cmdToCoinKey[cmd]])
-    )
+    matches = l.asArray.filter(_=> {
+      
+      return RegExp(re.source, re.flags).test(_[key])
+    })
     ;
     res.send(l.utils.buildRes(matches, mode))
     ;
   }
   ;
   l.refresh = res => http(l.api_endpoint, (_, __, data) => {
-
     l.asArray = JSON.parse(data)
     ;
     if(!res.send) {
