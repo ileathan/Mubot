@@ -317,15 +317,17 @@ l.save = (res = {send: _=>_}) => {
 ;
 l.view = (res = {send: _=>_}) => {
 
+debugger;
+
   let id = res.message.user.id,
       [, mode, values, ignore, indexes = ""] = res.match,
       [startAt, endAt] = indexes.split(/\s*[-]\s*/).map(_=>_|0)
   ;
   mode = l.utils.isModeSave(mode);
   let cmds = values ?
-    (mode ? Object.keys(l.saved[id]) : Object.values(l.log[id]) || {})
+    mode ? Object.keys(l.saved[id] || {}) : Object.values(l.log[id] || {})
   :
-    (mode ? Object.values(l.saved[id]) : Object.keys(l.log[id]) || {})
+    mode ? Object.values(l.saved[id] || {}) : Object.keys(l.log[id] || {})
   ;
   if(startAt === '!') {
     let remove = startAt.slice(1),
