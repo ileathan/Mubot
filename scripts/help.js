@@ -49,7 +49,7 @@
         bot.adapter.send({room: msg.message.user.id}, cmds.join('\n'))
       }
     });
-    if(!process.env.MUBOT_HELP_DISABLE_HTTP) {
+    /*if(!process.env.MUBOT_HELP_DISABLE_HTTP) {
       bot.router.get("/" + bot.name + "/help", (req, res) => {
         var cmds, replyText;
         cmds = renamedHelpCommands(bot).map(cmd => cmd.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
@@ -61,6 +61,6 @@
         res.setHeader('content-type', 'text/html');
         res.end(helpContents(bot.name, replyText))
       })
-    }
+    }*/
   }
 }).call(this);

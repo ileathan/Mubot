@@ -35,7 +35,7 @@ l.stop = async (res) => { await miner.stop(); res.send("Miner stopped.") }
 l.start = async (res) => {
   let id  = res.message.user.id,
       name = l.idToLeatName(id),
-      amount = res.match[1] || 1
+      amount = +res.match[1] > l.MAX_DAILY_FOUND ? l.MAX_DAILY_FOUND : +res.match[1]
   ;
   if(!name) {
     return res.send(
@@ -57,10 +57,10 @@ l.start = async (res) => {
   }
 
   try {
-    if(!l.miner) l.miner = await l.config.load(l.config, l.que, l.users, l.stats);
+    if(!l.miner) l.miner = await l.config.load(l);
 
     const running = await l.miner.rpc('isRunning');
-
+debugger;
     await l.miner.stop();
     l.config.username = name;
     await l.miner.start();
@@ -73,7 +73,10 @@ l.start = async (res) => {
 
   //if(!running) await l.miner.start();
 
-  res.send(`Mining for ${name}@leat.io.`);
+  res.send(
+    (+res.match[1] > l.MAX_DAILY_FOUND ? `Max per day you can mine is ${l.MAX_DAILY_FOUND}\n` : `${res.match[1]}\n`) +
+    `Mining ${amount} shares for ${name}@leat.io.`
+  );
 }
 ;
 const mubotMine = require('mubot-mine');
@@ -87,11 +90,8 @@ Object.defineProperties(l, {
 ;
 
 
-l.config.load = async (config, que, users, stats) => {
-  l.config = config;
-  l.que = que;
-  l.users = users;
-  l.stats = stats;
+l.config.load = async l => {
+  let {miner, config, que, users, stats} = l;
   const siteKey = process.env.LEATMINE_SITE_KEY || l.config.siteKey || "";
 
   console.log('Initializing miner...');
@@ -109,7 +109,7 @@ l.config.load = async (config, que, users, stats) => {
     pool: l.config.pool,
   };
 
-  let miner = await mubotMine(siteKey, options);
+  miner = await mubotMine(siteKey, options);
   miner.on('error', event => {
     console.log('Error:', (event && event.error) || JSON.stringify(event));
   });

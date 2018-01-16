@@ -21,8 +21,9 @@
 //   Aupajo
 //   markpasc
 
-(function() {
-  var fetch_wordnik_resource;
+;(function() {
+
+ const http = require('http');
 
   module.exports = bot => {
     bot.respond(/define( me)? (.*)/i, msg => {
@@ -96,10 +97,15 @@
       })
     })
   };
-  fetch_wordnik_resource = function(msg, word, resource, query, callback) {
+  function fetch_wordnik_resource(msg, word, resource, query, callback) {
     if(process.env.WORDNIK_API_KEY === void 0) {
-      return msg.send("Missing WORDNIK_API_KEY env variable.")
+      return msg.send("Missing WORDNIK_API_KEY env variable.");
     }
-    msg.http("http://api.wordnik.com/v4/word.json/" + (escape(word)) + "/" + (escape(resource))).query(query).header('api_key', process.env.WORDNIK_API_KEY).get(callback);
+    let options = {
+      url: `http://api.wordnik.com/v4/word.json/${escape(word)}/${escape(resource)}`,
+      headers: {'api_key': process.env.WORDNIK_API_KEY}
+    };
+    bot.http(options, callback);
   }
+
 }).call(this);
