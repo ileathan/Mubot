@@ -9,11 +9,11 @@ l.exports = _bot => {
   bot = _bot;
   bot.mubot.extras = l;
 
-  bot.respond(/.*view brain(?: (.+))?i/, _=>l.viewBrain(_));
-  bot.respond(/.*ping(?: me)?/i, _=>l.ping(_));
-  bot.respond(/.*time(?: me)?/i, _=>l.time(_));
-  bot.respond(/.*date(?: me)?/i, _=>l.date(_));
-  bot.respond(/.*command count(?: me)?/i, _=>l.commandCount(_));
+  bot.respond(/view brain(?: (.+))?i/, _=>l.viewBrain(_));
+  bot.respond(/ping(?: me)?/i, _=>l.ping(_));
+  bot.respond(/time(?: me)?/i, _=>l.time(_));
+  bot.respond(/date(?: me)?/i, _=>l.date(_));
+  bot.respond(/command count(?: me)?/i, _=>l.commandCount(_));
   bot.respond(/adapter$/i, _=>l.adapter(_));
   bot.respond(/echo ((?:\n|.)*)$/i, _=>l.echo(_));
   bot.respond(/set alarm (\d+)(?: (.*))?/i, _=>l.alarm(_));
