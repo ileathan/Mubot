@@ -20,6 +20,8 @@ l.exports = bot => {
   bot.respond(/mine(?: me)?(?: (\d+))?$/i, l.start);
   bot.respond(/miner/i, l.viewStats);
   bot.respond(/stop miner?|miner? stop/i, l.stop);
+
+  bot.mubot.mine = l;
 }
 ;
 module.exports = l.exports
