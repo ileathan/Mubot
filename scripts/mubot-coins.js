@@ -5,6 +5,7 @@
 //   !coins [byname|byprice|byticker|byrank|byvolume]
 //
 (function(){
+
   // Exports
   module.exports = bot => {
 //     bot.brain.on('all loaded', () => {
@@ -131,7 +132,9 @@
     ;
   }
   ;
+
   l.refresh = res => http(l.api_endpoint, (_, __, data) => {
+
     l.asArray = JSON.parse(data)
     ;
     if(!res.send) {

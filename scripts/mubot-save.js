@@ -44,11 +44,17 @@
   }
   ;
   l.load = (res = {send: _=>_}) => {
-   res.path || (res.path = Path.join(__dirname, '/../brain.json'));
-   try {
-     let data = fs.readFileSync(res.path, 'utf-8');
-     bot.brain.mergeData(JSON.parse(data));
-     bot.brain.emit('all loaded');
+    res.path || (res.path = Path.join(__dirname, '/../brain.json'));
+    let data;
+    try {
+      data = fs.readFileSync(res.path, 'utf-8')
+    } catch(e) {
+      data = "{}";
+      bot.logger.debug("Mubot-save: Error: Reading brain file.");
+    }
+    try {
+      bot.brain.mergeData(JSON.parse(data));
+      bot.brain.emit('all loaded');
     } catch(err) {
       bot.logger.debug("Mubot-save: Error: Loading brain.");
     }

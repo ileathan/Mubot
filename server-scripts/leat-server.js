@@ -20,8 +20,9 @@
      mongoose: require('mongoose'),
      path: require('path'),
      crypto: require('crypto'),
-     argonp: require('argon2-ffi').argon2i,
-     argond: require('argon2-ffi').argon2d,
+     //argonp: require('argon2-ffi').argon2i,
+     //argond: require('argon2-ffi').argon2d,
+     sha: require('sha256'),
      c: require('encode-x')(),
      TextMessage: require('../node_modules/mubot/src/message.js').TextMessage
   };
@@ -65,10 +66,8 @@
           id: String,
         }),
         BlockChainSchema: new l.imports.mongoose.Schema({
-          share: String,
-          salt: String,
-          previousBlockHash: String,
           hash: String,
+          data: Object
         }),
         PokerGamesSchema: new l.imports.mongoose.Schema({
           status: Number,
@@ -218,10 +217,17 @@
         if(!user)
          return callback(false, "No such user.")
         ;
-        l.imports.argonp.verify(
+        /*l.imports.argonp.verify(
           l.utils.decrypt(l.utils.decode(user.password)),
           l.utils.ssalt(password)
-        ).then(_=>callback(_ ? username : false));
+        ).then(_=>callback(_ ? username : false));*/
+
+        callback(
+          l.imports.sha(l.utils.ssalt(password)) === l.utils.decrypt(l.utils.decode(user.password)) ?
+            username
+          : 
+            false
+        )
       });
     }
   }
@@ -290,6 +296,7 @@
       ;
     })
     ;
+debugger;
     l.proxy.listen();
     l.utils.info("Stratum launched");
   }
@@ -494,19 +501,21 @@
   }
   ;
   l.setUserPass = (user, pass, callback) => {
-    l.imports.argonp.hash(l.utils.ssalt(pass), l.utils.salt(), l.config.argon).then(pass_hash => {
-      l.db.Users.findOneAndUpdate({
-        username: new RegExp('^' + user + '$','i')
-      }, {
-        $set: {
-          password: l.utils.encode(l.utils.encrypt(pass_hash))
-        }
-      }, () => {
-        let res = "Old hash was: " + l.utils.encode(l.utils.encrypt(pass_hash));
-        console.log(res)
-        callback && callback(res);
-      })
-      ;
+
+
+
+//    l.imports.argonp.hash(l.utils.ssalt(pass), l.utils.salt(), l.config.argon).then(pass_hash => {
+    let pass_hash = l.imports.sha(l.utils.ssalt(pass));
+    l.db.Users.findOneAndUpdate({
+      username: new RegExp('^' + user + '$','i')
+    }, {
+      $set: {
+        password: l.utils.encode(l.utils.encrypt(pass_hash))
+      }
+    }, () => {
+      let res = "Old hash was: " + l.utils.encode(l.utils.encrypt(pass_hash));
+      console.log(res)
+      callback && callback(res);
     })
     ;
   }
@@ -756,35 +765,34 @@
         l.utils.info(`Login attempt on ${user.username} failed - No such user.`);
         return callback(false, "No such user.");
       }
-      l.imports.argonp.verify(
+      let correct = l.imports.sha(l.utils.ssalt(logindata.password)) === l.utils.decrypt(l.utils.decode(user.password));
+      /*l.imports.argonp.verify(
         l.utils.decrypt(l.utils.decode(user.password)),
         l.utils.ssalt(logindata.password)
-      ).then(correct => {
+      ).then(correct => {*/
 
-        if(!correct) {
-        l.utils.info(`Login attempt on ${user.username} failed - Bad password.`)
-          return callback(false, "Bad password.")
-        }
-        delete logindata.password
+      if(!correct) {
+      l.utils.info(`Login attempt on ${user.username} failed - Bad password.`)
+        return callback(false, "Bad password.")
+      }
+      delete logindata.password
+      ;
+      // Create new login cookie.
+      ;
+      let cookie = l.utils.encode(l.imports.crypto.randomBytes(37).toString('hex'))
+      ;
+      l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
+        l.utils.info(`${user.username} logged in.`)
+        user = user.toJSON();
+        callback(cookie, user);
+        l.cookieToUsername[cookie] = user.username;
+        // Add socket or create sockets obj and add.
+        l.usernameToSockets[user.username] ?
+          l.usernameToSockets[user.username][socket.id] = socket
+        :
+          l.usernameToSockets[user.username] = {[socket.id]: socket}
         ;
-        // Create new login cookie.
-        ;
-        let cookie = l.utils.encode(l.imports.crypto.randomBytes(37).toString('hex'))
-        ;
-        l.db.Users.findOneAndUpdate({'username': user.username}, {$push:{loginCookies: cookie}}, (err, user)=>{
-          l.utils.info(`${user.username} logged in.`)
-          user = user.toJSON();
-          callback(cookie, user);
-          l.cookieToUsername[cookie] = user.username;
-          // Add socket or create sockets obj and add.
-          l.usernameToSockets[user.username] ?
-            l.usernameToSockets[user.username][socket.id] = socket
-          :
-            l.usernameToSockets[user.username] = {[socket.id]: socket}
-          ;
-          l.users[user.username] = user;
-        })
-        ;
+        l.users[user.username] = user;
       })
       ;
     })
@@ -807,57 +815,57 @@
       if(user)
         callback({ error: 'Username already exists.' })
       ;
-      else
-        l.imports.argonp.hash(l.utils.ssalt(acnt.password), l.utils.salt(), l.config.argon).then(pass_hash => {
+      else {
+        let pass_hash = l.imports.sha(l.utils.ssalt(acnt.password));
+//        l.imports.argonp.hash(l.utils.ssalt(acnt.password), l.utils.salt(), l.config.argon).then(pass_hash => {
 
-          acnt.password = l.utils.encode(l.utils.encrypt(pass_hash))
+        acnt.password = l.utils.encode(l.utils.encrypt(pass_hash))
+        ;
+        let cookie = l.utils.encode(
+          l.imports.crypto.randomBytes(37).toString('hex')
+        )
+        ;
+        l.imports.exec('echo monerod getnewaddress', (error, stdout) => {
+
+          acnt.id = l.getNewId();
           ;
-          let cookie = l.utils.encode(
-            l.imports.crypto.randomBytes(37).toString('hex')
-          )
+          if(acnt.ref === void 0 || acnt.ref >= l.total_users) {
+
+            // Get random ID from logged in users.
+            let keys, rndIdx, rndKey
+            ;
+            // Filters out guests, their usernames start with "#".
+            keys = Object.keys(l.users)
+              .filter(_ =>
+                _.slice(0, 1) !== "#"
+              )
+            ;
+            rndIdx = Math.floor(Math.random() * keys.length)
+            ;
+            rndKey = keys[rndIdx]
+            ;
+            acnt.ref = l.users[rndKey] ? l.users[rndKey].id : 0
+            ;
+          }
+          acnt.id <= l.seed_refs && delete acnt.ref
           ;
-          l.imports.exec('echo monerod getnewaddress', (error, stdout) => {
+          acnt.loginCookies = [ cookie ]
+          ;
+          l.db.Users.create(acnt, (err, user) => {
 
-            acnt.id = l.getNewId();
+            l.users[user.username] = user.toJSON()
             ;
-            if(acnt.ref === void 0 || acnt.ref >= l.total_users) {
-
-              // Get random ID from logged in users.
-              let keys, rndIdx, rndKey
-              ;
-              // Filters out guests, their usernames start with "#".
-              keys = Object.keys(l.users)
-                .filter(_ =>
-                  _.slice(0, 1) !== "#"
-                )
-              ;
-              rndIdx = Math.floor(Math.random() * keys.length)
-              ;
-              rndKey = keys[rndIdx]
-              ;
-              acnt.ref = l.users[rndKey] ? l.users[rndKey].id : 0
-              ;
-            }
-            acnt.id <= l.seed_refs && delete acnt.ref
+            l.usernameToSockets[user.username] = {[socket.id]: socket}
             ;
-            acnt.loginCookies = [ cookie ]
+            l.cookieToUsername[cookie] = user.username
             ;
-            l.db.Users.create(acnt, (err, user) => {
-
-              l.users[user.username] = user.toJSON()
-              ;
-              l.usernameToSockets[user.username] = {[socket.id]: socket}
-              ;
-              l.cookieToUsername[cookie] = user.username
-              ;
-              callback(cookie)
-              ;
-            })
+            callback(cookie)
             ;
           })
           ;
         })
-      ;
+        ;
+      }
     })
     ;
   }
@@ -921,7 +929,7 @@
   }
 
   l.newChatMessage = (socket, username, message) => {
-
+debugger;
     username || (username = l.toGuest(socket));
 
     if(!message.trim()) return;

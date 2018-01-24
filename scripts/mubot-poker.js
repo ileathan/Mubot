@@ -6,7 +6,8 @@
 
   const l = {};
   var bot = null;
-  const argond = require('argon2-ffi').argon2d;
+  //const argond = require('argon2-ffi').argon2d;
+  const sha = require('sha256');
   const crypto = require('crypto');
 
   l.Engine = function(){
@@ -61,33 +62,32 @@ debugger;
       /* Deal with our first block (it has no previous hash) */
       const previousHash = last_block ? last_block.hash : GENESIS
       ;
-      const options = {
+      /*const options = {
         timeCost: 77,
         memoryCost: 17777,
         parallelism: 77,
         hashLength: 77
       }
-      ;
+      ;*/
       const salt = crypto.randomBytes(77)
       ;
-      argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
-
-        var block = {
-          block: block_hash,
-          verifies: {
-            previousHash,
-            previousSecrets,
-            share
-          }
+      //argond.hash(previousHash + prevousSecrets + share, salt, options).then(block_hash => {
+      const hash = sha(previousHash + prevousSecrets + share + salt);
+      var block = {
+        hash,
+        data: {
+          previousHash,
+          previousSecrets,
+          share,
+          salt
         }
-        ;
-        l.BlockChain.create(block)
-        ;
-        this.games.forEach(_=>_.emit('block found', block))
-        ;
-        socket.emit('block found', block)
-        ;
-      })
+      }
+      ;
+      l.BlockChain.create(block)
+      ;
+      this.games.forEach(_=>_.emit('block found', block))
+      ;
+      socket.emit('block found', block)
       ;
     })
     ;
@@ -224,7 +224,7 @@ debugger;
 
   }
   ;
-  l.imports = {argond, crypto}
+  l.imports = {sha, crypto /*, argond*/}
   ;
   l.exports = _bot => {
     bot = _bot;
