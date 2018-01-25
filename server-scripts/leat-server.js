@@ -252,10 +252,6 @@
       l.db.DeletedContent.find({}, (err, ids)=>l.stats.deleted_ids = ids.map(_=>_.id));
     }
   }
-  /*
-  *  Since we allow multiple logins per acnt to mine for 1 account.
-  */
-  // Commands are just verify for now.
 
   l.loadProxy = bot => {
     l.proxy = new l.imports.proxy({
@@ -296,7 +292,7 @@
       ;
     })
     ;
-debugger;
+
     l.proxy.listen();
     l.utils.info("Stratum launched");
   }
@@ -360,7 +356,7 @@ debugger;
     })
     l.loadProxy(bot);
     l.stats.load(bot);
-    Object.assign(bot.leat, l)
+    bot.leat = l;
   }
   ;
   l.load = (socket, username, _, callback) => {
@@ -398,15 +394,15 @@ debugger;
   }
   ;
   // Logged in only API
-  l.utils.setMiningFor = (username, toUsername, callback) => {
+  l.utils.setMiningFor = (username, forUser, callback) => {
     let match = { username: RegExp('^' + username + '$', 'i') },
-        query = { [toUsername ? '$set' : '$unset']: { isMiningFor: toUsername || 1} },
+        query = { [forUser ? '$set' : '$unset']: { isMiningFor: forUser || 1} },
         update = () => l.db.Users.findOneAndUpdate(match, query).exec()
     ;
     if(toUsername) {
-      l.db.Users.findOne({username: RegExp('^' + toUsername + '$', 'i')}).then(found => {
+      l.db.Users.findOne({username: RegExp('^' + forUser + '$', 'i')}).then(found => {
         callback(!!found);
-        l.users[username].isMiningFor = toUsername;
+        l.users[username].isMiningFor = forUser;
         update();
       })
       ;
@@ -929,7 +925,6 @@ debugger;
   }
 
   l.newChatMessage = (socket, username, message) => {
-debugger;
     username || (username = l.toGuest(socket));
 
     if(!message.trim()) return;
