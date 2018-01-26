@@ -1,7 +1,7 @@
 // Description:
 //   Random extra mubot utilities
 //
-//
+
 const l = {}
 ;
 let bot
