@@ -26,12 +26,8 @@ l.alarm = res => {
   setTimeout(()=>res.reply(msg), delay*1000);
 }
 ;
-l.echo = res => {
-  if(res) {
-    if(!res.match[1]) res = {send: _=>_, match: [, res]};
-  }
-  return res.send(res.match[1])
-}
+l.echo = res =>
+  res.send(res.match[1])
 ;
 l.adapter = (res = {send: _=>_}) =>
   res.send(bot.adapterName)
