@@ -21,7 +21,7 @@ To install I recommend first installing nvm:
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash
 ```
 
-then run this snippet every time to load nvm (or add it to your .bashrc / .bash_profile)
+Then run this snippet every time to load nvm (or add it to your .bashrc / .bash_profile).
 
 ```sh
 export NVM_DIR="$HOME/.nvm"
