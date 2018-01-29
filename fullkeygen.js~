@@ -1,4 +1,3 @@
-// Delete this comment, I just needed to reload bot remotly
 var t, r, publicKey, hash, checksum, address, privateKey, crypto, eccrypto
 crypto = require('crypto');
 eccrypto  = require('eccrypto')
