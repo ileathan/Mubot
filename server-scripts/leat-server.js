@@ -930,8 +930,11 @@
     if(!message.trim()) return;
 
     // The message is a server command, handle with mubot & relayed back privately.
-    l.io.emit("lS.newChatMessage", {username, message, date: new Date()})
-    l.db.ChatMessages.create({username, message}, _=>0)
+    l.io.emit("lS.newChatMessage", {username, message, date: new Date()});
+    // Some pro hacker injected a simple injection, ie: '<script>'
+    const sanitizeHtml = require('sanitize-html');
+    message = sanitizeHtml(message, {allowedTags: [], allowedAttributes: []}).replace(/>/g, "&gt");
+    l.db.ChatMessages.create({username, message}, _=>0);
   }
   ;
   // Export.

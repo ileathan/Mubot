@@ -1,8 +1,3 @@
-#test777
-#test777
-#test777
-#test777
-#test777
 iptables -P INPUT ACCEPT
 iptables -P FORWARD ACCEPT
 iptables -P OUTPUT ACCEPT
